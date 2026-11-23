@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import PortalFooter from "@/components/PortalFooter";
 import { TOPIC_ICON } from "@/components/TopicIcons";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
@@ -62,16 +62,15 @@ export default async function ServicesHome({ params, searchParams }: { params: P
           </section>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">اختر المحور</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {CATEGORIES.map((c, i) => {
+                        <div className="grid grid-cols-5 gap-1.5 sm:gap-4">
+              {CATEGORIES.map((c) => {
                 const Icon = TOPIC_ICON[c];
                 return (
                   <Link key={c} href={`/m/${slug}/services/${c}${lang === "en" ? "?lang=en" : ""}`}
-                    className={`elev elev-hover flex min-h-32 items-center gap-4 rounded-3xl border bg-background p-5 active:bg-muted ${i === CATEGORIES.length - 1 ? "sm:col-span-2" : ""}`}>
-                    <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-accent text-primary"><Icon className="size-9" aria-hidden /></span>
-                    <span className="min-w-0 flex-1"><b className="block text-lg leading-snug">{catLabel(lang, c)}</b><span className="text-sm text-muted-foreground">{countAr(counts[c])}</span></span>
-                    <ChevronLeft className={`size-6 shrink-0 text-muted-foreground ${lang === "en" ? "rotate-180" : ""}`} aria-hidden />
+                    className="elev elev-hover flex min-h-36 flex-col items-center justify-start gap-2 rounded-2xl border bg-background px-1 py-4 text-center sm:min-h-52 sm:justify-center sm:gap-3 sm:rounded-3xl sm:px-3 sm:py-8 active:bg-muted">
+                    <span className="grid size-11 place-items-center rounded-xl bg-accent text-primary sm:size-20 sm:rounded-2xl"><Icon className="size-6 sm:size-10" aria-hidden /></span>
+                    <b className="text-[11px] leading-tight sm:text-lg sm:leading-snug">{catLabel(lang, c)}</b>
+                    <span className="text-[10px] text-muted-foreground sm:text-sm">{countAr(counts[c])}</span>
                   </Link>
                 );
               })}
