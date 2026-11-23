@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
 import { Clock, FileCheck2, Landmark, LayoutList, UserCog, Users } from "lucide-react";
 import Emblem from "@/components/Emblem";
@@ -17,7 +17,7 @@ const FEATURES = [
 export default async function RoleChooser({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const muni = await loadMunicipality(slug);
-  if (!muni) redirect(`/m/${BRAND.slug}`);
+  if (!muni) { if (slug !== BRAND.slug) redirect(`/m/${BRAND.slug}`); notFound(); }
 
   // Exhibition mode: employee / mayor open a restricted demo session; otherwise they lead to the normal login.
   const base = "group flex h-full w-full flex-col items-center justify-center gap-3 rounded-3xl border px-6 py-6 text-center transition active:scale-[0.99] min-h-64 lg:min-h-[clamp(12rem,27vh,19rem)]";
