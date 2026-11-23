@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClipboardList, Landmark, Scale, Search, Store, Wrench, FileCheck2, Siren } from "lucide-react";
+import Emblem from "@/components/Emblem";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { catLabel, normalizeArabic, pick, t } from "@/lib/i18n";
 import { TX, portalCategory, type PortalCat } from "@/lib/draft";
@@ -30,28 +31,32 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
 
   return (
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="pb-16">
-      <section className="bg-gradient-to-b from-primary to-[#5e1623] px-4 pb-14 pt-10 text-primary-foreground">
+      <section className="px-4 pb-10 pt-12">
         <div className="mx-auto max-w-3xl space-y-5 text-center">
-          <p className="text-sm font-medium text-white/80">{name}</p>
-          <h1 className="text-3xl font-bold leading-snug md:text-4xl">{t(lang, "heroTitle")}</h1>
-          <form action={`/m/${slug}`} className="mx-auto flex max-w-xl gap-2 rounded-2xl bg-white p-2 shadow-lg">
+          <div className="flex justify-center"><Emblem size={112} /></div>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{name}</h1>
+          <p className="flex items-center justify-center gap-3 text-xs font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">
+            <span className="h-px w-8 bg-border" />BY AIJUR · INTELLIGENT MUNICIPAL SERVICES<span className="h-px w-8 bg-border" />
+          </p>
+          <h2 className="pt-4 text-xl font-semibold text-foreground/80">{t(lang, "heroTitle")}</h2>
+          <form action={`/m/${slug}`} className="mx-auto flex max-w-xl gap-2 rounded-2xl border bg-background p-2 focus-within:border-primary">
             <input type="hidden" name="lang" value={lang} />{cat && <input type="hidden" name="c" value={cat} />}
             <Search aria-hidden className="mx-2 my-auto size-5 shrink-0 text-muted-foreground" />
-            <input name="q" defaultValue={sp.q ?? ""} placeholder={t(lang, "searchPlaceholder")} className="min-h-12 w-full bg-transparent text-foreground outline-none" />
+            <input name="q" defaultValue={sp.q ?? ""} placeholder={t(lang, "searchPlaceholder")} className="min-h-12 w-full bg-transparent outline-none" />
             <button className="min-h-12 shrink-0 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button>
           </form>
-          {(demo || !approved) && <p className="mx-auto inline-block rounded-full bg-white/15 px-4 py-1.5 text-xs">{t(lang, "demoBadge")}</p>}
+          {(demo || !approved || muni.isDemo) && <p className="mx-auto inline-block rounded-full bg-accent px-4 py-1.5 text-xs text-accent-foreground">{t(lang, "demoBadge")}</p>}
         </div>
       </section>
 
-      <div className="mx-auto -mt-8 max-w-3xl space-y-8 px-4">
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mx-auto max-w-3xl space-y-8 px-4">
+        <div className="grid grid-cols-3 divide-x divide-x-reverse overflow-hidden rounded-2xl border">
           {[
             { h: `/m/${slug}/report?lang=${lang}`, Icon: Siren, l: t(lang, "report"), s: t(lang, "reportHint") },
             { h: `/m/${slug}/track?lang=${lang}`, Icon: ClipboardList, l: t(lang, "track"), s: t(lang, "trackHint") },
             { h: "/laws", Icon: Scale, l: "القوانين", s: "البلديات والمحاسبة والشراء" },
           ].map(({ h, Icon, l, s }) => (
-            <Link key={h} href={h} className="elev elev-hover flex flex-col items-center gap-1 rounded-2xl border bg-background p-4 text-center">
+            <Link key={h} href={h} className="flex flex-col items-center gap-1 bg-background p-5 text-center transition hover:bg-accent/50">
               <span className="grid size-11 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" /></span>
               <b className="text-sm">{l}</b><span className="hidden text-xs text-muted-foreground sm:block">{s}</span>
             </Link>
@@ -75,7 +80,7 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {CATS.map(({ id, Icon }) => (
                   <Link key={id} href={cat === id ? href({}) : href({ c: id, ...(sp.q ? { q: sp.q } : {}) })}
-                    className={`elev flex flex-col items-center gap-2 rounded-2xl border p-3 text-center text-sm ${cat === id ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:border-primary"}`}>
+                    className={`flex flex-col items-center gap-2 rounded-2xl border p-3 text-center text-sm transition ${cat === id ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:border-primary"}`}>
                     <Icon className="size-6" /><b>{catLabel(lang, id)}</b><span className={`text-xs ${cat === id ? "text-white/80" : "text-muted-foreground"}`}>{counts[id]} معاملة</span>
                   </Link>
                 ))}

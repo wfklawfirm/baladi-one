@@ -2,7 +2,7 @@
 
 /* AIJUR Case Management design tokens (extracted from aijur-case-management/app/globals.css). */
 :root {
-  --page: #f6f5f3;
+  --page: #ffffff;
   --background: #ffffff;
   --foreground: #1a1a1f;
   --primary: #7a1f2e;
@@ -14,7 +14,7 @@
   --border: #e7e5e1;
   --ring: #7a1f2e;
   --scrim: rgb(24 24 31 / 0.6);
-  --shadow-card: 0 1px 2px rgba(24,24,31,.04), 0 2px 8px rgba(24,24,31,.06);
+  --shadow-card: 0 1px 2px rgba(24,24,31,.03);
   --shadow-hover: 0 6px 20px rgba(24,24,31,.10), 0 2px 8px rgba(24,24,31,.06);
   --shadow-modal: 0 24px 60px -12px rgba(24,24,31,.28), 0 8px 24px -8px rgba(24,24,31,.16);
   --ring-focus: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);

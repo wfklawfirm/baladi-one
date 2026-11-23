@@ -1,2 +1,3 @@
 import { redirect } from "next/navigation";
-export default function Home() { redirect("/m/demo"); }
+import { BRAND } from "@/lib/brand";
+export default function Home() { redirect(`/m/${BRAND.slug}`); }

@@ -1,26 +1,33 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Emblem from "./Emblem";
+import { BRAND } from "@/lib/brand";
 
-const LINKS = [["/m/demo", "الرئيسية"], ["/catalog", "المعاملات"], ["/laws", "القوانين"], ["/m/demo/track", "تتبّع طلب"]] as const;
+const home = `/m/${BRAND.slug}`;
+const LINKS = [[home, "الرئيسية"], ["/catalog", "المعاملات"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"]] as const;
 
 export default function SiteNav() {
   const path = usePathname() ?? "";
   if (path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-primary text-primary-foreground shadow-sm">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/m/demo" className="flex items-center gap-2 font-bold">
-          <span aria-hidden className="grid size-8 place-items-center rounded-lg bg-white/15 text-sm">ب</span>
-          <span>BALADI ONE</span>
+    <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+        <Link href={home} className="flex items-center gap-2.5">
+          <Emblem size={34} />
+          <span className="font-bold leading-tight">{BRAND.nameAr}<span className="block text-[11px] font-medium tracking-widest text-muted-foreground" dir="ltr">BY AIJUR</span></span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="hidden items-center gap-1 text-sm sm:flex">
           {LINKS.map(([href, label]) => {
-            const active = href === "/m/demo" ? path === href : path.startsWith(href);
-            return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "bg-white/20 font-semibold" : "hover:bg-white/10"}`}>{label}</Link>;
+            const active = href === home ? path === href : path.startsWith(href);
+            return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "font-bold text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Link>;
           })}
         </nav>
+        <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
       </div>
+      <nav className="flex justify-around border-t text-xs sm:hidden">
+        {LINKS.map(([href, label]) => <Link key={href} href={href} className={`flex-1 py-2 text-center ${(href === home ? path === href : path.startsWith(href)) ? "font-bold text-primary" : "text-muted-foreground"}`}>{label}</Link>)}
+      </nav>
     </header>
   );
 }
