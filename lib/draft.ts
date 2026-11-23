@@ -32,3 +32,13 @@ export function lawsFor(id: string) {
 export function txForArticle(lawId: string, n: number) {
   return [...Object.entries(L), ...Object.entries(W)].filter(([, m]) => m[lawId]?.includes(n)).map(([id]) => getTx(id)).filter(Boolean) as Tx[];
 }
+
+/** Portal groups (same mapping as scripts/gen_catalog_drafts.py). */
+export type PortalCat = "licenses" | "certificates" | "shops" | "public_works" | "reports";
+export function portalCategory(c: string): PortalCat {
+  if (/شكاو|مخالفات/.test(c)) return "reports";
+  if (/اقتصاد|مهنية/.test(c)) return "shops";
+  if (/بناء|البناء|رخص|تراخيص|إشغال|تنظيم|التنظيم|تخطيط|التخطيط/.test(c)) return "licenses";
+  if (/أملاك|الأملاك|بنية|سير|بيئة|نظافة|سلامة|فنية|الفنية|مشاع|الأشغال|الأراضي/.test(c)) return "public_works";
+  return "certificates";
+}
