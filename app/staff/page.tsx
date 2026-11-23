@@ -1,54 +1,61 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Bot, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
-import { REPORT_TYPES, STATUS_AR } from "@/lib/reports";
+import { STATUS_AR } from "@/lib/reports";
 import { BRAND } from "@/lib/brand";
+import { brainConfigured } from "@/lib/brain/rag";
+import Emblem from "@/components/Emblem";
 
 const ROLE_AR: Record<string, string> = { staff: "موظف البلدية", mayor: "رئيس البلدية", admin: "مدير النظام" };
-
 export const dynamic = "force-dynamic";
-export const metadata = { title: "مساحة الموظفين — BALADI ONE", referrer: "no-referrer" as const };
-const fmt = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date(d));
+export const metadata = { title: "مساحة العمل — BALADI ONE", referrer: "no-referrer" as const };
 
 async function signOut() { "use server"; const { supabaseServer } = await import("@/lib/supabase-server"); await (await supabaseServer()).auth.signOut(); redirect(`/m/${BRAND.slug}`); }
 
-export default async function StaffHome({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
+export default async function StaffHome() {
   const { sb, memberships } = await requireStaff();
-  const filter = (await searchParams).s;
-  let q = sb.from("citizen_request").select("id,kind,report_type,description,location_text,status,is_demo,created_at,updated_at").order("created_at", { ascending: false }).limit(200);
-  if (filter && STATUS_AR[filter]) q = q.eq("status", filter);
-  const { data } = await q;
+  const { data } = await sb.from("citizen_request").select("status").limit(500);
   const rows = data ?? [];
   const isDemo = memberships.some((m) => m.is_demo);
-  const oversight = memberships.some((m) => m.role === "mayor" || m.role === "admin") && !filter;
+  const top = memberships.some((m) => m.role === "mayor" || m.role === "admin");
+  const admin = memberships.some((m) => m.role === "admin");
+  const on = brainConfigured();
+  const tools = [
+    { href: "/staff/assistant", Icon: Bot, title: "المساعد الذكي", sub: "اسأل في القوانين والاجتهادات" },
+    { href: "/staff/analyze", Icon: ScanSearch, title: "قراءة المعاملة", sub: "ملاحظات وخيارات قرار جاهزة" },
+    { href: "/staff/decisions", Icon: FileSignature, title: "مولّد القرارات", sub: "قرارات وكتب ومحاضر للتوقيع" },
+    { href: "/staff/requests", Icon: Inbox, title: "الطلبات الواردة", sub: `${rows.filter((r) => r.status === "received").length} جديدة` },
+    ...(top ? [{ href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" }] : []),
+    ...(admin ? [{ href: "/staff/accounts", Icon: UsersRound, title: "الحسابات", sub: "إدارة المستخدمين" }] : []),
+  ];
   return (
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8">
-      <header className="flex items-center justify-between gap-3">
-        <div><p className="text-sm font-semibold text-primary">BALADI ONE</p><h1 className="text-2xl font-bold">طلبات وبلاغات المواطنين</h1>
-          <p className="text-sm text-muted-foreground">{memberships.map((m) => `${ROLE_AR[m.role] ?? m.role} — ${m.municipality?.name_ar}`).join("، ")}</p></div>
-        <div className="flex gap-2">{memberships.some((m) => m.role === "admin") && <Link href="/staff/accounts" className="rounded-xl border px-4 py-2 text-sm">الحسابات</Link>}{memberships.some((m) => m.role === "mayor" || m.role === "admin") && <Link href="/staff/services" className="rounded-xl border px-4 py-2 text-sm">اعتماد الخدمات</Link>}<form action={signOut}><button className="rounded-xl border px-4 py-2 text-sm">خروج</button></form></div>
-      </header>
-      {isDemo && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">حساب عرض: ترى وتغيّر الطلبات التجريبية فقط، ولا يؤثر ذلك على أي بيانات حقيقية.</p>}
-      {oversight && (
-        <section aria-label="نظرة عامة" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (
-            <Link key={k} href={`/staff?s=${k}`} className="elev rounded-2xl border bg-background p-4 text-center active:bg-muted"><b className="block text-3xl text-primary">{rows.filter((r) => r.status === k).length}</b><span className="text-sm text-muted-foreground">{STATUS_AR[k]}</span></Link>
+    <>
+      <header className="border-b bg-background"><div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+        <Emblem size={44} />
+        <div className="text-center"><p className="font-bold">{memberships.map((m) => ROLE_AR[m.role] ?? m.role).filter((v, i, a) => a.indexOf(v) === i).join("، ")}</p><p className="text-xs text-muted-foreground">{memberships[0]?.municipality?.name_ar}</p></div>
+        <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
+      </div></header>
+      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-6 md:py-10">
+        {isDemo && <p className="rounded-xl bg-accent p-3 text-center text-sm text-accent-foreground">حساب عرض — البيانات تجريبية.</p>}
+        {top && (
+          <section aria-label="نظرة عامة" className="grid grid-cols-4 gap-2 sm:gap-3">
+            {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (
+              <Link key={k} href={`/staff/requests?s=${k}`} className="elev rounded-2xl border bg-background p-3 text-center active:bg-muted"><b className="block text-2xl text-primary sm:text-3xl">{rows.filter((r) => r.status === k).length}</b><span className="block text-[11px] leading-tight text-muted-foreground sm:text-sm">{STATUS_AR[k]}</span></Link>
+            ))}
+          </section>
+        )}
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1">
+          {tools.map(({ href, Icon, title, sub }) => (
+            <Link key={href} href={href} className="elev elev-hover flex min-h-44 flex-col items-center justify-center gap-3 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-52">
+              <span className="grid size-16 place-items-center rounded-2xl bg-accent text-primary sm:size-20"><Icon className="size-8 sm:size-10" aria-hidden /></span>
+              <b className="text-base sm:text-lg">{title}</b>
+              <span className="text-xs text-muted-foreground sm:text-sm">{!on && ["/staff/assistant", "/staff/analyze", "/staff/decisions"].includes(href) ? "قريبًا" : sub}</span>
+            </Link>
           ))}
         </section>
-      )}
-      <nav className="flex flex-wrap gap-2">
-        <Link href="/staff" className={`rounded-full border px-4 py-2 text-sm ${!filter ? "bg-primary text-primary-foreground" : "bg-background"}`}>الكل</Link>
-        {Object.entries(STATUS_AR).map(([k, v]) => <Link key={k} href={`/staff?s=${k}`} className={`rounded-full border px-4 py-2 text-sm ${filter === k ? "bg-primary text-primary-foreground" : "bg-background"}`}>{v}</Link>)}
-      </nav>
-      <p className="text-sm text-muted-foreground">{rows.length} نتيجة</p>
-      <ul className="divide-y rounded-xl border bg-background">
-        {rows.map((r) => (
-          <li key={r.id}><Link href={`/staff/r/${r.id}`} className="block space-y-1 p-3 hover:bg-muted">
-            <p className="flex flex-wrap items-center gap-2 text-sm"><b className="text-primary">{STATUS_AR[r.status]}</b><span>{REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? r.kind}</span>{r.is_demo && <span className="rounded bg-accent px-2 text-xs">تجريبي</span>}<span className="text-muted-foreground">{fmt(r.created_at)}</span></p>
-            <p className="line-clamp-2 text-sm leading-7">{r.description}</p></Link></li>
-        ))}
-        {!rows.length && <li className="p-6 text-center text-muted-foreground">لا توجد طلبات.</li>}
-      </ul>
-    </main>
+        <form action={signOut} className="text-center"><button className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-5 text-sm active:bg-muted"><LogOut className="size-4" />خروج</button></form>
+      </main>
+    </>
   );
 }

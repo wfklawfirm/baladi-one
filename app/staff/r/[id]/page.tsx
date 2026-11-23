@@ -25,7 +25,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const { data: hist } = await sb.from("request_status_history").select("to_status,note,internal,created_at").eq("request_id", id).order("created_at");
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-2xl space-y-5 p-4 md:p-8">
-      <Link href="/staff" className="text-sm text-primary">← الطلبات</Link>
+      <Link href="/staff/requests" className="text-sm text-primary">← الطلبات</Link>
       <header className="space-y-1"><h1 className="text-2xl font-bold">{REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? "طلب"}</h1>
         <p className="text-sm text-muted-foreground">{fmt(r.created_at)} · الحالة: <b className="text-primary">{STATUS_AR[r.status]}</b>{r.is_demo ? " · تجريبي" : ""}</p></header>
       <section className="space-y-2 rounded-2xl border bg-background p-4">
@@ -33,6 +33,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         {r.location_text && <p className="text-sm"><b>الموقع:</b> {r.location_text}</p>}
         {r.contact_phone && <p className="text-sm"><b>الهاتف:</b> <span dir="ltr">{r.contact_phone}</span></p>}
       </section>
+      <Link href={`/staff/analyze?t=${encodeURIComponent(r.description ?? "")}`} className="flex min-h-12 items-center justify-center rounded-xl border-2 border-primary font-semibold text-primary active:bg-muted">قراءة الطلب بالمساعد الذكي</Link>
       <form action={change.bind(null, id)} className="space-y-3 rounded-2xl border bg-background p-4">
         <h2 className="font-bold">تحديث الحالة</h2>
         <select name="status" defaultValue={r.status} className="min-h-12 w-full rounded-xl border bg-background px-3">{Object.entries(STATUS_AR).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
