@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, ClipboardList, FileSearch, Scale, Search, Siren } from "lucide-react";
+import { ChevronLeft, ClipboardList, FileSearch, Scale, Search, Siren, UserCog } from "lucide-react";
 import Emblem from "@/components/Emblem";
 import PortalFooter from "@/components/PortalFooter";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
@@ -63,6 +63,12 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
             </Link>
           ))}
         </div>
+
+        <Link href="/staff" className="elev flex min-h-20 items-center gap-4 rounded-2xl border bg-background p-4 active:bg-muted">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><UserCog className="size-6" aria-hidden /></span>
+          <span className="min-w-0 flex-1"><b className="block">دخول الموظفين ورئيس البلدية</b><span className="text-sm text-muted-foreground">متابعة الطلبات، وتغيير حالتها، واعتماد الخدمات.</span></span>
+          <ChevronLeft className={`size-6 shrink-0 text-muted-foreground ${lang === "en" ? "rotate-180" : ""}`} aria-hidden />
+        </Link>
       </div>
       <PortalFooter />
     </main>

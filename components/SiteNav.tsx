@@ -5,7 +5,7 @@ import Emblem from "./Emblem";
 import { BRAND } from "@/lib/brand";
 
 const home = `/m/${BRAND.slug}`;
-const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعاملات"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"]] as const;
+const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعاملات"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"], ["/staff", "الموظفون"]] as const;
 
 export default function SiteNav() {
   const path = usePathname() ?? "";
