@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileText, ListChecks, Clock, Building2, Scale } from "lucide-react";
 import { getTx, lawsFor } from "@/lib/draft";
+import { BRAND } from "@/lib/brand";
+import PortalFooter from "@/components/PortalFooter";
 
 const Card = ({ icon, title, items, ordered }: { icon: React.ReactNode; title: string; items: string[]; ordered?: boolean }) => {
   if (!items.length) return null;
@@ -23,7 +25,7 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
     <main className="pb-16">
       <section className="border-b bg-background px-4 pb-8 pt-8">
         <div className="mx-auto max-w-3xl space-y-3">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-primary">← كل المعاملات</Link>
+          <Link href={`/m/${BRAND.slug}/services`} className="text-sm text-muted-foreground hover:text-primary">← المعاملات البلدية</Link>
           <p className="text-sm font-semibold text-primary">{t.category}</p>
           <h1 className="text-3xl font-bold leading-snug text-foreground">{t.title}</h1>
           {t.authority && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="size-4" />{t.authority}</p>}
@@ -45,6 +47,7 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
         <Card icon={<FileText className="size-4" />} title="تفاصيل إضافية (غير محققة)" items={extra} />
         {t.notes && <p className="whitespace-pre-line rounded-2xl bg-muted p-4 text-sm leading-7">{t.notes}</p>}
       </div>
+      <PortalFooter />
     </main>
   );
 }

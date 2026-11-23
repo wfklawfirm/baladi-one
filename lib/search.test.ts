@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterServices } from "./search";
+import { filterServices, searchServices } from "./search";
 import type { Service } from "./types";
 
 const mk = (slug: string, ar: string, category: Service["category"]): Service => ({
@@ -18,5 +18,15 @@ describe("filterServices", () => {
   });
   it("returns nothing when no word matches", () => {
     expect(filterServices(list, "سيارة", "all", "ar")).toEqual([]);
+  });
+  it("understands a question: drops filler words and Arabic prefixes", () => {
+    expect(filterServices(list, "ما المستندات المطلوبة لرخصة البناء؟", "all", "ar").map((s) => s.slug)).toEqual(["a"]);
+    expect(filterServices(list, "للمحل", "all", "ar").map((s) => s.slug)).toEqual(["c"]);
+  });
+  it("falls back to the closest matches and says they are not exact", () => {
+    const r = searchServices(list, "رخصة سيارة", "all", "ar");
+    expect(r.exact).toBe(false);
+    expect(r.items.map((s) => s.slug)).toEqual(["a"]);
+    expect(searchServices(list, "رخصة البناء", "all", "ar").exact).toBe(true);
   });
 });
