@@ -21,6 +21,8 @@ export function Kiosk({
   const [warn, setWarn] = useState<number | null>(null);
   const last = useRef(Date.now());
   const dir = lang === "ar" ? "rtl" : "ltr";
+  // Narrow windows cannot fit the kiosk layout: hand over to the mobile portal.
+  useEffect(() => { if (window.matchMedia("(max-width: 820px)").matches && !location.search.includes("force=1")) location.replace(`/m/${muni.slug}${initialLang === "en" ? "?lang=en" : ""}`); }, [muni.slug, initialLang]);
 
   const reset = useCallback(() => { setView({ name: "home" }); setQuery(""); setCat("all"); setWarn(null); setLang(initialLang); }, [initialLang]);
   const touch = useCallback(() => { last.current = Date.now(); setWarn(null); }, []);

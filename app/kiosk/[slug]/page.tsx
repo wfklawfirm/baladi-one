@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { Kiosk } from "@/components/Kiosk";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { draftServices } from "@/lib/draft";
@@ -11,6 +12,9 @@ export default async function KioskPage({
 }: { params: Promise<{ slug: string }>; searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const { slug } = await params;
   const sp = await searchParams;
+  // Phones get the mobile portal; the kiosk layout is built for large touch screens (?force=1 overrides).
+  const ua = (await headers()).get("user-agent") ?? "";
+  if (/iPhone|iPod|Android.+Mobile|Mobile.+Firefox/i.test(ua) && sp.force !== "1") redirect(`/m/${slug}${sp.lang === "en" ? "?lang=en" : ""}`);
   const muni = await loadMunicipality(slug);
   if (!muni) notFound();
   const cat = await loadCatalog();

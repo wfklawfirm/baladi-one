@@ -77,7 +77,7 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
           <>
             <section className="space-y-3">
               <h2 className="text-xl font-bold">{t(lang, "transactions")}</h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 [&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:col-span-1">
                 {CATS.map(({ id, Icon }) => (
                   <Link key={id} href={cat === id ? href({}) : href({ c: id, ...(sp.q ? { q: sp.q } : {}) })}
                     className={`flex flex-col items-center gap-2 rounded-2xl border p-3 text-center text-sm transition ${cat === id ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:border-primary"}`}>
