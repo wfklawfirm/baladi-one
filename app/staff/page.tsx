@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bot, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut } from "lucide-react";
+import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
 import { STATUS_AR } from "@/lib/reports";
 import { BRAND } from "@/lib/brand";
@@ -27,6 +27,7 @@ export default async function StaffHome() {
     { href: "/staff/decisions", Icon: FileSignature, title: "مولّد القرارات", sub: "قرارات وكتب ومحاضر للتوقيع" },
     { href: "/staff/requests", Icon: Inbox, title: "الطلبات الواردة", sub: `${rows.filter((r) => r.status === "received").length} جديدة` },
     ...(top ? [{ href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" }] : []),
+    ...(admin ? [{ href: "/staff/brain", Icon: DatabaseZap, title: "قاعدة معرفة الذكاء", sub: "تحميل مكتبة القوانين" }] : []),
     ...(admin ? [{ href: "/staff/accounts", Icon: UsersRound, title: "الحسابات", sub: "إدارة المستخدمين" }] : []),
   ];
   return (

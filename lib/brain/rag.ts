@@ -1,12 +1,13 @@
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT } from "./prompts";
+import { supabaseServer } from "@/lib/supabase-server";
 
-// Port of baladi-api (BALADI AI): same models, same Qdrant collection, same ranking rules.
-const EMBED_MODEL = "text-embedding-3-large";
-const EMBED_DIMS = 3072;
+// Port of baladi-api (BALADI AI): same prompts and ranking rules; the legal knowledge lives in Supabase (pgvector) instead of Qdrant.
+const EMBED_MODEL = "text-embedding-3-small";
+const EMBED_DIMS = 1536;
 const CHAT_MODEL = "gpt-4o";
 const CHAT_MODEL_MINI = "gpt-4o-mini";
-const MIN_SCORE = 0.28, MAX_CONTEXT = 15, MAX_CONTEXT_JUR = 5;
+const MIN_SCORE = 0.22, MAX_CONTEXT = 15, MAX_CONTEXT_JUR = 5;
 const JUR_SOURCE = "استشارات_هيئة_التشريع_البلديات";
 const LEGAL_DOMAINS = new Set(["D01", "D07", "D09", "D13"]);
 export const DOMAIN_NAMES: Record<string, string> = {
@@ -19,7 +20,7 @@ export const REFUSAL = "لا أملك مرجعاً كافياً في قاعدة 
 export type Hit = { chunk_id: string; title: string; text: string; domain: string; source: string; score: number };
 export type Msg = { role: "system" | "user" | "assistant"; content: string | unknown[] };
 
-export const brainConfigured = () => !!(process.env.OPENAI_API_KEY && process.env.QDRANT_URL);
+export const brainConfigured = () => !!process.env.OPENAI_API_KEY;
 
 export function normalizeArabic(t: string) {
   return t.replace(/[ؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۨ-ۭ]/g, "").replace(/ـ/g, "")
@@ -32,29 +33,20 @@ async function openai(path: string, body: unknown) {
   if (!r.ok) throw new Error(`OpenAI ${r.status}`);
   return r.json();
 }
-async function embed(text: string): Promise<number[]> {
-  const j = await openai("embeddings", { model: EMBED_MODEL, input: normalizeArabic(text).slice(0, 8000), dimensions: EMBED_DIMS });
-  return j.data[0].embedding;
+export async function embedTexts(texts: string[]): Promise<number[][]> {
+  const j = await openai("embeddings", { model: EMBED_MODEL, input: texts.map((t) => normalizeArabic(t).slice(0, 8000)), dimensions: EMBED_DIMS });
+  return j.data.map((d: any) => d.embedding);
 }
-async function qdrant(vec: number[], limit: number, must: unknown[] | null, threshold: number): Promise<Hit[]> {
-  const base = process.env.QDRANT_URL!.replace(/\/$/, "");
-  const col = process.env.QDRANT_COLLECTION || "baladi_ai_chunks_full";
-  const r = await fetch(`${base}/collections/${col}/points/search`, {
-    method: "POST", headers: { "content-type": "application/json", ...(process.env.QDRANT_API_KEY ? { "api-key": process.env.QDRANT_API_KEY } : {}) },
-    body: JSON.stringify({ vector: vec, limit, score_threshold: threshold, with_payload: true, ...(must ? { filter: { must } } : {}) }),
-  });
-  if (!r.ok) throw new Error(`Qdrant ${r.status}`);
-  const j = await r.json();
-  return (j.result ?? []).map((x: any) => ({ chunk_id: x.payload?.chunk_id ?? "", title: x.payload?.title ?? "", text: x.payload?.text ?? "", domain: x.payload?.domain ?? "", source: x.payload?.source ?? "", score: x.score }));
+async function search(vec: number[], limit: number): Promise<Hit[]> {
+  const sb = await supabaseServer();
+  const { data, error } = await sb.rpc("match_law_chunks", { p_embedding: JSON.stringify(vec), p_limit: limit, p_min: MIN_SCORE });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((x: any) => ({ chunk_id: x.chunk_id, title: x.title, text: x.body, domain: x.domain, source: x.source, score: x.score }));
 }
 
 export async function retrieve(query: string, complexity: "mini" | "full", topK = 20): Promise<Hit[]> {
-  const vec = await embed(query);
-  if (complexity === "mini") return qdrant(vec, 8, null, MIN_SCORE);
-  const [main, jur] = await Promise.all([qdrant(vec, topK, null, MIN_SCORE), qdrant(vec, MAX_CONTEXT_JUR, [{ key: "source", match: { value: JUR_SOURCE } }], 0.25).catch(() => [])]);
-  const seen = new Set(main.map((h) => h.chunk_id));
-  for (const h of jur) if (!seen.has(h.chunk_id)) { main.push(h); seen.add(h.chunk_id); }
-  return main;
+  const [vec] = await embedTexts([query]);
+  return search(vec, complexity === "mini" ? 8 : topK);
 }
 
 export function filterAndRank(hits: Hit[]): Hit[] {
