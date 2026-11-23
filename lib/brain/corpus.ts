@@ -16,8 +16,8 @@ export function corpus(): Row[] {
   })));
   const dir = path.join(process.cwd(), "data", "kb");
   const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort() : [];
-  // services first (small, high value), then books
-  files.sort((a, b) => (a === "services.json" ? -1 : b === "services.json" ? 1 : a.localeCompare(b)));
+  // services and official forms first (small, high value), then books
+  const head = ["services.json", "forms.json"]; files.sort((a, b) => (head.indexOf(a) < 0 ? 99 : head.indexOf(a)) - (head.indexOf(b) < 0 ? 99 : head.indexOf(b)) || a.localeCompare(b));
   const kb = files.flatMap((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")) as Row[]).map((r) => ({ ...r, domain: r.domain ?? "D01", body: r.body.slice(0, 6000) }));
   return (cache = [...laws, ...kb]);
 }

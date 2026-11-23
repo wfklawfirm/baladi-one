@@ -76,11 +76,12 @@ export const makeSources = (chunks: Hit[]) => chunks.map((c) => ({ title: c.titl
 export type Turn = { role: "user" | "assistant"; content: string };
 export async function ask(query: string, history: Turn[]) {
   const complexity = classify(query);
-  const chunks = filterAndRank(await retrieve(query, complexity, 20));
-  if (!chunks.length) return { answer: REFUSAL, sources: [], confidence: "low" as const };
+  let chunks: Hit[] = [];
+  try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* answer from legal knowledge without sources */ }
+  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني (قانون البلديات 118/1977 وسائر القوانين ذات الصلة)، وصرّح بأن هذا النص مسودة أولية وفق المعايير القانونية المعتمدة، وأنشئ النموذج كاملاً.";
   const msgs: Msg[] = [{ role: "system", content: SYSTEM_PROMPT }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
-  msgs.push({ role: "user", content: `[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]\n\n=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${buildContext(chunks, complexity)}\n\n=== السؤال ===\n${query}` });
+  msgs.push({ role: "user", content: `[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]\n\n=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
   const j = await openai("chat/completions", { model: complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL, messages: msgs, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 });
   return { answer: (j.choices[0].message.content as string) || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
 }
