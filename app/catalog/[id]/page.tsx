@@ -18,7 +18,8 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
       <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">مسودة غير معتمدة من البلدية — للمراجعة فقط.</p>
       {laws.length > 0 && (
         <section className="space-y-2"><h2 className="font-bold">المواد القانونية ذات الصلة</h2>
-          <div className="flex flex-wrap gap-2">{laws.map((l) => <Link key={l.lawId + l.n} href={`/laws/${l.lawId}/${l.n}`} className="rounded-full border bg-background px-3 py-1 text-sm hover:border-primary">{l.short} م.{l.n}</Link>)}</div></section>)}
+          <div className="flex flex-wrap gap-2">{laws.map((l) => <Link key={l.lawId + l.n} href={`/laws/${l.lawId}/${l.n}`} className={`rounded-full border bg-background px-3 py-1 text-sm hover:border-primary ${l.weak ? "border-dashed text-muted-foreground" : ""}`}>{l.short} م.{l.n}{l.weak ? " (مرجَّح)" : ""}</Link>)}</div>
+          {laws.some((l) => l.weak) && <p className="text-xs text-muted-foreground">الروابط المنقّطة مرجَّحة وتحتاج مراجعة قانونية.</p>}</section>)}
       {t.legal_basis && <p className="text-sm text-muted-foreground">الأساس القانوني: {t.legal_basis}</p>}
       <List title="المستندات المطلوبة" items={t.documents.map((d) => d.t)} />
       <List title="المراحل" items={t.stages.map((d) => d.t)} />

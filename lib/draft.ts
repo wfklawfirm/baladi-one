@@ -1,6 +1,7 @@
 import "server-only";
 import raw from "@/data/catalog_draft_slim.json";
 import links from "@/data/law_links.json";
+import weakLinks from "@/data/law_links_weak.json";
 import { getLaw } from "./laws";
 
 type Item = { t: string; s: string };
@@ -13,20 +14,21 @@ export type Tx = {
 export const TX = (raw as unknown as { catalog: Tx[] }).catalog;
 export const AUDIENCE_LABELS: Record<string, string> = (raw as any).audience_labels;
 const L = links as Record<string, Record<string, number[]>>;
+const W = weakLinks as Record<string, Record<string, number[]>>;
 
 export const getTx = (id: string) => TX.find((t) => t.id === id);
 
 /** Articles that govern a transaction, resolved against the law library. */
 export function lawsFor(id: string) {
-  const out: { lawId: string; short: string; n: number; heading: string }[] = [];
-  for (const [lawId, ns] of Object.entries(L[id] ?? {})) {
+  const out: { lawId: string; short: string; n: number; heading: string; weak: boolean }[] = [];
+  for (const [weak, src] of [[false, L[id]], [true, W[id]]] as const) for (const [lawId, ns] of Object.entries(src ?? {})) {
     const law = getLaw(lawId); if (!law) continue;
-    for (const n of ns) { const a = law.articles.find((x) => x.n === n); if (a) out.push({ lawId, short: law.short, n, heading: a.heading }); }
+    for (const n of ns) { const a = law.articles.find((x) => x.n === n); if (a) out.push({ lawId, short: law.short, n, heading: a.heading, weak }); }
   }
   return out;
 }
 
 /** Transactions that cite a given article. */
 export function txForArticle(lawId: string, n: number) {
-  return Object.entries(L).filter(([, m]) => m[lawId]?.includes(n)).map(([id]) => getTx(id)).filter(Boolean) as Tx[];
+  return [...Object.entries(L), ...Object.entries(W)].filter(([, m]) => m[lawId]?.includes(n)).map(([id]) => getTx(id)).filter(Boolean) as Tx[];
 }

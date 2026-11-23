@@ -9,5 +9,6 @@ describe("draft catalog links", () => {
     const l = lawsFor("T-136");
     expect(l.some((x) => x.lawId === "MUN-118" && x.n === 53)).toBe(true);
     expect(txForArticle("MUN-118", 74).length).toBeGreaterThan(5);
+    expect(TX.filter((t) => lawsFor(t.id).length).length).toBeGreaterThan(230);
   });
 });
