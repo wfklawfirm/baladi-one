@@ -5,7 +5,7 @@ import Emblem from "./Emblem";
 import { BRAND } from "@/lib/brand";
 
 const home = `/m/${BRAND.slug}`;
-const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعاملات"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"]] as const;
+const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعاملات البلدية"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"]] as const;
 
 export default function SiteNav() {
   const path = usePathname() ?? "";
@@ -16,7 +16,7 @@ export default function SiteNav() {
         <Link href={home} className="flex items-center gap-2.5">
           <Emblem size={44} />
         </Link>
-        <nav className="hidden items-center gap-1 text-sm sm:flex">
+        <nav className="hidden items-center gap-1 text-sm sm:flex lg:text-lg">
           {LINKS.map(([href, label]) => {
             const active = href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"));
             return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "font-bold text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Link>;
