@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* AIJUR Case Management design tokens (extracted from aijur-case-management/app/globals.css). */
+:root {
+  --page: #f6f5f3;
+  --background: #ffffff;
+  --foreground: #1a1a1f;
+  --primary: #7a1f2e;
+  --primary-foreground: #ffffff;
+  --accent: #fbeef0;
+  --accent-foreground: #7a1f2e;
+  --muted: #f1f0ee;
+  --muted-foreground: #5b5b64;
+  --border: #e7e5e1;
+  --ring: #7a1f2e;
+  --scrim: rgb(24 24 31 / 0.6);
+  --shadow-card: 0 1px 2px rgba(24,24,31,.04), 0 2px 8px rgba(24,24,31,.06);
+  --shadow-hover: 0 6px 20px rgba(24,24,31,.10), 0 2px 8px rgba(24,24,31,.06);
+  --shadow-modal: 0 24px 60px -12px rgba(24,24,31,.28), 0 8px 24px -8px rgba(24,24,31,.16);
+  --ring-focus: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+  --font-sans: var(--font-manrope), var(--font-arabic), system-ui, sans-serif;
+}
+@theme inline {
+  --color-page: var(--page);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+}
+* { border-color: var(--border); }
+body { background: var(--page); color: var(--foreground); font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }
+:lang(ar) { line-height: 1.75; letter-spacing: 0; font-synthesis: none; }
+.elev { box-shadow: var(--shadow-card); }
+.elev-hover:hover { box-shadow: var(--shadow-hover); }
+button, [role=button] { touch-action: manipulation; }
+:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+@keyframes anim-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes anim-rise { from { opacity: 0; transform: translateY(6px) scale(.98) } to { opacity: 1; transform: none } }
+.anim-fade-in { animation: anim-fade-in 150ms ease-out; }
+.anim-rise { animation: anim-rise 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .anim-fade-in, .anim-rise { animation: none; } * { transition: none !important; } }

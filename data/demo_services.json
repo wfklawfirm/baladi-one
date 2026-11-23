@@ -1,0 +1,332 @@
+[
+ {
+  "slug": "mun-001",
+  "category": "licenses",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "رخصة البناء (Permis de Construire)",
+   "en": "Building Permit (Permis de Construire)"
+  },
+  "summary": {
+   "ar": "الإذن الرسمي اللازم لإنشاء أي مبنى أو إجراء توسعة أو تعديل جوهري. يُصدر بعد موافقة التنظيم المدني والبلدية المعنية ووزارة المالية. ضروري لأي بناء قانوني في لبنان.",
+   "en": "The official authorization required to construct any building or to carry out an expansion or substantial modification. It is issued after approval by Urban Planning, the relevant municipality, and the Ministry of Finance. It is necessary for any lawful construction in Lebanon."
+  },
+  "documents": [
+   {
+    "ar": "افادة عقارية حديثة (من السجل العقاري)",
+    "en": "A recent real estate statement (from the Land Registry)"
+   },
+   {
+    "ar": "خرائط هندسية (مسقط أفقي + مقاطع + واجهات) معدة من مهندس مرخص",
+    "en": "Engineering drawings (floor plan, sections, and elevations) prepared by a licensed engineer"
+   },
+   {
+    "ar": "ملف نقابة المهندسين مؤشر عليه من النقابة",
+    "en": "An Order of Engineers file endorsed by the order"
+   },
+   {
+    "ar": "اتفاقية مهندس مشروع موقعة ومسجلة بالنقابة",
+    "en": "A project engineer agreement, signed and registered with the order"
+   },
+   {
+    "ar": "خريطة كيل تبين مناسيب الأرض",
+    "en": "A survey map (kayl) showing the ground levels"
+   },
+   {
+    "ar": "وثيقة ملكية العقار",
+    "en": "The property's ownership document"
+   },
+   {
+    "ar": "براءة الذمة الضريبية",
+    "en": "A tax clearance certificate"
+   },
+   {
+    "ar": "موافقات خاصة إن وجدت (الجيش للمناطق الحساسة، وزارة السياحة للمناطق الأثرية)",
+    "en": "Special approvals if applicable (the Army for sensitive areas, the Ministry of Tourism for archaeological areas)"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "المديرية العامة للتنظيم المدني + البلدية المختصة",
+   "en": "Directorate General of Urban Planning + the Competent Municipality"
+  },
+  "processingTime": {
+   "ar": "من شهر إلى 4 أشهر حسب اكتمال الملف وتعقيد المشروع",
+   "en": "One to 4 months, depending on the completeness of the file and the complexity of the project"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 0
+ },
+ {
+  "slug": "mun-002",
+  "category": "certificates",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "شهادة إشغال المبنى",
+   "en": "Building Occupancy Certificate"
+  },
+  "summary": {
+   "ar": "وثيقة رسمية تُثبت أن المبنى المنشأ أو الموسَّع أُنجز وفق الشروط والمواصفات المذكورة في رخصة البناء، وأنه صالح للاستخدام. تُطلب لتوصيل الكهرباء والمياه والتسجيل في الأوضاع الإدارية.",
+   "en": "An official document certifying that the constructed or expanded building has been completed in accordance with the conditions and specifications stated in the building permit, and that it is fit for use. It is required for connecting electricity and water and for administrative registration."
+  },
+  "documents": [
+   {
+    "ar": "رخصة البناء الأصلية",
+    "en": "The original building permit"
+   },
+   {
+    "ar": "أمر المباشرة من نقابة المهندسين",
+    "en": "The order to commence work from the Order of Engineers"
+   },
+   {
+    "ar": "تقرير إتمام الأشغال من المهندس المشرف",
+    "en": "A report of completion of works from the supervising engineer"
+   },
+   {
+    "ar": "كشف ميداني من البلدية أو التنظيم المدني",
+    "en": "A field inspection by the municipality or Urban Planning"
+   },
+   {
+    "ar": "إثبات الالتزام بالتصاميم المعتمدة",
+    "en": "Proof of compliance with the approved designs"
+   },
+   {
+    "ar": "شهادات اختبار السلامة (كهرباء، حريق) في المباني التجارية",
+    "en": "Safety test certificates (electrical, fire) for commercial buildings"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "البلدية المختصة + المديرية العامة للتنظيم المدني",
+   "en": "The Competent Municipality + Directorate General of Urban Planning"
+  },
+  "processingTime": {
+   "ar": "شهر إلى 3 أشهر (بعد الكشف الميداني)",
+   "en": "One month to 3 months (after the field inspection)"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 1
+ },
+ {
+  "slug": "mun-003",
+  "category": "shops",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "ترخيص محل تجاري (البلدية)",
+   "en": "Commercial Premises License (Municipality)"
+  },
+  "summary": {
+   "ar": "ترخيص لازم لفتح وتشغيل أي محل تجاري أو حرفي أو صناعي. يصدر عن البلدية التي يقع في نطاقها المحل. يختلف عن التسجيل في السجل التجاري.",
+   "en": "A license required for opening and operating any commercial, craft, or industrial premises. It is issued by the municipality within whose jurisdiction the premises are located. It is distinct from registration in the commercial register."
+  },
+  "documents": [
+   {
+    "ar": "طلب رسمي للترخيص",
+    "en": "An official license application"
+   },
+   {
+    "ar": "عقد إيجار المحل أو سند الملكية",
+    "en": "The premises lease contract or the title deed"
+   },
+   {
+    "ar": "رخصة البناء للمحل أو شهادة الإشغال",
+    "en": "The building permit for the premises or the occupancy certificate"
+   },
+   {
+    "ar": "هوية صاحب المحل",
+    "en": "Identity of the shop owner"
+   },
+   {
+    "ar": "مستخرج السجل التجاري",
+    "en": "A commercial register extract"
+   },
+   {
+    "ar": "موافقة المالك إن كان مستأجراً",
+    "en": "The owner's approval if the applicant is a tenant"
+   },
+   {
+    "ar": "شهادة صحية (للمحلات الغذائية) من وزارة الصحة",
+    "en": "A health certificate (for food establishments) from the Ministry of Public Health"
+   },
+   {
+    "ar": "موافقة وزارة الصناعة (للمنشآت الصناعية)",
+    "en": "Approval of the Ministry of Industry (for industrial establishments)"
+   },
+   {
+    "ar": "شهادة عدم ممانعة من الجيران (لبعض النشاطات)",
+    "en": "A no-objection certificate from neighbors (for certain activities)"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "البلدية المختصة + وزارة الداخلية والبلديات",
+   "en": "The Competent Municipality + Ministry of Interior and Municipalities"
+  },
+  "processingTime": {
+   "ar": "أسبوع إلى شهر",
+   "en": "One week to one month"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 2
+ },
+ {
+  "slug": "mun-004",
+  "category": "public_works",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "طلب خدمات البلدية (جمع النفايات، الإضاءة، الصرف الصحي)",
+   "en": "Request for Municipal Services (Waste Collection, Lighting, Sanitation)"
+  },
+  "summary": {
+   "ar": "الخدمات البلدية الأساسية التي تتولى البلديات تأمينها للمواطنين: جمع النفايات، إضاءة الشوارع، صيانة الطرق، تصريف المياه، الصرف الصحي. الطلب يُقدم للبلدية مباشرة.",
+   "en": "The basic municipal services that municipalities are responsible for providing to citizens: waste collection, street lighting, road maintenance, water drainage, and sanitation. The request is submitted directly to the municipality."
+  },
+  "documents": [
+   {
+    "ar": "طلب خطي أو شفهي حسب البلدية",
+    "en": "A written or verbal request, depending on the municipality"
+   },
+   {
+    "ar": "هوية مقدم الطلب",
+    "en": "Identity of the applicant"
+   },
+   {
+    "ar": "عنوان الخدمة المطلوبة",
+    "en": "The address of the requested service"
+   },
+   {
+    "ar": "وثائق ملكية العقار أو عقد الإيجار (لخدمات الإشراك)",
+    "en": "Property ownership documents or the lease contract (for connection services)"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "البلدية المختصة - وزارة الداخلية والبلديات",
+   "en": "The Competent Municipality - Ministry of Interior and Municipalities"
+  },
+  "processingTime": {
+   "ar": "يتفاوت: 24 ساعة للطوارئ إلى أسابيع للمشاريع الجديدة",
+   "en": "Varies: 24 hours for emergencies to weeks for new projects"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 3
+ },
+ {
+  "slug": "mun-005",
+  "category": "certificates",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "الطعن بقرار بلدي",
+   "en": "Appeal Against a Municipal Decision"
+  },
+  "summary": {
+   "ar": "الطريق القانوني للطعن بالقرارات البلدية التي يرى المتضرر أنها مخالفة للقانون أو تعسفية. يُقدم الطعن أمام مجلس شورى الدولة وهو المحكمة الإدارية العليا في لبنان.",
+   "en": "The legal channel for appealing municipal decisions that an aggrieved party considers unlawful or arbitrary. The appeal is filed before the State Shura Council, which is the highest administrative court in Lebanon."
+  },
+  "documents": [
+   {
+    "ar": "استدعاء الطعن محرر من محامٍ",
+    "en": "An appeal petition drafted by a lawyer"
+   },
+   {
+    "ar": "نسخة عن القرار البلدي المطعون فيه",
+    "en": "A copy of the municipal decision being appealed"
+   },
+   {
+    "ar": "إثبات تبليغ القرار أو علم المتضرر به",
+    "en": "Proof of notification of the decision or of the aggrieved party's knowledge of it"
+   },
+   {
+    "ar": "المستندات الداعمة لوجاهة الطعن",
+    "en": "Documents supporting the merits of the appeal"
+   },
+   {
+    "ar": "وكالة خاصة لمحامٍ",
+    "en": "A special power of attorney to a lawyer"
+   },
+   {
+    "ar": "إيصال دفع الرسوم",
+    "en": "Fee payment receipt"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "مجلس شورى الدولة (القضاء الإداري)",
+   "en": "State Shura Council (Administrative Judiciary)"
+  },
+  "processingTime": {
+   "ar": "من 6 أشهر إلى سنتين",
+   "en": "6 months to 2 years"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 4
+ },
+ {
+  "slug": "proc-001",
+  "category": "certificates",
+  "onlineEnabled": false,
+  "title": {
+   "ar": "الاستعلام عن المخطط التوجيهي العام (Master Plan)",
+   "en": "Inquiry about the General Master Plan"
+  },
+  "summary": {
+   "ar": "الاستعلام عن التصنيف العقاري لقطعة أرض ضمن المخطط التوجيهي العام (سكني، تجاري، صناعي، زراعي) ونسب الاستثمار والارتفاعات المسموحة، خطوة أساسية قبل أي رخصة بناء أو شراء عقار.",
+   "en": "Inquiring about the zoning classification of a plot of land within the General Master Plan (residential, commercial, industrial, agricultural) and the permitted investment ratios and heights, an essential step before any building permit or property purchase."
+  },
+  "documents": [
+   {
+    "ar": "صورة عن سند ملكية الأرض أو العقار",
+    "en": "A copy of the title deed of the land or property"
+   },
+   {
+    "ar": "طلب خطي يوضح الغرض",
+    "en": "A written request stating the purpose"
+   },
+   {
+    "ar": "صورة هوية صاحب الطلب",
+    "en": "A copy of the applicant's ID"
+   }
+  ],
+  "steps": [],
+  "authority": {
+   "ar": "المديرية العامة للتنظيم المدني — البلدية المختصة",
+   "en": "General Directorate of Urban Planning — Competent Municipality"
+  },
+  "processingTime": {
+   "ar": "أسبوع إلى أسبوعين",
+   "en": "One to two weeks"
+  },
+  "sources": [
+   {
+    "title": "دليلك (DALILAK) — قيد التدقيق"
+   }
+  ],
+  "demo": true,
+  "sort": 5
+ }
+]
