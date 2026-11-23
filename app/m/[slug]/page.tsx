@@ -1,74 +1,63 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ChevronLeft, ClipboardList, FileSearch, Scale, Search, Siren, UserCog } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { ChevronLeft, Landmark, UserCog, Users } from "lucide-react";
 import Emblem from "@/components/Emblem";
 import PortalFooter from "@/components/PortalFooter";
-import { loadCatalog, loadMunicipality } from "@/lib/catalog";
-import { t } from "@/lib/i18n";
-import { TX } from "@/lib/draft";
-import { countAr } from "@/lib/topics";
+import { loadMunicipality } from "@/lib/catalog";
+import { enterDemo } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function CitizenHome({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ lang?: string }> }) {
+const ROLES = [
+  { id: "citizen", Icon: Users, title: "مواطن", text: "ابحث عن معاملتك وتعرّف على مستنداتها، وأبلغ عن مشكلة وتابع طلبك.", chips: ["المعاملات البلدية", "البلاغات", "متابعة الطلب"] },
+  { id: "staff", Icon: UserCog, title: "موظف البلدية", text: "استلم طلبات المواطنين وبلاغاتهم، وغيّر حالتها وتابع معالجتها.", chips: ["قائمة الطلبات", "تغيير الحالة", "سجل المتابعة"] },
+  { id: "mayor", Icon: Landmark, title: "رئيس البلدية", text: "راقب الطلبات على مستوى البلدية، واطّلع على الخدمات المعروضة للاعتماد.", chips: ["نظرة عامة", "اعتماد الخدمات", "الإشراف"] },
+] as const;
+
+export default async function RoleChooser({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const sp = await searchParams;
-  const lang = sp.lang === "en" ? "en" : "ar";
   const muni = await loadMunicipality(slug);
   if (!muni) notFound();
-  const { services, demo } = await loadCatalog();
-  const approved = services.length > 0 && !demo;
-  const total = approved ? services.length : TX.filter((x) => x.audience === "citizen").length;
+  // Role choice is an exhibition feature; a live municipality opens straight on the citizen portal.
+  if (!muni.isDemo) redirect(`/m/${slug}/citizen`);
+
+  const body = (r: (typeof ROLES)[number]) => (
+    <>
+      <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><r.Icon className="size-9" aria-hidden /></span>
+      <span className="min-w-0 flex-1 space-y-1.5">
+        <b className="block text-xl">{r.title}</b>
+        <span className="block text-sm leading-6 text-muted-foreground">{r.text}</span>
+        <span className="flex flex-wrap gap-1.5 pt-1">{r.chips.map((c) => <span key={c} className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">{c}</span>)}</span>
+      </span>
+      <ChevronLeft className="size-7 shrink-0 text-primary" aria-hidden />
+    </>
+  );
+  const cls = "elev elev-hover flex w-full items-center gap-4 rounded-3xl border bg-background p-5 text-start active:bg-muted min-h-32";
 
   return (
-    <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
-      <section className="px-4 pb-8 pt-10">
-        <div className="mx-auto max-w-2xl space-y-6 text-center">
+    <main dir="rtl" lang="ar">
+      <section className="px-4 pb-6 pt-10">
+        <div className="mx-auto max-w-2xl space-y-5 text-center">
           <div className="flex justify-center"><Emblem size={128} /></div>
           <p className="flex items-center justify-center gap-3 text-xs font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">
             <span className="h-px w-8 bg-border" />BY AIJUR · INTELLIGENT MUNICIPAL SERVICES<span className="h-px w-8 bg-border" />
           </p>
-          {(!approved || muni.isDemo) && <p className="mx-auto inline-block rounded-full bg-accent px-4 py-1.5 text-xs text-accent-foreground">{t(lang, "demoBadge")}</p>}
-          <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl">{t(lang, "heroTitle")}</h1>
-          <p className="text-muted-foreground">{t(lang, "heroSub")}</p>
-          <form action={`/m/${slug}/services`} className="mx-auto flex max-w-xl items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary" role="search">
-            <input type="hidden" name="lang" value={lang} />
-            <Search aria-hidden className="mx-2 size-5 shrink-0 text-muted-foreground" />
-            <input name="q" placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")} className="min-h-12 min-w-0 flex-1 bg-transparent outline-none" />
-            <button className="min-h-12 shrink-0 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90">{t(lang, "open")}</button>
-          </form>
+          <p className="mx-auto inline-block rounded-full bg-accent px-4 py-1.5 text-xs text-accent-foreground">نسخة تجريبية — المحتوى غير معتمد</p>
+          <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl">جرّب المنصة بدورك</h1>
+          <p className="text-muted-foreground">اختر دورًا لترى الخدمات والمحتوى الخاص به.</p>
         </div>
       </section>
-
-      <div className="mx-auto max-w-2xl space-y-4 px-4">
-        <Link href={`/m/${slug}/services`} className="elev elev-hover flex min-h-28 items-center gap-4 rounded-3xl border border-primary/40 bg-accent/50 p-5 active:bg-accent">
-          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><FileSearch className="size-8" aria-hidden /></span>
-          <span className="min-w-0 flex-1">
-            <b className="block text-xl">{t(lang, "transactions")}</b>
-            <span className="text-sm text-muted-foreground">{t(lang, "transactionsHint")}</span>
-            <span className="mt-1 block text-xs font-semibold text-primary">{countAr(total)}</span>
-          </span>
-          <ChevronLeft className={`size-7 shrink-0 text-primary ${lang === "en" ? "rotate-180" : ""}`} aria-hidden />
-        </Link>
-
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { h: `/m/${slug}/report?lang=${lang}`, Icon: Siren, l: t(lang, "report") },
-            { h: `/m/${slug}/track?lang=${lang}`, Icon: ClipboardList, l: t(lang, "track") },
-            { h: "/laws", Icon: Scale, l: lang === "ar" ? "القوانين" : "Laws" },
-          ].map(({ h, Icon, l }) => (
-            <Link key={h} href={h} className="elev flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border bg-background p-3 text-center active:bg-muted">
-              <span className="grid size-12 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
-              <b className="text-sm leading-snug">{l}</b>
-            </Link>
-          ))}
-        </div>
-
-        <Link href="/staff" className="elev flex min-h-20 items-center gap-4 rounded-2xl border bg-background p-4 active:bg-muted">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><UserCog className="size-6" aria-hidden /></span>
-          <span className="min-w-0 flex-1"><b className="block">دخول الموظفين ورئيس البلدية</b><span className="text-sm text-muted-foreground">متابعة الطلبات، وتغيير حالتها، واعتماد الخدمات.</span></span>
-          <ChevronLeft className={`size-6 shrink-0 text-muted-foreground ${lang === "en" ? "rotate-180" : ""}`} aria-hidden />
-        </Link>
+      <div className="mx-auto max-w-2xl space-y-3 px-4">
+        {ROLES.map((r) =>
+          r.id === "citizen" ? (
+            <Link key={r.id} href={`/m/${slug}/citizen`} className={cls}>{body(r)}</Link>
+          ) : (
+            <form key={r.id} action={enterDemo.bind(null, r.id)}><button className={cls}>{body(r)}</button></form>
+          ),
+        )}
+        <p className="pt-2 text-center text-sm text-muted-foreground">
+          حسابات العرض تتعامل مع طلبات تجريبية فقط. <Link href="/staff/login" className="font-semibold text-primary">الدخول بحساب حقيقي</Link>
+        </p>
       </div>
       <PortalFooter />
     </main>

@@ -2,12 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import { REPORT_TYPES, STATUS_AR } from "@/lib/reports";
+import { BRAND } from "@/lib/brand";
+
+const ROLE_AR: Record<string, string> = { staff: "موظف البلدية", mayor: "رئيس البلدية", admin: "مدير النظام" };
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "مساحة الموظفين — BALADI ONE", referrer: "no-referrer" as const };
 const fmt = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date(d));
 
-async function signOut() { "use server"; const { supabaseServer } = await import("@/lib/supabase-server"); await (await supabaseServer()).auth.signOut(); redirect("/staff/login"); }
+async function signOut() { "use server"; const { supabaseServer } = await import("@/lib/supabase-server"); await (await supabaseServer()).auth.signOut(); redirect(`/m/${BRAND.slug}`); }
 
 export default async function StaffHome({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
   const { sb, memberships } = await requireStaff();
@@ -16,13 +19,23 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
   if (filter && STATUS_AR[filter]) q = q.eq("status", filter);
   const { data } = await q;
   const rows = data ?? [];
+  const isDemo = memberships.some((m) => m.is_demo);
+  const oversight = memberships.some((m) => m.role === "mayor" || m.role === "admin") && !filter;
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8">
       <header className="flex items-center justify-between gap-3">
         <div><p className="text-sm font-semibold text-primary">BALADI ONE</p><h1 className="text-2xl font-bold">طلبات وبلاغات المواطنين</h1>
-          <p className="text-sm text-muted-foreground">{memberships.map((m) => m.municipality?.name_ar).join("، ")}</p></div>
+          <p className="text-sm text-muted-foreground">{memberships.map((m) => `${ROLE_AR[m.role] ?? m.role} — ${m.municipality?.name_ar}`).join("، ")}</p></div>
         <div className="flex gap-2">{memberships.some((m) => m.role === "admin") && <Link href="/staff/accounts" className="rounded-xl border px-4 py-2 text-sm">الحسابات</Link>}{memberships.some((m) => m.role === "mayor" || m.role === "admin") && <Link href="/staff/services" className="rounded-xl border px-4 py-2 text-sm">اعتماد الخدمات</Link>}<form action={signOut}><button className="rounded-xl border px-4 py-2 text-sm">خروج</button></form></div>
       </header>
+      {isDemo && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">حساب عرض: ترى وتغيّر الطلبات التجريبية فقط، ولا يؤثر ذلك على أي بيانات حقيقية.</p>}
+      {oversight && (
+        <section aria-label="نظرة عامة" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (
+            <Link key={k} href={`/staff?s=${k}`} className="elev rounded-2xl border bg-background p-4 text-center active:bg-muted"><b className="block text-3xl text-primary">{rows.filter((r) => r.status === k).length}</b><span className="text-sm text-muted-foreground">{STATUS_AR[k]}</span></Link>
+          ))}
+        </section>
+      )}
       <nav className="flex flex-wrap gap-2">
         <Link href="/staff" className={`rounded-full border px-4 py-2 text-sm ${!filter ? "bg-primary text-primary-foreground" : "bg-background"}`}>الكل</Link>
         {Object.entries(STATUS_AR).map(([k, v]) => <Link key={k} href={`/staff?s=${k}`} className={`rounded-full border px-4 py-2 text-sm ${filter === k ? "bg-primary text-primary-foreground" : "bg-background"}`}>{v}</Link>)}
