@@ -3,6 +3,7 @@ import raw from "@/data/catalog_draft_slim.json";
 import links from "@/data/law_links.json";
 import weakLinks from "@/data/law_links_weak.json";
 import { getLaw } from "./laws";
+import type { Service } from "./types";
 
 type Item = { t: string; s: string };
 export type Tx = {
@@ -41,4 +42,20 @@ export function portalCategory(c: string): PortalCat {
   if (/بناء|البناء|رخص|تراخيص|إشغال|تنظيم|التنظيم|تخطيط|التخطيط/.test(c)) return "licenses";
   if (/أملاك|الأملاك|بنية|سير|بيئة|نظافة|سلامة|فنية|الفنية|مشاع|الأشغال|الأراضي/.test(c)) return "public_works";
   return "certificates";
+}
+
+/** Citizen-facing draft transactions in the kiosk/portal Service shape (unapproved: demo=true, never any fees). */
+export function draftServices(): Service[] {
+  return TX.filter((x) => x.audience === "citizen").map((x) => {
+    const uniq = (xs: Item[]) => [...new Set(xs.map((d) => d.t.trim()).filter(Boolean))].map((ar) => ({ ar }));
+    const tl = [...new Set(x.timeline.map((d) => d.value.trim()).filter(Boolean))].slice(0, 3).join(" / ");
+    return {
+      slug: x.id.toLowerCase(), category: portalCategory(x.category), onlineEnabled: false,
+      title: { ar: x.title }, summary: { ar: x.category },
+      documents: uniq(x.documents), steps: uniq(x.stages),
+      authority: x.authority ? { ar: x.authority } : undefined,
+      processingTime: tl ? { ar: tl } : undefined,
+      sources: [], demo: true, phonePath: `/catalog/${x.id}`,
+    } satisfies Service;
+  });
 }

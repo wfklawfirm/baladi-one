@@ -65,11 +65,11 @@ export function Kiosk({
         <div className="flex items-center gap-4">
           {muni.logoUrl
             // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={muni.logoUrl} alt="" className="h-16 w-16 object-contain" />
+            ? <img src={muni.logoUrl} alt="" className="h-20 w-auto max-w-[10rem] object-contain" />
             : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
           <div>
             <p className="text-[1.6rem] font-bold leading-tight">{lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr}</p>
-            <p className="text-[1.05rem] text-muted-foreground">BALADI ONE</p>
+            <p className="text-[1.05rem] font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">BY AIJUR</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ export function Kiosk({
             </div>
             <aside className="flex w-[27%] shrink-0 flex-col items-center gap-4 rounded-3xl border bg-background p-6 elev">
               <Smartphone className="size-10 text-primary" />
-              <Qr path={`/s/${muni.slug}/${service.slug}?lang=${lang}`} size={300} label={t(lang, "continueOnPhone")} />
+              <Qr path={service.phonePath ?? `/s/${muni.slug}/${service.slug}?lang=${lang}`} size={300} label={t(lang, "continueOnPhone")} />
               <p className="text-center text-[1.3rem] font-semibold">{t(lang, "continueOnPhone")}</p>
               <p className="text-center text-[1.05rem] text-muted-foreground">{t(lang, "scanQr")}</p>
               {service.onlineEnabled && reportsEnabled
@@ -170,7 +170,9 @@ export function Kiosk({
       </main>
 
       <footer className="flex shrink-0 items-center justify-between text-[1.05rem] text-muted-foreground">
-        <span>{t(lang, "touchHint")}</span><span>{t(lang, "poweredBy")}</span>
+        <span>{t(lang, "touchHint")}</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/aijur-logo.png" alt="AIJUR" className="h-14 w-auto" />
       </footer>
 
       {warn !== null && (

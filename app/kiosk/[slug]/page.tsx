@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Kiosk } from "@/components/Kiosk";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
+import { draftServices } from "@/lib/draft";
+import { BRAND } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +13,14 @@ export default async function KioskPage({
   const sp = await searchParams;
   const muni = await loadMunicipality(slug);
   if (!muni) notFound();
-  const { services, demo } = await loadCatalog();
+  const cat = await loadCatalog();
+  const approved = cat.services.length > 0 && !cat.demo;
+  const services = approved ? cat.services : draftServices();
+  const demo = !approved;
   const idle = Number(Array.isArray(sp.idle) ? sp.idle[0] : sp.idle);
   return (
     <Kiosk
-      muni={muni}
+      muni={{ ...muni, logoUrl: muni.logoUrl ?? (muni.slug === BRAND.slug ? BRAND.logo ?? undefined : undefined) }}
       services={services}
       demo={demo || muni.isDemo}
       reportsEnabled={process.env.REPORTS_ENABLED === "1"}

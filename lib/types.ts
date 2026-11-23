@@ -17,6 +17,8 @@ export interface Service {
   reviewedOn?: string;
   /** true only for content shown in conference DEMO mode; never for approved catalogue rows. */
   demo: boolean;
+  /** Where the phone QR opens (drafts live under /catalog until approved). */
+  phonePath?: string;
 }
 export interface Municipality {
   slug: string;
