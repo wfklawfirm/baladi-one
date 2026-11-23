@@ -6,6 +6,7 @@ import { STATUS_AR } from "@/lib/reports";
 import { BRAND } from "@/lib/brand";
 import { brainConfigured } from "@/lib/brain/rag";
 import Emblem from "@/components/Emblem";
+import AutoIngest from "@/components/brain/AutoIngest";
 
 const ROLE_AR: Record<string, string> = { staff: "موظف البلدية", mayor: "رئيس البلدية", admin: "مدير النظام" };
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function StaffHome() {
         <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
       </div></header>
       <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-6 md:py-10">
+        {admin && on && <AutoIngest />}
         {isDemo && <p className="rounded-xl bg-accent p-3 text-center text-sm text-accent-foreground">حساب عرض — البيانات تجريبية.</p>}
         {top && (
           <section aria-label="نظرة عامة" className="grid grid-cols-4 gap-2 sm:gap-3">
