@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ComingSoon } from "@/components/ComingSoon";
 import { loadMunicipality } from "@/lib/catalog";
 import { formatCode, REPORT_TYPES, reportsEnabled, STATUS_AR, trackReport } from "@/lib/reports";
 
@@ -16,10 +17,10 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
   const result = reportsEnabled() && code ? await trackReport(code) : null;
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-xl space-y-4 p-4">
-      <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>
-      <h1 className="text-2xl font-bold">متابعة بلاغ</h1>
-      {!reportsEnabled() ? <p className="rounded-xl bg-muted p-4">هذه الخدمة غير مفعّلة بعد.</p> : (
+      {!reportsEnabled() ? <ComingSoon title="متابعة طلب" slug={slug} /> : (
         <>
+          <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>
+          <h1 className="text-2xl font-bold">متابعة بلاغ</h1>
           {sp.new && result && (
             <div className="rounded-2xl border-2 border-primary bg-background p-4 text-center">
               <p className="font-bold">تم استلام بلاغك</p>
