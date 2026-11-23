@@ -155,9 +155,15 @@ export function Kiosk({
 
         {(view.name === "report" || view.name === "track") && (
           <div className="grid h-full place-items-center">
-            <div className="max-w-3xl rounded-3xl border bg-background p-10 text-center elev">
+            <div className="flex max-w-3xl flex-col items-center gap-6 rounded-3xl border bg-background p-10 text-center elev">
               <p className="text-[2rem] font-bold">{t(lang, view.name === "report" ? "report" : "track")}</p>
-              <p className="mt-3 text-[1.4rem] text-muted-foreground">{t(lang, "unavailable")}</p>
+              {reportsEnabled ? (
+                <>
+                  <Qr path={`/m/${muni.slug}/${view.name}?lang=${lang}`} size={320} label={t(lang, view.name === "report" ? "report" : "track")} />
+                  <p className="text-[1.3rem] text-muted-foreground">{t(lang, view.name === "report" ? "scanReport" : "scanTrack")}</p>
+                </>
+              ) : <p className="mt-3 text-[1.4rem] text-muted-foreground">{t(lang, "unavailable")}</p>}
+              <Btn variant="secondary" onClick={() => setView({ name: "home" })}>{t(lang, "home")}</Btn>
             </div>
           </div>
         )}
