@@ -21,7 +21,7 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
       <header className="flex items-center justify-between gap-3">
         <div><p className="text-sm font-semibold text-primary">BALADI ONE</p><h1 className="text-2xl font-bold">طلبات وبلاغات المواطنين</h1>
           <p className="text-sm text-muted-foreground">{memberships.map((m) => m.municipality?.name_ar).join("، ")}</p></div>
-        <div className="flex gap-2">{memberships.some((m) => m.role === "mayor" || m.role === "admin") && <Link href="/staff/services" className="rounded-xl border px-4 py-2 text-sm">اعتماد الخدمات</Link>}<form action={signOut}><button className="rounded-xl border px-4 py-2 text-sm">خروج</button></form></div>
+        <div className="flex gap-2">{memberships.some((m) => m.role === "admin") && <Link href="/staff/accounts" className="rounded-xl border px-4 py-2 text-sm">الحسابات</Link>}{memberships.some((m) => m.role === "mayor" || m.role === "admin") && <Link href="/staff/services" className="rounded-xl border px-4 py-2 text-sm">اعتماد الخدمات</Link>}<form action={signOut}><button className="rounded-xl border px-4 py-2 text-sm">خروج</button></form></div>
       </header>
       <nav className="flex flex-wrap gap-2">
         <Link href="/staff" className={`rounded-full border px-4 py-2 text-sm ${!filter ? "bg-primary text-primary-foreground" : "bg-background"}`}>الكل</Link>

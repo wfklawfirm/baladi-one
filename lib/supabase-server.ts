@@ -14,11 +14,12 @@ export async function supabaseServer() {
 }
 
 /** Authenticated staff member (verified with the auth server) or redirect to login. */
-export async function requireStaff() {
+export async function requireStaff(opts: { allowPasswordChange?: boolean } = {}) {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/staff/login");
-  const { data: rows } = await sb.from("staff_member").select("municipality_id,role,display_name,municipality(slug,name_ar)").eq("user_id", user.id);
+  const { data: rows } = await sb.from("staff_member").select("municipality_id,role,display_name,must_change_password,municipality(slug,name_ar)").eq("user_id", user.id);
   if (!rows?.length) redirect("/staff/login?denied=1");
+  if (!opts.allowPasswordChange && rows.some((r: any) => r.must_change_password)) redirect("/staff/password");
   return { sb, user, memberships: rows as any[] };
 }
