@@ -23,6 +23,9 @@ export default async function KioskPage({
   const demo = !approved;
   const idle = Number(Array.isArray(sp.idle) ? sp.idle[0] : sp.idle);
   return (
+    <>
+    {/* rem scales with the screen so 1920 = 16px, 4K = 32px; floor keeps small windows legible */}
+    <style>{"html{font-size:clamp(14px,0.8333vw,32px)}"}</style>
     <Kiosk
       muni={{ ...muni, logoUrl: muni.logoUrl ?? (muni.slug === BRAND.slug ? BRAND.logo ?? undefined : undefined) }}
       services={services}
@@ -31,5 +34,6 @@ export default async function KioskPage({
       idleSeconds={Number.isFinite(idle) && idle >= 30 ? idle : 90}
       initialLang={sp.lang === "en" ? "en" : "ar"}
     />
+    </>
   );
 }

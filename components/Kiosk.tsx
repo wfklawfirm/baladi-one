@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, FileSearch, Home, Languages, Lightbulb, QrCode, Search, Smartphone } from "lucide-react";
+import { ArrowRight, ChevronLeft, ClipboardCheck, FileSearch, Home, Languages, Megaphone, Search, Smartphone } from "lucide-react";
 import { CATEGORIES, catLabel, pick, t } from "@/lib/i18n";
 import { filterServices } from "@/lib/search";
 import type { CategoryId, Lang, Municipality, Service } from "@/lib/types";
@@ -10,6 +10,7 @@ import { ServiceBody } from "./ServiceBody";
 type View = { name: "home" } | { name: "list" } | { name: "service"; slug: string } | { name: "report" } | { name: "track" };
 
 const WARN_SECONDS = 15;
+const SUGGESTIONS = ["رخصة بناء", "رخصة ترميم", "براءة ذمة", "تسجيل عقود الإيجار"];
 
 export function Kiosk({
   muni, services, demo, reportsEnabled, idleSeconds, initialLang,
@@ -44,14 +45,31 @@ export function Kiosk({
   const service = view.name === "service" ? services.find((s) => s.slug === view.slug) : undefined;
   const goList = (q?: string) => { if (q !== undefined) setQuery(q); setView({ name: "list" }); };
 
-  const Card = ({ icon, title, hint, onClick, disabled }: { icon: React.ReactNode; title: string; hint: string; onClick: () => void; disabled?: boolean }) => (
-    <button onClick={onClick} className="elev elev-hover flex h-full flex-col items-center justify-center gap-5 rounded-3xl border bg-background p-8 text-center transition active:scale-[0.98]">
-      <span className="grid size-28 place-items-center rounded-full bg-accent text-primary">{icon}</span>
-      <span className="text-[2.2rem] font-bold leading-tight">{title}</span>
-      <span className="text-[1.4rem] text-muted-foreground">{hint}</span>
-      <span className={`rounded-full bg-muted px-4 py-1 text-[1.1rem] text-muted-foreground ${disabled ? "" : "invisible"}`} aria-hidden={!disabled}>{t(lang, "unavailable")}</span>
-    </button>
-  );
+  // Primary = the one action that always works; secondary cards become "coming soon" (not clickable) until enabled.
+  const Card = ({ icon, title, hint, onClick, disabled, primary }: { icon: React.ReactNode; title: string; hint: string; onClick: () => void; disabled?: boolean; primary?: boolean }) => {
+    const body = (
+      <>
+        <span className="flex items-center justify-between">
+          <span className={`grid size-[5.5rem] shrink-0 place-items-center rounded-2xl ${primary ? "bg-primary text-primary-foreground" : disabled ? "border bg-background text-muted-foreground" : "bg-accent text-primary"}`}>{icon}</span>
+          {disabled
+            ? <span className="rounded-full border bg-background px-5 py-2 text-[1.15rem] font-semibold text-foreground">{t(lang, "comingSoon")}</span>
+            : <ChevronLeft className={`size-10 text-primary ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />}
+        </span>
+        <span className="mt-auto flex flex-col gap-2">
+          <span className={`font-bold leading-tight ${primary ? "text-[2.3rem]" : "text-[1.9rem]"}`}>{title}</span>
+          <span className="text-[1.3rem] leading-snug text-muted-foreground">{hint}</span>
+        </span>
+      </>
+    );
+    const base = "flex min-h-[16rem] flex-col gap-6 rounded-3xl border p-8 text-start";
+    if (disabled) return <div role="group" aria-disabled="true" className={`${base} border-dashed bg-muted/60`}>{body}</div>;
+    return (
+      <button onClick={onClick}
+        className={`${base} elev elev-hover transition active:scale-[0.985] ${primary ? "border-primary/40 bg-accent/60 active:bg-accent" : "bg-background active:bg-muted"}`}>
+        {body}
+      </button>
+    );
+  };
 
   const Btn = ({ children, onClick, variant = "primary", disabled }: { children: React.ReactNode; onClick?: () => void; variant?: "primary" | "secondary"; disabled?: boolean }) => (
     <button disabled={disabled} onClick={onClick}
@@ -61,52 +79,69 @@ export function Kiosk({
   );
 
   return (
-    <div dir={dir} lang={lang} className="flex h-dvh w-full select-none flex-col overflow-hidden bg-page px-[4vw] py-[2.2vh]">
+    <div dir={dir} lang={lang} className="flex h-dvh w-full select-none flex-col overflow-hidden bg-page px-[4vw] pb-[1.6vh] pt-[2vh]">
       {/* top bar */}
-      <header className="flex shrink-0 items-center justify-between">
-        <div className="flex items-center gap-4">
+      <header className="flex shrink-0 items-center justify-between border-b pb-[1.6vh]">
+        <div className="flex items-center gap-6">
           {muni.logoUrl
             // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={muni.logoUrl} alt="" className="h-20 w-auto max-w-[10rem] object-contain" />
+            ? <img src={muni.logoUrl} alt={lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr} className="h-[5.5rem] w-auto max-w-[12rem] object-contain" />
             : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
-          <div>
-            <p className="text-[1.6rem] font-bold leading-tight">{lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr}</p>
-            <p className="text-[1.05rem] font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">BY AIJUR</p>
-          </div>
+          <span className="hidden h-12 w-px bg-border lg:block" aria-hidden />
+          <p className="hidden text-[1.6rem] font-semibold text-muted-foreground lg:block">{t(lang, "headerTitle")}</p>
         </div>
-        <div className="flex items-center gap-3">
-          {demo && <span className="rounded-full bg-accent px-5 py-2 text-[1.1rem] font-semibold text-accent-foreground">{t(lang, "demoBadge")}</span>}
+        <div className="flex items-center gap-4">
+          {demo && (
+            <span className="inline-flex items-center gap-3 whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-[1.15rem] font-semibold text-accent-foreground">
+              <span className="size-2.5 rounded-full bg-primary" aria-hidden />{t(lang, "demoBadge")}
+            </span>
+          )}
           {view.name !== "home" && <Btn variant="secondary" onClick={reset}><Home className="size-6" />{t(lang, "home")}</Btn>}
-          <Btn variant="secondary" onClick={() => setLang(lang === "ar" ? "en" : "ar")}><Languages className="size-6" />{t(lang, "language")}</Btn>
+          <button onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            className="inline-flex min-h-16 items-center gap-3 rounded-2xl border bg-background px-6 text-[1.25rem] font-semibold transition active:scale-[0.98] active:bg-muted">
+            <Languages className="size-6" />{t(lang, "language")}
+          </button>
         </div>
       </header>
 
       {/* body */}
-      <main className="min-h-0 flex-1 py-[1.5vh]">
+      <main className="min-h-0 flex-1 overflow-y-auto py-[1.5vh]">
         {view.name === "home" && (
-          <div className="flex h-full flex-col">
-            <h1 className="mt-[1vh] text-center text-[3.4rem] font-bold leading-tight">{t(lang, "heroTitle")}</h1>
-            <form className="mx-auto mt-[2.5vh] flex w-full max-w-[62%] items-center gap-3 rounded-3xl border bg-background px-6 elev"
-              onSubmit={(e) => { e.preventDefault(); goList(query); }}>
-              <Search className="size-8 text-muted-foreground" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")}
-                className="h-20 flex-1 bg-transparent text-[1.7rem] outline-none placeholder:text-muted-foreground" enterKeyHint="search" />
-              <button type="submit" className="min-h-14 rounded-xl bg-primary px-6 text-[1.3rem] font-bold text-primary-foreground">{t(lang, "open")}</button>
-            </form>
-            <div className="mt-[3vh] grid min-h-0 flex-1 grid-cols-3 gap-[2vw]">
-              <Card icon={<FileSearch className="size-14" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
-              <Card icon={<Lightbulb className="size-14" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
-              <Card icon={<QrCode className="size-14" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
+          <div className="mx-auto flex min-h-full w-full max-w-[104rem] flex-col justify-center gap-[4.5vh]">
+            <div className="text-center">
+              <h1 className="text-[3.5rem] font-bold leading-tight">{t(lang, "heroTitle")}</h1>
+              <p className="mt-3 text-[1.6rem] text-muted-foreground">{t(lang, "heroSub")}</p>
+              <form className="mx-auto mt-[3.5vh] flex w-full max-w-[64rem] items-center gap-3 rounded-3xl border-2 bg-background py-2 ps-7 pe-2.5 elev focus-within:border-primary focus-within:shadow-[var(--ring-focus)]"
+                role="search" onSubmit={(e) => { e.preventDefault(); goList(query); }}>
+                <Search className="size-8 shrink-0 text-muted-foreground" aria-hidden />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")}
+                  className="h-[4.5rem] min-w-0 flex-1 bg-transparent text-[1.6rem] outline-none focus-visible:!shadow-none placeholder:text-muted-foreground" enterKeyHint="search" />
+                <button type="submit" className="min-h-[4.5rem] shrink-0 rounded-2xl bg-primary px-10 text-[1.5rem] font-bold text-primary-foreground transition active:scale-[0.98]">{t(lang, "open")}</button>
+              </form>
+              {lang === "ar" && (
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  <span className="text-[1.2rem] text-muted-foreground">{t(lang, "suggestionsLabel")}</span>
+                  {SUGGESTIONS.map((q) => (
+                    <button key={q} onClick={() => goList(q)}
+                      className="min-h-14 rounded-full border bg-background px-6 text-[1.25rem] font-medium transition active:scale-[0.98] active:bg-muted">{q}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr_1fr]">
+              <Card primary icon={<FileSearch className="size-12" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
+              <Card icon={<Megaphone className="size-10" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
+              <Card icon={<ClipboardCheck className="size-10" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
             </div>
           </div>
         )}
 
         {view.name === "list" && (
           <div className="flex h-full flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-3xl border bg-background px-6 elev">
-              <Search className="size-7 text-muted-foreground" />
+            <div className="flex items-center gap-3 rounded-3xl border-2 bg-background px-6 elev focus-within:border-primary focus-within:shadow-[var(--ring-focus)]">
+              <Search className="size-7 text-muted-foreground" aria-hidden />
               <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")}
-                className="h-16 flex-1 bg-transparent text-[1.5rem] outline-none placeholder:text-muted-foreground" />
+                className="h-16 flex-1 bg-transparent text-[1.5rem] outline-none focus-visible:!shadow-none placeholder:text-muted-foreground" />
             </div>
             <div className="flex flex-wrap gap-3">
               {(["all", ...CATEGORIES] as const).map((c) => (
@@ -116,9 +151,9 @@ export function Kiosk({
                 </button>
               ))}
             </div>
-            <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-4 overflow-y-auto pb-2">
-              {services.length === 0 && <p className="col-span-2 py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noCatalog")}</p>}
-              {services.length > 0 && results.length === 0 && <p className="col-span-2 py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noResults")}</p>}
+            <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-1 gap-4 overflow-y-auto pb-2 xl:grid-cols-2">
+              {services.length === 0 && <p className="col-span-full py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noCatalog")}</p>}
+              {services.length > 0 && results.length === 0 && <p className="col-span-full py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noResults")}</p>}
               {results.map((s) => (
                 <button key={s.slug} onClick={() => setView({ name: "service", slug: s.slug })}
                   className="elev elev-hover flex min-h-28 flex-col items-start gap-1 rounded-2xl border bg-background p-5 text-start transition active:scale-[0.99]">
@@ -171,10 +206,13 @@ export function Kiosk({
         )}
       </main>
 
-      <footer className="flex shrink-0 items-center justify-between text-[1.05rem] text-muted-foreground">
-        <span>{t(lang, "touchHint")}</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/aijur-logo.png" alt="AIJUR" className="h-14 w-auto" />
+      <footer className="flex shrink-0 items-center justify-between border-t pt-[1.4vh] text-[1.15rem] text-muted-foreground">
+        <span>{view.name === "home" ? t(lang, "touchHint") : ""}</span>
+        <span className="flex items-center gap-3">
+          {t(lang, "poweredBy")}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-12 w-auto" />
+        </span>
       </footer>
 
       {warn !== null && (
