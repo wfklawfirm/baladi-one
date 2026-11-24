@@ -44,7 +44,6 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
       <main className="mx-auto flex w-full max-w-[72.5rem] flex-1 flex-col items-center justify-center gap-10 px-6 py-8 text-center lg:gap-12">
         <section className="flex max-w-3xl flex-col items-center gap-4">
           <h1 className="text-4xl font-bold leading-tight text-primary lg:text-5xl">منصتكم البلدية الذكية</h1>
-          <p className="text-xl font-medium text-muted-foreground lg:text-2xl">اختر طريقة الدخول إلى خدمات البلدية</p>
         </section>
 
         <section aria-label="اختر نوع المستخدم" className="grid w-full grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
