@@ -57,7 +57,7 @@ button, [role=button] { touch-action: manipulation; }
   .ch-header { height: 4.5rem; }
   .ch-aijur { height: 3.75rem; }
   .ch-main { gap: 1rem; padding-block: 0.5rem; }
-  .ch-logo img { height: 140px !important; }
+  .ch-logo img { height: 165px !important; }
   .ch-card { gap: 0.5rem; padding: 1.25rem 1.5rem 1.5rem; }
   .ch-card > span:first-child { width: 3.5rem; height: 3.5rem; border-radius: 1.25rem; }
   .ch-card > span:first-child svg { width: 1.75rem; height: 1.75rem; }
@@ -65,7 +65,7 @@ button, [role=button] { touch-action: manipulation; }
   .ch-card > span:nth-child(3) { font-size: 1.05rem; margin-bottom: 0.5rem; }
   .ch-cta { height: 3rem; font-size: 1.05rem; }
   .ch-qr { gap: 0.6rem; }
-  .ch-qr > div:first-child { width: 7.5rem; height: 7.5rem; }
+  .ch-qr > div:first-child { width: 8.5rem; height: 8.5rem; }
   .ch-qr a { min-height: 2.5rem; }
   .ch-footer { padding-block: 0.5rem 0.6rem; font-size: 0.9rem; }
 }

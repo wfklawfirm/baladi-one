@@ -45,7 +45,7 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
       </header>
 
       <div className="flex flex-1 flex-col justify-center">
-      <main className="ch-main mx-auto flex w-full max-w-[72.5rem] flex-col items-center gap-8 px-6 pt-6 text-center lg:gap-8">
+      <main className="ch-main mx-auto flex w-full max-w-[72.5rem] flex-col items-center gap-8 px-6 py-4 text-center lg:gap-8">
         <section className="flex max-w-3xl flex-col items-center gap-4">
           <h1 className="sr-only">البلدية الذكية</h1>
           <div className="ch-logo min-[2400px]:[zoom:1.9]"><Emblem size={170} /></div>
@@ -73,8 +73,6 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
           <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center rounded-xl border-2 border-primary px-8 text-base font-bold text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:bg-accent max-sm:w-full max-sm:bg-primary max-sm:text-white">زيارة الموقع الرسمي</a>
         </section>
       </main>
-
-      <footer className="ch-footer pb-5 pt-6 text-center text-base text-muted-foreground">من تطوير AIJUR</footer>
       </div>
     </div>
   );
