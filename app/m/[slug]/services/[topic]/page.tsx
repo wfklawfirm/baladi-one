@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import PortalFooter from "@/components/PortalFooter";
 import { SUB_ICON, TOPIC_ICON } from "@/components/TopicIcons";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
@@ -54,15 +53,18 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
           const SubIcon = SUB_ICON[s.id] ?? Icon;
           return (
             <section key={s.id} id={s.id} className="scroll-mt-24 space-y-3">
-              <h2 className="flex items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><SubIcon className="size-5" aria-hidden /></span>
-                <span className="flex-1 font-bold leading-snug">{s.label}</span>
-                <span className="text-xs text-muted-foreground">{countAr(list.length)}</span>
-              </h2>
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {!only && (
+                <h2 className="flex items-center gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><SubIcon className="size-5" aria-hidden /></span>
+                  <span className="flex-1 font-bold leading-snug">{s.label}</span>
+                  <span className="text-xs text-muted-foreground">{countAr(list.length)}</span>
+                </h2>
+              )}
+              <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-4">
                 {shown.map((x) => (
-                  <li key={x.href}><Link href={x.href} className="flex h-full items-center gap-2 rounded-xl border bg-background px-4 py-3 text-sm leading-7 active:bg-muted">
-                    <span className="flex-1">{x.title}</span><ChevronLeft className={`size-4 shrink-0 text-muted-foreground ${lang === "en" ? "rotate-180" : ""}`} aria-hidden /></Link></li>
+                  <li key={x.href}><Link href={x.href} className="elev elev-hover flex h-full min-h-36 flex-col items-center justify-start gap-3 rounded-2xl border bg-background px-3 pb-4 pt-5 text-center active:bg-muted">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><SubIcon className="size-6" aria-hidden /></span>
+                    <span className="line-clamp-3 text-sm font-semibold leading-6">{x.title}</span></Link></li>
                 ))}
               </ul>
               {!only && list.length > PREVIEW && (
