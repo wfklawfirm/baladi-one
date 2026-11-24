@@ -92,11 +92,6 @@ export function Kiosk({
           <p className="hidden text-[1.6rem] font-semibold text-muted-foreground lg:block">{t(lang, "headerTitle")}</p>
         </div>
         <div className="flex items-center gap-4">
-          {demo && (
-            <span className="inline-flex items-center gap-3 whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-[1.15rem] font-semibold text-accent-foreground">
-              <span className="size-2.5 rounded-full bg-primary" aria-hidden />{t(lang, "demoBadge")}
-            </span>
-          )}
           {view.name !== "home" && <Btn variant="secondary" onClick={reset}><Home className="size-6" />{t(lang, "home")}</Btn>}
           <button onClick={() => setLang(lang === "ar" ? "en" : "ar")}
             className="inline-flex min-h-16 items-center gap-3 rounded-2xl border bg-background px-6 text-[1.25rem] font-semibold transition active:scale-[0.98] active:bg-muted">

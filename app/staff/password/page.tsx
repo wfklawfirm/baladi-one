@@ -23,7 +23,6 @@ export default async function PasswordPage({ searchParams }: { searchParams: Pro
   const e = ERR[(await searchParams).e ?? ""];
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-sm space-y-4 p-6">
-      <p className="text-sm font-semibold text-primary">BALADI ONE</p>
       <h1 className="text-2xl font-bold">اختر كلمة مرور جديدة</h1>
       <p className="text-sm text-muted-foreground">كلمة المرور الحالية مؤقتة. يجب تغييرها قبل المتابعة.</p>
       {e && <p role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">{e}</p>}

@@ -40,7 +40,6 @@ export default async function StaffHome() {
       </div></header>
       <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-6 md:py-10">
         {admin && on && <AutoIngest />}
-        {isDemo && <p className="rounded-xl bg-accent p-3 text-center text-sm text-accent-foreground">حساب عرض — البيانات تجريبية.</p>}
         {top && (
           <section aria-label="نظرة عامة" className="grid grid-cols-4 gap-2 sm:gap-3">
             {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (
@@ -48,9 +47,9 @@ export default async function StaffHome() {
             ))}
           </section>
         )}
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1">
+        <section className="flex flex-wrap justify-center gap-3 sm:gap-4">
           {tools.map(({ href, Icon, title, sub }) => (
-            <Link key={href} href={href} className="elev elev-hover flex min-h-44 flex-col items-center justify-center gap-3 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-52">
+            <Link key={href} href={href} className={`${tools.length === 4 ? "lg:basis-[calc(25%-0.75rem)]" : "lg:basis-[calc(33.333%-0.75rem)]"} basis-[calc(50%-0.375rem)] elev elev-hover flex min-h-44 flex-col items-center justify-center gap-3 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-52`}>
               <span className="grid size-16 place-items-center rounded-2xl bg-accent text-primary sm:size-20"><Icon className="size-8 sm:size-10" aria-hidden /></span>
               <b className="text-base sm:text-lg">{title}</b>
               <span className="text-xs text-muted-foreground sm:text-sm">{!on && ["/staff/assistant", "/staff/analyze", "/staff/decisions"].includes(href) ? "قريبًا" : sub}</span>

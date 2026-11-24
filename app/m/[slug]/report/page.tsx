@@ -17,7 +17,6 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
         <>
           <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>
           <h1 className="text-2xl font-bold">أبلغ عن مشكلة</h1>
-          {muni.isDemo && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">نسخة تجريبية — البلاغات لا تصل إلى أي بلدية.</p>}
           <ReportForm slug={slug} />
         </>
       )}

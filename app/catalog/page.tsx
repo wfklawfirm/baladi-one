@@ -15,7 +15,6 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <header className="space-y-2">
-        <p className="text-sm font-semibold text-primary">BALADI ONE</p>
         <h1 className="text-3xl font-bold">كتالوج المعاملات البلدية</h1>
         <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">مسودة بحثية غير معتمدة من البلدية، ولا تتضمن أي مبالغ. المعتمد وحده يظهر للمواطنين.</p>
       </header>

@@ -15,7 +15,6 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const sp = await searchParams;
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-sm space-y-4 p-6">
-      <p className="text-sm font-semibold text-primary">BALADI ONE</p>
       <h1 className="text-2xl font-bold">دخول موظفي البلدية</h1>
       {sp.error && <p role="alert" className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">بيانات الدخول غير صحيحة.</p>}
       {sp.denied && <p role="alert" className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">حسابك غير مفوَّض لأي بلدية. تواصل مع المسؤول.</p>}

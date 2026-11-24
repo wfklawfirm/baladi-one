@@ -19,9 +19,9 @@ export default async function MobileService({
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="mx-auto max-w-xl space-y-4 p-4">
       <header className="flex items-center gap-3">
         <span className="grid size-10 place-items-center rounded-xl bg-primary font-bold text-primary-foreground">B</span>
-        <div><p className="font-bold leading-tight">{lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr}</p><p className="text-xs text-muted-foreground">BALADI ONE</p></div>
+        <div><p className="font-bold leading-tight">{lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr}</p></div>
       </header>
-      {(demo || s.demo) && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">{t(lang, "demoBadge")} — {t(lang, "draftNote")}</p>}
+      {(demo || s.demo) && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">{t(lang, "draftNote")}</p>}
       <p className="text-sm text-primary">{catLabel(lang, s.category)}</p>
       <h1 className="text-2xl font-bold">{pick(lang, s.title)}</h1>
       <p className="text-muted-foreground">{pick(lang, s.summary)}</p>

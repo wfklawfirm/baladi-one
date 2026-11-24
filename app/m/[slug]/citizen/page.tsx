@@ -24,7 +24,6 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
       <section className="px-4 pb-8 pt-12">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
-          {(!approved || muni.isDemo) && <p className="mx-auto inline-block rounded-full bg-accent px-4 py-1.5 text-xs text-accent-foreground">{t(lang, "demoBadge")}</p>}
           <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl">{t(lang, "heroTitle")}</h1>
           <p className="text-muted-foreground">{t(lang, "heroSub")}</p>
           <form action={`/m/${slug}/services`} className="mx-auto flex max-w-xl items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary" role="search">

@@ -10,7 +10,6 @@ export default async function LawsHome({ searchParams }: { searchParams: Promise
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <header className="space-y-2">
-        <p className="text-sm font-semibold text-primary">BALADI ONE</p>
         <h1 className="text-3xl font-bold">المكتبة القانونية البلدية</h1>
         <p className="text-muted-foreground">قانون البلديات، قانون المحاسبة العمومية، قانون الشراء العام، ومرسوم أصول المحاسبة في البلديات — مادة بمادة وقابلة للبحث.</p>
       </header>
