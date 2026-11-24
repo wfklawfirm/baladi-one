@@ -78,10 +78,11 @@ export async function ask(query: string, history: Turn[]) {
   const complexity = classify(query);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* answer from legal knowledge without sources */ }
-  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني (قانون البلديات 118/1977 وسائر القوانين ذات الصلة)، وصرّح بأن هذا النص مسودة أولية وفق المعايير القانونية المعتمدة، وأنشئ النموذج كاملاً.";
+  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني (قانون البلديات 118/1977 وسائر القوانين ذات الصلة)، وصرّح بأن هذا النص مسودة أولية وفق المعايير القانونية المعتمدة، وأنشئ النموذج كاملاً. لا تقتبس نص أي مادة حرفياً ولا تنسب صياغة إلى مادة بعينها: اذكر اسم القانون ورقمه، ورقم المادة فقط حين تكون متأكداً منه، ونبّه إلى وجوب مراجعة النص الرسمي.";
+  const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]" : "[تلميح: لا مصادر مسترجعة — استخدم الهيكل الكامل دون اقتباس حرفي لنصوص المواد]";
   const msgs: Msg[] = [{ role: "system", content: SYSTEM_PROMPT }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
-  msgs.push({ role: "user", content: `[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]\n\n=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
+  msgs.push({ role: "user", content: `${HINT}\n\n=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
   const j = await openai("chat/completions", { model: complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL, messages: msgs, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 });
   return { answer: (j.choices[0].message.content as string) || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
 }
@@ -91,7 +92,7 @@ export async function analyze(input: { text?: string; imageDataUrl?: string; nam
   const searchText = ((input.question ?? "") + " " + (input.text ?? "طلب بلدي وثيقة تحليل")).trim().slice(0, 2000);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(searchText, "full", 20)); } catch { /* answer without sources */ }
-  const ctx = chunks.length ? buildContext(chunks) : "لا توجد مصادر متاحة في قاعدة المعرفة.";
+  const ctx = chunks.length ? buildContext(chunks) : "لا توجد مصادر متاحة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني دون اقتباس حرفي لنصوص المواد: اذكر اسم القانون ورقمه، ورقم المادة فقط حين تكون متأكداً منه.";
   let intro = `المستند المُحمَّل: ${input.name || "وثيقة"}\n`;
   if (input.question) intro += `سؤال المستخدم: ${input.question}\n`;
   const legal = `\n\n=== قاعدة المعرفة القانونية ===\n${ctx}`;
