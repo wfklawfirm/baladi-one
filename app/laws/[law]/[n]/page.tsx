@@ -12,7 +12,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ law: s
   const rel = txForArticle(law.id, num);
   const a = law.articles[idx], prev = law.articles[idx - 1], next = law.articles[idx + 1];
   return (
-    <main className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
+    <main className="mx-auto max-w-3xl space-y-5 p-4 md:p-8 lg:max-w-5xl">
       <Link href={`/laws/${law.id}`} className="text-sm text-primary">← {law.short}</Link>
       <header className="space-y-1">
         <p className="text-sm text-muted-foreground">{law.title}</p>

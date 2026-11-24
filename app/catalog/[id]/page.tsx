@@ -24,14 +24,14 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
   return (
     <main className="pb-16">
       <section className="border-b bg-background px-4 pb-8 pt-8">
-        <div className="mx-auto max-w-3xl space-y-3">
+        <div className="mx-auto max-w-3xl space-y-3 lg:max-w-6xl">
           <Link href={`/m/${BRAND.slug}/services`} className="text-sm text-muted-foreground hover:text-primary">← المعاملات البلدية</Link>
           <p className="text-sm font-semibold text-primary">{t.category}</p>
-          <h1 className="text-3xl font-bold leading-snug text-foreground">{t.title}</h1>
+          <h1 className="text-3xl font-bold leading-snug text-foreground lg:text-4xl">{t.title}</h1>
           {t.authority && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="size-4" />{t.authority}</p>}
         </div>
       </section>
-      <div className="mx-auto mt-6 max-w-3xl space-y-4 px-4">
+      <div className="mx-auto mt-6 max-w-3xl space-y-4 px-4 lg:max-w-6xl lg:columns-2 lg:gap-6 lg:space-y-0 [&>*]:break-inside-avoid lg:[&>*]:mb-6">
         <Card icon={<FileText className="size-4" />} title="المستندات المطلوبة" items={t.documents.map((d) => d.t)} />
         <Card icon={<ListChecks className="size-4" />} title="المراحل" items={t.stages.map((d) => d.t)} ordered />
         <Card icon={<Clock className="size-4" />} title="المهل" items={[...new Set(t.timeline.map((d) => d.value))]} />

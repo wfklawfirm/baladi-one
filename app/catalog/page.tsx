@@ -13,7 +13,7 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
   const byCat = new Map<string, typeof list>();
   for (const t of list) byCat.set(t.category, [...(byCat.get(t.category) ?? []), t]);
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-6xl">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">كتالوج المعاملات البلدية</h1>
       </header>
@@ -22,7 +22,7 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
           <Link key={k} href={`/catalog?a=${k}`} className={`rounded-full border px-4 py-2 text-sm font-semibold ${k === aud ? "bg-primary text-primary-foreground" : "bg-background"}`}>{v}</Link>
         ))}
       </nav>
-      <form className="flex gap-2"><input type="hidden" name="a" value={aud} />
+      <form className="flex gap-2 lg:max-w-3xl"><input type="hidden" name="a" value={aud} />
         <input id="q-catalog" name="q" defaultValue={sp.q ?? ""} placeholder="ابحث عن معاملة…" className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-4" />
         <Mic target="q-catalog" mode="replace" submit />
         <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button></form>
@@ -30,8 +30,8 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
       {[...byCat].map(([cat, items]) => (
         <section key={cat} className="space-y-2">
           <h2 className="text-sm font-bold text-primary">{cat}</h2>
-          <ul className="divide-y rounded-xl border bg-background">
-            {items.map((t) => <li key={t.id}><Link href={`/catalog/${t.id}`} className="flex gap-3 p-3 hover:bg-muted"><span className="min-w-14 font-bold">{t.id}</span><span className="text-sm leading-7">{t.title}</span></Link></li>)}
+          <ul className="grid gap-2 lg:grid-cols-2">
+            {items.map((t) => <li key={t.id}><Link href={`/catalog/${t.id}`} className="flex gap-3 rounded-xl border bg-background p-3 hover:bg-muted"><span className="min-w-14 font-bold">{t.id}</span><span className="text-sm leading-7">{t.title}</span></Link></li>)}
           </ul>
         </section>
       ))}

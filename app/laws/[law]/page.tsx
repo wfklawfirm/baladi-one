@@ -14,7 +14,7 @@ export default async function LawPage({ params, searchParams }: { params: Promis
     if (last && last.part === a.part) last.items.push(a); else groups.push({ part: a.part, items: [a] });
   }
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-5xl">
       <Link href="/laws" className="text-sm text-primary">← المكتبة القانونية</Link>
       <header className="space-y-2">
         <h1 className="text-2xl font-bold">{law.title}</h1>

@@ -8,12 +8,12 @@ export default async function LawsHome({ searchParams }: { searchParams: Promise
   const q = ((await searchParams).q ?? "").trim();
   const hits = q ? searchLaws(q) : [];
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-6xl">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">المكتبة القانونية البلدية</h1>
         <p className="text-muted-foreground">قانون البلديات، قانون المحاسبة العمومية، قانون الشراء العام، ومرسوم أصول المحاسبة في البلديات — مادة بمادة وقابلة للبحث.</p>
       </header>
-      <form action="/laws" className="flex gap-2">
+      <form action="/laws" className="flex gap-2 lg:max-w-3xl">
         <input id="q-laws" name="q" defaultValue={q} placeholder="ابحث بكلمة أو برقم مادة…" className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-4" />
         <Mic target="q-laws" mode="replace" submit />
         <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button>
@@ -30,7 +30,7 @@ export default async function LawsHome({ searchParams }: { searchParams: Promise
           ))}
         </section>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {LAWS.map((l) => (
             <li key={l.id}>
               <Link href={`/laws/${l.id}`} className="block h-full rounded-2xl border bg-background p-5 hover:border-primary">

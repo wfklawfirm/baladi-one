@@ -33,7 +33,7 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
   return (
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
       <section className="border-b bg-background px-4 pb-6 pt-6">
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-6xl">
           <Link href={only ? base : `/m/${slug}/services`} className="text-sm text-muted-foreground hover:text-primary">← {only ? catLabel(lang, tp) : t(lang, "transactions")}</Link>
           <div className="flex items-center gap-4">
             <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><Icon className="size-9" aria-hidden /></span>
@@ -47,7 +47,7 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-8 px-4 pt-6">
+      <div className="mx-auto max-w-3xl space-y-8 px-4 pt-6 lg:max-w-6xl lg:pt-10">
         {(only ? [only] : subs).map((s) => {
           const list = all.filter((x) => x.sub === s.id);
           const shown = only ? list : list.slice(0, PREVIEW);
@@ -59,7 +59,7 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
                 <span className="flex-1 font-bold leading-snug">{s.label}</span>
                 <span className="text-xs text-muted-foreground">{countAr(list.length)}</span>
               </h2>
-              <ul className="grid gap-2 sm:grid-cols-2">
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {shown.map((x) => (
                   <li key={x.href}><Link href={x.href} className="flex h-full items-center gap-2 rounded-xl border bg-background px-4 py-3 text-sm leading-7 active:bg-muted">
                     <span className="flex-1">{x.title}</span><ChevronLeft className={`size-4 shrink-0 text-muted-foreground ${lang === "en" ? "rotate-180" : ""}`} aria-hidden /></Link></li>

@@ -21,12 +21,12 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
   const total = approved ? services.length : TX.filter((x) => x.audience === "citizen").length;
 
   return (
-    <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
-      <section className="px-4 pb-8 pt-12">
-        <div className="mx-auto max-w-3xl space-y-6 text-center">
-          <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl">{t(lang, "heroTitle")}</h1>
+    <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="flex min-h-[calc(100dvh-5.5rem)] flex-col">
+      <section className="px-4 pb-8 pt-12 lg:pb-12 lg:pt-20">
+        <div className="mx-auto max-w-3xl space-y-6 text-center lg:space-y-8">
+          <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl lg:text-5xl">{t(lang, "heroTitle")}</h1>
           <p className="text-muted-foreground">{t(lang, "heroSub")}</p>
-          <form action={`/m/${slug}/services`} className="mx-auto flex max-w-xl items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary" role="search">
+          <form action={`/m/${slug}/services`} className="mx-auto flex max-w-xl items-center gap-2 rounded-2xl border-2 lg:max-w-3xl lg:p-3 bg-background p-2 focus-within:border-primary" role="search">
             <input type="hidden" name="lang" value={lang} />
             <Search aria-hidden className="mx-2 size-5 shrink-0 text-muted-foreground" />
             <input id="q-citizen" name="q" placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")} className="min-h-12 min-w-0 flex-1 bg-transparent outline-none" />
@@ -36,8 +36,8 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-4 px-4">
-        <Link href={`/m/${slug}/services`} className="elev elev-hover flex min-h-28 items-center gap-4 rounded-3xl border border-primary/40 bg-accent/50 p-5 active:bg-accent">
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 lg:max-w-5xl lg:space-y-6">
+        <Link href={`/m/${slug}/services`} className="elev elev-hover flex min-h-28 items-center gap-4 rounded-3xl border border-primary/40 bg-accent/50 p-5 lg:min-h-36 lg:gap-6 lg:p-8 active:bg-accent">
           <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><FileSearch className="size-8" aria-hidden /></span>
           <span className="min-w-0 flex-1">
             <b className="block text-xl">{t(lang, "transactions")}</b>
@@ -47,21 +47,21 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
           <ChevronLeft className={`size-7 shrink-0 text-primary ${lang === "en" ? "rotate-180" : ""}`} aria-hidden />
         </Link>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 lg:gap-6">
           {[
             { h: `/m/${slug}/report?lang=${lang}`, Icon: Siren, l: t(lang, "report") },
             { h: `/m/${slug}/track?lang=${lang}`, Icon: ClipboardList, l: t(lang, "track") },
             { h: "/laws", Icon: Scale, l: lang === "ar" ? "القوانين" : "Laws" },
           ].map(({ h, Icon, l }) => (
-            <Link key={h} href={h} className="elev flex min-h-32 flex-col items-center justify-center gap-3 rounded-2xl border bg-background p-4 text-center active:bg-muted">
+            <Link key={h} href={h} className="elev flex min-h-32 flex-col items-center justify-center gap-3 rounded-2xl border bg-background p-4 lg:min-h-44 lg:gap-4 lg:rounded-3xl text-center active:bg-muted">
               <span className="grid size-12 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
-              <b className="text-sm leading-snug">{l}</b>
+              <b className="text-sm leading-snug lg:text-xl">{l}</b>
             </Link>
           ))}
         </div>
         {muni.isDemo && <p className="pt-2 text-center"><Link href={`/m/${slug}`} className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground hover:text-primary">{lang === "ar" ? "تغيير الدور" : "Change role"}</Link></p>}
       </div>
-      <PortalFooter />
+      <div className="mt-auto"><PortalFooter /></div>
     </main>
   );
 }

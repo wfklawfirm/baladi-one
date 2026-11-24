@@ -17,9 +17,9 @@ export default function SiteNav() {
   if (chooser || path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
-      <div className={`mx-auto flex ${"max-w-3xl"} items-center justify-between gap-3 px-4 py-2`}>
+      <div className={`mx-auto flex ${"max-w-3xl lg:max-w-6xl"} items-center justify-between gap-3 px-4 py-2`}>
         <Link href={home} className="flex items-center gap-2.5">
-          <Emblem size={52} />
+          <Emblem size={56} />
         </Link>
         {!chooser && <nav className="hidden items-center gap-1 text-sm sm:flex lg:text-lg">
           {LINKS.map(([href, label]) => {
@@ -27,7 +27,7 @@ export default function SiteNav() {
             return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "font-bold text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Link>;
           })}
         </nav>}
-        <img src="/aijur-logo.png" alt="AIJUR" className={`h-11 w-auto`} />
+        <img src="/aijur-logo.png" alt="AIJUR" className={`h-12 w-auto`} />
       </div>
       {!chooser && <nav className="flex justify-around border-t text-xs sm:hidden">
         {LINKS.map(([href, label]) => <Link key={href} href={href} className={`flex-1 py-2 text-center ${(href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"))) ? "font-bold text-primary" : "text-muted-foreground"}`}>{label}</Link>)}

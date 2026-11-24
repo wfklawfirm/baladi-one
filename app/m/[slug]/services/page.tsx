@@ -31,12 +31,12 @@ export default async function ServicesHome({ params, searchParams }: { params: P
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c, items.filter((x) => x.topic === c).length]));
 
   return (
-    <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
+    <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="flex min-h-[calc(100dvh-5.5rem)] flex-col">
       <section className="border-b bg-background px-4 pb-6 pt-6">
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-6xl">
           <Link href={`/m/${slug}${lang === "en" ? "?lang=en" : ""}`} className="text-sm text-muted-foreground hover:text-primary">← {lang === "ar" ? "الرئيسية" : "Home"}</Link>
-          <h1 className="text-3xl font-bold">{t(lang, "transactions")}</h1>
-          <form action={`/m/${slug}/services`} className="flex items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary" role="search">
+          <h1 className="text-3xl font-bold lg:text-4xl">{t(lang, "transactions")}</h1>
+          <form action={`/m/${slug}/services`} className="flex items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary lg:max-w-3xl" role="search">
             <input type="hidden" name="lang" value={lang} />
             <Search aria-hidden className="mx-2 size-5 shrink-0 text-muted-foreground" />
             <input id="q-services" name="q" defaultValue={q} placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")} className="min-h-12 min-w-0 flex-1 bg-transparent outline-none" />
@@ -46,13 +46,13 @@ export default async function ServicesHome({ params, searchParams }: { params: P
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-6 px-4 pt-6">
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 lg:max-w-6xl lg:pt-10">
         {found ? (
           <section className="space-y-3" aria-label="نتائج البحث">
             <p className="text-sm text-muted-foreground">
               {found.items.length === 0 ? t(lang, "noResults") : found.exact ? `${countAr(found.items.length)} · «${q}»` : `لا توجد نتيجة مطابقة تمامًا لـ «${q}». هذه أقرب النتائج:`}
             </p>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {found.items.slice(0, 40).map((x) => (
                 <li key={x.href}><Link href={x.href} className="elev elev-hover flex h-full flex-col gap-1 rounded-2xl border bg-background p-4 active:bg-muted">
                   <span className="font-bold leading-7">{x.title}</span>
@@ -64,7 +64,7 @@ export default async function ServicesHome({ params, searchParams }: { params: P
           </section>
         ) : (
           <section className="space-y-3">
-                        <div className="grid grid-cols-5 gap-1.5 sm:gap-4">
+                        <div className="grid grid-cols-5 gap-1.5 sm:gap-4 lg:gap-6">
               {CATEGORIES.map((c) => {
                 const Icon = TOPIC_ICON[c];
                 return (
@@ -80,7 +80,7 @@ export default async function ServicesHome({ params, searchParams }: { params: P
           </section>
         )}
       </div>
-      <PortalFooter />
+      <div className="mt-auto"><PortalFooter /></div>
     </main>
   );
 }

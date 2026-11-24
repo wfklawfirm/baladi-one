@@ -15,7 +15,7 @@ export default async function ServicesReview({ searchParams }: { searchParams: P
   const { data } = await q;
   const rows = (data ?? []) as any[];
   return (
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8 lg:max-w-5xl">
       <Link href="/staff" className="text-sm text-primary">← الطلبات</Link>
       <h1 className="text-2xl font-bold">اعتماد الخدمات</h1>
       <nav className="flex flex-wrap gap-2">
