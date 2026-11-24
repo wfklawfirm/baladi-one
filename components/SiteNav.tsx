@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Emblem from "./Emblem";
@@ -9,6 +10,8 @@ const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعامل�
 
 export default function SiteNav() {
   const path = usePathname() ?? "";
+  // A new page can open slightly scrolled (the browser clamps the old offset on a shorter page), leaving its heading under this sticky bar.
+  useEffect(() => { if (window.scrollY > 0 && window.scrollY < 140 && !window.location.hash) window.scrollTo(0, 0); }, [path]);
   if (path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
