@@ -64,7 +64,7 @@ button, [role=button] { touch-action: manipulation; }
   .ch-card > b { font-size: 1.5rem; margin-top: 0; }
   .ch-card > span:nth-child(3) { font-size: 1.05rem; margin-bottom: 0.5rem; }
   .ch-cta { height: 3rem; font-size: 1.05rem; }
-  .ch-qr { padding-block: 0.75rem; }
+  .ch-qr { gap: 0.6rem; }
   .ch-qr > div:first-child { width: 7.5rem; height: 7.5rem; }
   .ch-qr a { min-height: 2.5rem; }
   .ch-footer { padding-block: 0.5rem 0.6rem; font-size: 0.9rem; }

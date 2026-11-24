@@ -68,13 +68,9 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
           )}
         </section>
 
-        <section aria-label="الموقع الرسمي للبلدية" className="ch-qr flex w-full max-w-3xl items-center justify-center gap-6 rounded-2xl border border-border bg-background px-6 py-4 shadow-[0_1px_8px_rgb(0_0_0/0.04)] max-sm:flex-col max-sm:text-center lg:gap-8 lg:px-8">
-          <div role="img" aria-label="رمز QR للموقع الرسمي للبلدية" className="size-32 shrink-0 lg:size-[9.5rem] [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
-          <div className="flex flex-col items-start gap-2 max-sm:items-center">
-            <h2 className="text-xl font-bold text-primary lg:text-2xl">اكتشف الموقع الرسمي للبلدية</h2>
-            <p className="max-w-md text-lg leading-relaxed text-foreground/80">تابع أخبار البلدية وإعلاناتها ومشاريعها وخدماتها الرسمية.</p>
-            <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl max-sm:w-full max-sm:bg-primary max-sm:text-primary-foreground border-2 border-primary px-6 text-base font-bold text-primary max-sm:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:bg-accent">زيارة الموقع الرسمي</a>
-          </div>
+        <section aria-label="الموقع الرسمي للبلدية" className="ch-qr flex flex-col items-center gap-4">
+          <div role="img" aria-label="رمز QR للموقع الرسمي للبلدية" className="size-36 shrink-0 rounded-xl border border-border p-1 lg:size-40 [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
+          <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center rounded-xl border-2 border-primary px-8 text-base font-bold text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:bg-accent max-sm:w-full max-sm:bg-primary max-sm:text-white">زيارة الموقع الرسمي</a>
         </section>
       </main>
 
