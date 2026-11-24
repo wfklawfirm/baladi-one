@@ -12,7 +12,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const muni = await loadMunicipality(slug);
   if (!muni) notFound();
   return (
-    <main dir="rtl" lang="ar" className="mx-auto max-w-xl space-y-4 p-4">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
       {!reportsEnabled() ? <ComingSoon title="أبلغ عن مشكلة" slug={slug} /> : (
         <>
           <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>

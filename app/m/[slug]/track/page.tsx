@@ -16,7 +16,7 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
   const code = (sp.code ?? "").trim();
   const result = reportsEnabled() && code ? await trackReport(code) : null;
   return (
-    <main dir="rtl" lang="ar" className="mx-auto max-w-xl space-y-4 p-4">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
       {!reportsEnabled() ? <ComingSoon title="متابعة طلب" slug={slug} /> : (
         <>
           <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>

@@ -22,12 +22,8 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
 
   return (
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
-      <section className="px-4 pb-8 pt-10">
-        <div className="mx-auto max-w-2xl space-y-6 text-center">
-          {muni.isDemo && <div className="text-start"><Link href={`/m/${slug}`} className="text-sm text-muted-foreground hover:text-primary">← {lang === "ar" ? "تغيير الدور" : "Change role"}</Link></div>}
-          <p className="flex items-center justify-center gap-3 text-xs font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">
-            <span className="h-px w-8 bg-border" />BY AIJUR · INTELLIGENT MUNICIPAL SERVICES<span className="h-px w-8 bg-border" />
-          </p>
+      <section className="px-4 pb-8 pt-12">
+        <div className="mx-auto max-w-3xl space-y-6 text-center">
           {(!approved || muni.isDemo) && <p className="mx-auto inline-block rounded-full bg-accent px-4 py-1.5 text-xs text-accent-foreground">{t(lang, "demoBadge")}</p>}
           <h1 className="pt-2 text-3xl font-bold leading-snug md:text-4xl">{t(lang, "heroTitle")}</h1>
           <p className="text-muted-foreground">{t(lang, "heroSub")}</p>
@@ -41,7 +37,7 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
         </div>
       </section>
 
-      <div className="mx-auto max-w-2xl space-y-4 px-4">
+      <div className="mx-auto max-w-3xl space-y-4 px-4">
         <Link href={`/m/${slug}/services`} className="elev elev-hover flex min-h-28 items-center gap-4 rounded-3xl border border-primary/40 bg-accent/50 p-5 active:bg-accent">
           <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><FileSearch className="size-8" aria-hidden /></span>
           <span className="min-w-0 flex-1">
@@ -58,12 +54,13 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
             { h: `/m/${slug}/track?lang=${lang}`, Icon: ClipboardList, l: t(lang, "track") },
             { h: "/laws", Icon: Scale, l: lang === "ar" ? "القوانين" : "Laws" },
           ].map(({ h, Icon, l }) => (
-            <Link key={h} href={h} className="elev flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border bg-background p-3 text-center active:bg-muted">
+            <Link key={h} href={h} className="elev flex min-h-32 flex-col items-center justify-center gap-3 rounded-2xl border bg-background p-4 text-center active:bg-muted">
               <span className="grid size-12 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
               <b className="text-sm leading-snug">{l}</b>
             </Link>
           ))}
         </div>
+        {muni.isDemo && <p className="pt-2 text-center"><Link href={`/m/${slug}`} className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground hover:text-primary">{lang === "ar" ? "تغيير الدور" : "Change role"}</Link></p>}
       </div>
       <PortalFooter />
     </main>
