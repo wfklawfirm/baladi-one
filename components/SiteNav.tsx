@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Emblem from "./Emblem";
-import { BRAND } from "@/lib/brand";
+import { BRAND, OFFICIAL } from "@/lib/brand";
 
 const home = `/m/${BRAND.slug}`;
 const LINKS = [[home, "الرئيسية"], [`${home}/services`, "المعاملات البلدية"], ["/laws", "القوانين"], [`${home}/track`, "تتبّع طلب"]] as const;
@@ -26,11 +26,13 @@ export default function SiteNav() {
             const active = href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"));
             return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "font-bold text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Link>;
           })}
+          <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">الموقع الرسمي</a>
         </nav>}
         <img src="/aijur-logo.png" alt="AIJUR" className={`h-12 w-auto`} />
       </div>
       {!chooser && <nav className="flex justify-around border-t text-xs sm:hidden">
         {LINKS.map(([href, label]) => <Link key={href} href={href} className={`flex-1 py-2 text-center ${(href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"))) ? "font-bold text-primary" : "text-muted-foreground"}`}>{label}</Link>)}
+        <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 text-center text-muted-foreground">الموقع الرسمي</a>
       </nav>}
     </header>
   );

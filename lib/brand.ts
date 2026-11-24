@@ -5,3 +5,10 @@ export const BRAND = {
   nameEn: "Khreibet El Jundi Municipality",
   logo: "/logos/khreibet-al-jundi.png" as string | null,
 };
+
+/** The municipality's official website (links below were checked against the live site). */
+export const OFFICIAL = {
+  home: "https://khreibeteljundi.gov.lb/",
+  forms: "https://khreibeteljundi.gov.lb/models",
+  fees: "https://khreibeteljundi.gov.lb/check-fees",
+};

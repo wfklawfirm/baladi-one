@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileText, ListChecks, Clock, Building2, Scale } from "lucide-react";
 import { getTx, lawsFor } from "@/lib/draft";
-import { BRAND } from "@/lib/brand";
+import { BRAND, OFFICIAL } from "@/lib/brand";
 import PortalFooter from "@/components/PortalFooter";
 
 const Card = ({ icon, title, items, ordered }: { icon: React.ReactNode; title: string; items: string[]; ordered?: boolean }) => {
@@ -44,6 +44,7 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
           </section>)}
         {laws.length === 0 && t.legal_basis && <p className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">الأساس القانوني: {t.legal_basis}</p>}
         <Card icon={<FileText className="size-4" />} title="تفاصيل إضافية (غير محققة)" items={extra} />
+        <a href={OFFICIAL.forms} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">النماذج الرسمية على موقع البلدية ↗</a>
         {t.notes && <p className="whitespace-pre-line rounded-2xl bg-muted p-4 text-sm leading-7">{t.notes}</p>}
       </div>
       <PortalFooter />

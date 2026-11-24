@@ -7,6 +7,7 @@ import { t } from "@/lib/i18n";
 import { TX } from "@/lib/draft";
 import { countAr } from "@/lib/topics";
 import Mic from "@/components/Mic";
+import { OFFICIAL } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,10 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
             </Link>
           ))}
         </div>
+        <p className="flex flex-wrap justify-center gap-x-6 text-sm text-muted-foreground">
+          <a href={OFFICIAL.forms} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-medium hover:text-primary">{lang === "ar" ? "النماذج الرسمية" : "Official forms"} ↗</a>
+          <a href={OFFICIAL.fees} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-medium hover:text-primary">{lang === "ar" ? "الاستعلام عن الرسوم" : "Fee inquiry"} ↗</a>
+        </p>
         {muni.isDemo && <p className="pt-2 text-center"><Link href={`/m/${slug}`} className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground hover:text-primary">{lang === "ar" ? "تغيير الدور" : "Change role"}</Link></p>}
       </div>
       <div className="mt-auto"><PortalFooter /></div>
