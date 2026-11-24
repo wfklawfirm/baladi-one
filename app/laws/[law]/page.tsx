@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLaw, searchLaws, snippet } from "@/lib/laws";
+import Mic from "@/components/Mic";
 
 export default async function LawPage({ params, searchParams }: { params: Promise<{ law: string }>; searchParams: Promise<{ q?: string }> }) {
   const law = getLaw((await params).law);
@@ -22,7 +23,8 @@ export default async function LawPage({ params, searchParams }: { params: Promis
         <a href={law.url} className="text-sm text-primary underline" target="_blank" rel="noreferrer">الملف الرسمي (PDF)</a>
       </header>
       <form className="flex gap-2">
-        <input name="q" defaultValue={q} placeholder={`ابحث داخل ${law.short}…`} className="min-h-12 flex-1 rounded-xl border bg-background px-4" />
+        <input id="q-law" name="q" defaultValue={q} placeholder={`ابحث داخل ${law.short}…`} className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-4" />
+        <Mic target="q-law" mode="replace" submit />
         <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button>
       </form>
       {q ? (

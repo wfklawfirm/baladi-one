@@ -74,7 +74,34 @@ export function confidence(chunks: Hit[]): "high" | "medium" | "low" {
 export const makeSources = (chunks: Hit[]) => chunks.map((c) => ({ title: c.title, preview: c.text.slice(0, 220), domain: DOMAIN_NAMES[c.domain] ?? c.domain, score: Math.round(c.score * 1000) / 1000 }));
 
 export type Turn = { role: "user" | "assistant"; content: string };
-export async function ask(query: string, history: Turn[]) {
+
+const CLARIFY_PROMPT = `أنت مساعد قانوني للبلديات اللبنانية. مهمتك الوحيدة الآن: تقرير ما إذا كان السؤال يحتاج إلى توضيح قبل الإجابة.
+اطرح أسئلة توضيحية فقط إذا كان غياب المعلومة يغيّر الجواب القانوني أو الإجرائي جوهرياً (مثل: نوع الطلب أو المعاملة، صفة صاحب الطلب، الواقعة الأساسية، هل صدر قرار أو بوشرت إجراءات، نوع العقار أو الاستعمال).
+القواعد:
+- حدّ أقصى 3 أسئلة، وغالباً سؤال واحد أو اثنان يكفيان، كل سؤال قصير ويمكن الإجابة عنه بجملة.
+- إن كان السؤال واضحاً أو عاماً ويمكن الإجابة عنه مباشرة من القانون، أو كان متابعة لحوار سبق فيه توضيح، فلا تسأل.
+- لا تسأل عمّا سبق ذكره في السؤال أو في المحادثة.
+- لا تسأل عن الرسوم أو المبالغ، ولا عن بيانات شخصية.
+أجب بـ JSON فقط: {"questions": []} أو {"questions": ["...", "..."]}.`;
+
+/** Up to 3 short clarifying questions, or [] when the question can be answered directly. Never blocks an answer on failure. */
+export async function clarify(query: string, history: Turn[]): Promise<string[]> {
+  try {
+    const ctx = history.slice(-4).map((h) => `${h.role === "user" ? "المستخدم" : "المساعد"}: ${h.content.slice(0, 500)}`).join("\n");
+    const j = await openai("chat/completions", {
+      model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 300, response_format: { type: "json_object" },
+      messages: [{ role: "system", content: CLARIFY_PROMPT }, { role: "user", content: `${ctx ? `=== المحادثة السابقة ===\n${ctx}\n\n` : ""}=== السؤال الحالي ===\n${query.slice(0, 1500)}` }],
+    });
+    const qs = JSON.parse(j.choices[0].message.content || "{}").questions;
+    return Array.isArray(qs) ? qs.map((x: unknown) => String(x).trim().slice(0, 200)).filter(Boolean).slice(0, 3) : [];
+  } catch { return []; }
+}
+
+export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean } = {}) {
+  if (!opts.noClarify) {
+    const questions = await clarify(query, history);
+    if (questions.length) return { clarify: questions };
+  }
   const complexity = classify(query);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* answer from legal knowledge without sources */ }

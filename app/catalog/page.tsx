@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AUDIENCE_LABELS, TX } from "@/lib/draft";
 import { normalizeArabic } from "@/lib/i18n";
+import Mic from "@/components/Mic";
 
 export const metadata = { title: "كتالوج المعاملات (مسودة) — BALADI ONE" };
 
@@ -24,7 +25,8 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
         ))}
       </nav>
       <form className="flex gap-2"><input type="hidden" name="a" value={aud} />
-        <input name="q" defaultValue={sp.q ?? ""} placeholder="ابحث عن معاملة…" className="min-h-12 flex-1 rounded-xl border bg-background px-4" />
+        <input id="q-catalog" name="q" defaultValue={sp.q ?? ""} placeholder="ابحث عن معاملة…" className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-4" />
+        <Mic target="q-catalog" mode="replace" submit />
         <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button></form>
       <p className="text-sm text-muted-foreground">{list.length} معاملة</p>
       {[...byCat].map(([cat, items]) => (

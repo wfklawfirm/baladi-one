@@ -6,6 +6,7 @@ import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { t } from "@/lib/i18n";
 import { TX } from "@/lib/draft";
 import { countAr } from "@/lib/topics";
+import Mic from "@/components/Mic";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,8 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
           <form action={`/m/${slug}/services`} className="mx-auto flex max-w-xl items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary" role="search">
             <input type="hidden" name="lang" value={lang} />
             <Search aria-hidden className="mx-2 size-5 shrink-0 text-muted-foreground" />
-            <input name="q" placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")} className="min-h-12 min-w-0 flex-1 bg-transparent outline-none" />
+            <input id="q-citizen" name="q" placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")} className="min-h-12 min-w-0 flex-1 bg-transparent outline-none" />
+            <Mic target="q-citizen" mode="replace" submit />
             <button className="min-h-12 shrink-0 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90">{t(lang, "open")}</button>
           </form>
         </div>

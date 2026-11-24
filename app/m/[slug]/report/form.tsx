@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import { sendReport } from "./actions";
 import { REPORT_TYPES } from "@/lib/reports-client";
+import Mic from "@/components/Mic";
 
 export function ReportForm({ slug }: { slug: string }) {
   const [state, action, pending] = useActionState(sendReport.bind(null, slug), null);
@@ -15,10 +16,12 @@ export function ReportForm({ slug }: { slug: string }) {
           </label>
         ))}
       </fieldset>
-      <label className="block space-y-1"><span className="font-semibold">وصف المشكلة</span>
-        <textarea name="description" required minLength={10} maxLength={1000} rows={5} className="w-full rounded-xl border bg-background p-3" placeholder="مثال: عمود الإنارة أمام المدرسة مطفأ منذ أسبوع" /></label>
-      <label className="block space-y-1"><span className="font-semibold">الموقع</span>
-        <input name="location" maxLength={300} className="min-h-12 w-full rounded-xl border bg-background px-3" placeholder="الشارع / أقرب معلم" /></label>
+      <div className="space-y-1"><label htmlFor="rp-desc" className="block font-semibold">وصف المشكلة</label>
+        <div className="relative"><textarea id="rp-desc" name="description" required minLength={10} maxLength={1000} rows={5} className="w-full rounded-xl border bg-background p-3 pe-16" placeholder="مثال: عمود الإنارة أمام المدرسة مطفأ منذ أسبوع" />
+          <Mic target="rp-desc" className="absolute bottom-3 end-2" /></div>
+        <p className="text-xs text-muted-foreground">يمكنك الإملاء بالصوت: اضغط الميكروفون وتكلّم، فيُكتب كلامك في الحقل.</p></div>
+      <div className="space-y-1"><label htmlFor="rp-loc" className="block font-semibold">الموقع</label>
+        <div className="flex gap-2"><input id="rp-loc" name="location" maxLength={300} className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-3" placeholder="الشارع / أقرب معلم" /><Mic target="rp-loc" /></div></div>
       <label className="block space-y-1"><span className="font-semibold">هاتف للتواصل (اختياري)</span>
         <input name="phone" inputMode="tel" maxLength={20} className="min-h-12 w-full rounded-xl border bg-background px-3" dir="ltr" /></label>
       <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />

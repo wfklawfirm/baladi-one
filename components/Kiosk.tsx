@@ -6,6 +6,7 @@ import { filterServices } from "@/lib/search";
 import type { CategoryId, Lang, Municipality, Service } from "@/lib/types";
 import { Qr } from "./Qr";
 import { ServiceBody } from "./ServiceBody";
+import Mic from "@/components/Mic";
 
 type View = { name: "home" } | { name: "list" } | { name: "service"; slug: string } | { name: "report" } | { name: "track" };
 
@@ -114,8 +115,9 @@ export function Kiosk({
               <form className="mx-auto mt-[3.5vh] flex w-full max-w-[64rem] items-center gap-3 rounded-3xl border-2 bg-background py-2 ps-7 pe-2.5 elev focus-within:border-primary focus-within:shadow-[var(--ring-focus)]"
                 role="search" onSubmit={(e) => { e.preventDefault(); goList(query); }}>
                 <Search className="size-8 shrink-0 text-muted-foreground" aria-hidden />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")}
+                <input id="kq-home" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")} aria-label={t(lang, "heroSub")}
                   className="h-[4.5rem] min-w-0 flex-1 bg-transparent text-[1.6rem] outline-none focus-visible:!shadow-none placeholder:text-muted-foreground" enterKeyHint="search" />
+                <Mic target="kq-home" mode="replace" size="lg" />
                 <button type="submit" className="min-h-[4.5rem] shrink-0 rounded-2xl bg-primary px-10 text-[1.5rem] font-bold text-primary-foreground transition active:scale-[0.98]">{t(lang, "open")}</button>
               </form>
               {lang === "ar" && (
@@ -140,8 +142,9 @@ export function Kiosk({
           <div className="flex h-full flex-col gap-4">
             <div className="flex items-center gap-3 rounded-3xl border-2 bg-background px-6 elev focus-within:border-primary focus-within:shadow-[var(--ring-focus)]">
               <Search className="size-7 text-muted-foreground" aria-hidden />
-              <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")}
-                className="h-16 flex-1 bg-transparent text-[1.5rem] outline-none focus-visible:!shadow-none placeholder:text-muted-foreground" />
+              <input id="kq-list" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t(lang, "searchPlaceholder")}
+                className="h-16 min-w-0 flex-1 bg-transparent text-[1.5rem] outline-none focus-visible:!shadow-none placeholder:text-muted-foreground" />
+              <Mic target="kq-list" mode="replace" />
             </div>
             <div className="flex flex-wrap gap-3">
               {(["all", ...CATEGORIES] as const).map((c) => (

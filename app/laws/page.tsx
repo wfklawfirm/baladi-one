@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LAWS, searchLaws, snippet } from "@/lib/laws";
+import Mic from "@/components/Mic";
 
 export const metadata = { title: "المكتبة القانونية — BALADI ONE" };
 
@@ -14,7 +15,8 @@ export default async function LawsHome({ searchParams }: { searchParams: Promise
         <p className="text-muted-foreground">قانون البلديات، قانون المحاسبة العمومية، قانون الشراء العام، ومرسوم أصول المحاسبة في البلديات — مادة بمادة وقابلة للبحث.</p>
       </header>
       <form action="/laws" className="flex gap-2">
-        <input name="q" defaultValue={q} placeholder="ابحث بكلمة أو برقم مادة…" className="min-h-12 flex-1 rounded-xl border bg-background px-4" />
+        <input id="q-laws" name="q" defaultValue={q} placeholder="ابحث بكلمة أو برقم مادة…" className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-4" />
+        <Mic target="q-laws" mode="replace" submit />
         <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">بحث</button>
       </form>
 
