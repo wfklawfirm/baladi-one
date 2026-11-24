@@ -18,15 +18,15 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
 
   // Exhibition mode: employee / mayor open a restricted demo session; otherwise they lead to the normal login.
   // The whole card is the touch target; the "button" is a label inside it, so there is one interaction, not two.
-  const light = `${card} border-border bg-background shadow-[0_4px_18px_rgb(0_0_0/0.07)]`;
+  const light = `${card} border-border bg-background shadow-[0_4px_18px_rgb(0_0_0/0.07)] hover:border-primary hover:bg-gradient-to-b hover:from-[#86233a] hover:to-[#6b1a29] hover:text-white hover:shadow-[0_10px_28px_rgb(122_31_46/0.30)]`;
   const body = (Icon: typeof Users, title: string, desc: string, label: string, dark = false) => (
     <>
-      <span className={`grid size-24 place-items-center rounded-3xl ${dark ? "bg-white/15" : "bg-accent"}`}>
-        <Icon className={`size-12 ${dark ? "text-white" : "text-primary"}`} strokeWidth={1.6} aria-hidden />
+      <span className={`grid size-24 place-items-center rounded-3xl ${dark ? "bg-white/15" : "bg-accent group-hover:bg-white/15"}`}>
+        <Icon className={`size-12 ${dark ? "text-white" : "text-primary group-hover:text-white"}`} strokeWidth={1.6} aria-hidden />
       </span>
       <b className="mt-2 text-3xl font-bold leading-snug">{title}</b>
-      <span className={`mb-4 text-xl font-medium ${dark ? "text-white/90" : "text-muted-foreground"}`}>{desc}</span>
-      <span className={`${cta} ${dark ? "bg-white text-primary" : "border-2 border-primary text-primary group-active:bg-accent"}`}>{label}</span>
+      <span className={`mb-4 text-xl font-medium ${dark ? "text-white/90" : "text-muted-foreground group-hover:text-white/90"}`}>{desc}</span>
+      <span className={`${cta} ${dark ? "bg-white text-primary" : "border-2 border-primary text-primary group-hover:border-white group-hover:bg-white"}`}>{label}</span>
     </>
   );
   const staff = body(UserCog, "موظف البلدية", "إدارة الطلبات والخدمات", "دخول النظام");
