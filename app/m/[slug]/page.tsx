@@ -9,8 +9,8 @@ import Emblem from "@/components/Emblem";
 
 export const dynamic = "force-dynamic";
 
-const card = "group flex h-full w-full flex-col items-center gap-4 rounded-[22px] border px-7 pb-8 pt-9 text-center transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:scale-[0.985] active:brightness-95 disabled:pointer-events-none disabled:opacity-60";
-const cta = "mt-auto flex h-16 w-full items-center justify-center rounded-2xl text-xl font-bold";
+const card = "ch-card group flex h-full w-full flex-col items-center gap-4 rounded-[22px] border px-7 pb-8 pt-9 text-center transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:scale-[0.985] active:brightness-95 disabled:pointer-events-none disabled:opacity-60";
+const cta = "ch-cta mt-auto flex h-16 w-full items-center justify-center rounded-2xl text-xl font-bold";
 
 export default async function RoleChooser({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -38,16 +38,16 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
 
   return (
     <div dir="rtl" lang="ar" className="flex min-h-dvh flex-col bg-background">
-      <header className="h-28 border-b border-border/70 lg:h-32">
+      <header className="ch-header h-28 border-b border-border/70 lg:h-32">
         <div className="mx-auto flex h-full max-w-[77.5rem] items-center justify-end px-6">
-          <img src="/aijur-logo.png" alt="AIJUR" className="h-24 w-auto" />
+          <img src="/aijur-logo.png" alt="AIJUR" className="ch-aijur h-24 w-auto" />
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[72.5rem] flex-1 flex-col items-center justify-center gap-8 px-6 py-6 text-center lg:gap-8">
+      <main className="ch-main mx-auto flex w-full max-w-[72.5rem] flex-1 flex-col items-center justify-center gap-8 px-6 py-6 text-center lg:gap-8">
         <section className="flex max-w-3xl flex-col items-center gap-4">
           <h1 className="sr-only">البلدية الذكية</h1>
-          <div className="min-[2400px]:[zoom:1.9]"><Emblem size={170} /></div>
+          <div className="ch-logo min-[2400px]:[zoom:1.9]"><Emblem size={170} /></div>
         </section>
 
         <section aria-label="اختر نوع المستخدم" className="grid w-full grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
@@ -67,7 +67,7 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
           )}
         </section>
 
-        <section aria-label="الموقع الرسمي للبلدية" className="flex w-full max-w-3xl items-center justify-center gap-6 rounded-2xl border border-border bg-background px-6 py-4 shadow-[0_1px_8px_rgb(0_0_0/0.04)] max-sm:flex-col max-sm:text-center lg:gap-8 lg:px-8">
+        <section aria-label="الموقع الرسمي للبلدية" className="ch-qr flex w-full max-w-3xl items-center justify-center gap-6 rounded-2xl border border-border bg-background px-6 py-4 shadow-[0_1px_8px_rgb(0_0_0/0.04)] max-sm:flex-col max-sm:text-center lg:gap-8 lg:px-8">
           <div role="img" aria-label="رمز QR للموقع الرسمي للبلدية" className="size-32 shrink-0 lg:size-[9.5rem] [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
           <div className="flex flex-col items-start gap-1.5 max-sm:items-center">
             <h2 className="text-xl font-bold text-primary lg:text-2xl">اكتشف الموقع الرسمي للبلدية</h2>
@@ -78,7 +78,7 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
         </section>
       </main>
 
-      <footer className="py-5 text-center text-base text-muted-foreground">من تطوير AIJUR</footer>
+      <footer className="ch-footer py-5 text-center text-base text-muted-foreground">من تطوير AIJUR</footer>
     </div>
   );
 }
