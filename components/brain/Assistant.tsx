@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { Md, Doc, Sources, splitTemplates, callBrain, type Src } from "./Answer";
+import Mic from "@/components/Mic";
 
 type Turn = { role: "user" | "assistant"; content: string; sources?: Src[]; confidence?: string };
 const IDEAS = ["ما صلاحيات رئيس البلدية في منح رخص البناء؟", "كيف تُجرى المناقصة العمومية وما عتبات الشراء؟", "أنشئ نموذج قرار تعيين موظف مؤقت", "ما مهل الطعن بقرارات المجلس البلدي؟"];
@@ -31,7 +32,8 @@ export default function Assistant() {
       {err && <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{err}</p>}
       <div ref={end} />
       <form onSubmit={(e) => { e.preventDefault(); send(q); }} className="sticky bottom-3 flex items-end gap-2 rounded-3xl border-2 bg-background p-2 shadow-lg">
-        <textarea value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(q); } }} rows={2} maxLength={2000} placeholder="اسأل المساعد عن أي مسألة بلدية أو قانونية…" className="min-h-12 flex-1 resize-none bg-transparent p-2 text-base outline-none" />
+        <textarea value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(q); } }} id="ask-q" rows={2} maxLength={2000} placeholder="اسأل المساعد عن أي مسألة بلدية أو قانونية…" className="min-h-12 flex-1 resize-none bg-transparent p-2 text-base outline-none" />
+        <Mic target="ask-q" />
         <button disabled={busy || !q.trim()} aria-label="إرسال" className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-40"><Send className="size-5 -scale-x-100" /></button>
       </form>
     </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import { REPORT_TYPES, STATUS_AR } from "@/lib/reports";
+import Mic from "@/components/Mic";
 
 export const dynamic = "force-dynamic";
 export const metadata = { referrer: "no-referrer" as const };
@@ -37,7 +38,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
       <form action={change.bind(null, id)} className="space-y-3 rounded-2xl border bg-background p-4">
         <h2 className="font-bold">تحديث الحالة</h2>
         <select name="status" defaultValue={r.status} className="min-h-12 w-full rounded-xl border bg-background px-3">{Object.entries(STATUS_AR).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-        <textarea name="note" maxLength={500} rows={3} placeholder="ملاحظة (اختياري)" className="w-full rounded-xl border bg-background p-3" />
+        <div className="relative"><textarea id="req-note" name="note" maxLength={500} rows={3} placeholder="ملاحظة (اختياري)" className="w-full rounded-xl border bg-background p-3 pe-16" />
+          <Mic target="req-note" className="absolute bottom-3 end-2" /></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="public" /> إظهار الملاحظة للمواطن في صفحة التتبع</label>
         <button className="min-h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground">حفظ</button>
       </form>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import { VERSION_STATUS_AR, actionsFor, REVIEW_ERRORS } from "@/lib/review";
+import Mic from "@/components/Mic";
 
 export const dynamic = "force-dynamic";
 export const metadata = { referrer: "no-referrer" as const };
@@ -49,7 +50,8 @@ export default async function VersionPage({ params, searchParams }: { params: Pr
       {actions.length > 0 && (
         <form action={transition.bind(null, id)} className="space-y-3 rounded-2xl border bg-background p-4">
           <h2 className="font-bold">الإجراء</h2>
-          <textarea name="note" maxLength={500} rows={2} placeholder="ملاحظة (اختياري)" className="w-full rounded-xl border bg-background p-3" />
+          <div className="relative"><textarea id="svc-note" name="note" maxLength={500} rows={2} placeholder="ملاحظة (اختياري)" className="w-full rounded-xl border bg-background p-3 pe-16" />
+            <Mic target="svc-note" className="absolute bottom-3 end-2" /></div>
           <div className="flex flex-wrap gap-2">{actions.map((a) => <button key={a.to} name="to" value={a.to} className="min-h-12 flex-1 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">{a.label}</button>)}</div>
         </form>
       )}

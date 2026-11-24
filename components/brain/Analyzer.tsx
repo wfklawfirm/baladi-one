@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Loader2, Paperclip, ScanSearch } from "lucide-react";
 import { Doc, Sources, callBrain, type Src } from "./Answer";
+import Mic from "@/components/Mic";
 
 type Opt = { id: string; type: string; title: string; description: string; pros?: string; cons?: string; template: string };
 type A = { doc_type?: string; summary?: string; validity?: string; validity_reason?: string; legal_basis?: string; authority?: string; decision_maker?: string; urgency?: string; required_signatures?: string[]; required_docs?: string[]; risks?: string; options?: Opt[]; recommended_option?: string; next_steps?: string[]; time_limits?: string; recommendations?: string; sources: Src[]; confidence: string };
@@ -21,10 +22,11 @@ export default function Analyzer({ initialText = "" }: { initialText?: string })
   return (
     <div className="space-y-5">
       <form onSubmit={run} className="space-y-3 rounded-2xl border bg-background p-4">
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} maxLength={12000} placeholder="الصق نص المعاملة أو الطلب هنا…" className="w-full rounded-xl border bg-background p-3 text-base" />
+        <div className="relative"><textarea id="an-text" value={text} onChange={(e) => setText(e.target.value)} rows={6} maxLength={12000} placeholder="الصق نص المعاملة أو الطلب هنا، أو أملِه بصوتك…" className="w-full rounded-xl border bg-background p-3 pe-16 text-base" />
+          <Mic target="an-text" className="absolute bottom-3 end-2" /></div>
         <label className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed px-3 text-sm"><Paperclip className="size-4" /><span className="truncate">{file ? file.name : "أو أرفق ملفاً (PDF، Word، صورة)"}</span>
           <input type="file" className="sr-only" accept=".pdf,.docx,.txt,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
-        <input value={q} onChange={(e) => setQ(e.target.value)} maxLength={500} placeholder="سؤال محدد عن المعاملة (اختياري)" className="min-h-12 w-full rounded-xl border bg-background px-3" />
+        <div className="flex gap-2"><input id="an-q" value={q} onChange={(e) => setQ(e.target.value)} maxLength={500} placeholder="سؤال محدد عن المعاملة (اختياري)" className="min-h-12 min-w-0 flex-1 rounded-xl border bg-background px-3" /><Mic target="an-q" /></div>
         <button disabled={busy || (!text.trim() && !file)} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-40">{busy ? <Loader2 className="size-5 animate-spin" /> : <ScanSearch className="size-5" />}{busy ? "جاري قراءة المعاملة…" : "اقرأ المعاملة وأعطِ الملاحظات"}</button>
       </form>
       {err && <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{err}</p>}
