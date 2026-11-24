@@ -32,7 +32,6 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
         </div>
       </section>
       <div className="mx-auto mt-6 max-w-3xl space-y-4 px-4">
-        <p className="rounded-xl border border-primary/20 bg-accent p-3 text-sm text-accent-foreground">مسودة غير معتمدة من البلدية — للمراجعة فقط، ولا تتضمن أي مبالغ.</p>
         <Card icon={<FileText className="size-4" />} title="المستندات المطلوبة" items={t.documents.map((d) => d.t)} />
         <Card icon={<ListChecks className="size-4" />} title="المراحل" items={t.stages.map((d) => d.t)} ordered />
         <Card icon={<Clock className="size-4" />} title="المهل" items={[...new Set(t.timeline.map((d) => d.value))]} />

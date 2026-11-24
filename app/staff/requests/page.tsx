@@ -22,7 +22,6 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
     <><StaffHeader back="/staff" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8">
       <h1 className="text-2xl font-bold">طلبات وبلاغات المواطنين</h1>
-      {isDemo && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">حساب عرض: ترى وتغيّر الطلبات التجريبية فقط، ولا يؤثر ذلك على أي بيانات حقيقية.</p>}
       {oversight && (
         <section aria-label="نظرة عامة" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (

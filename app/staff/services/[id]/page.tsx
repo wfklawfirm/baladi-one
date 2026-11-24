@@ -46,7 +46,6 @@ export default async function VersionPage({ params, searchParams }: { params: Pr
         {list(v.documents).length > 0 && <div><b>المستندات</b><ul className="list-disc ps-6">{list(v.documents).map((d, i) => <li key={i}>{d}</li>)}</ul></div>}
         {list(v.steps).length > 0 && <div><b>الخطوات</b><ol className="list-decimal ps-6">{list(v.steps).map((d, i) => <li key={i}>{d}</li>)}</ol></div>}
       </section>
-      {isDemo && <p className="rounded-xl bg-muted p-3 text-sm">حساب عرض: الاعتماد والمراجعة معطّلان لهذا الحساب.</p>}
       {actions.length > 0 && (
         <form action={transition.bind(null, id)} className="space-y-3 rounded-2xl border bg-background p-4">
           <h2 className="font-bold">الإجراء</h2>

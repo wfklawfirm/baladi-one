@@ -21,7 +21,6 @@ export default async function MobileService({
         <span className="grid size-10 place-items-center rounded-xl bg-primary font-bold text-primary-foreground">B</span>
         <div><p className="font-bold leading-tight">{lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr}</p></div>
       </header>
-      {(demo || s.demo) && <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">{t(lang, "draftNote")}</p>}
       <p className="text-sm text-primary">{catLabel(lang, s.category)}</p>
       <h1 className="text-2xl font-bold">{pick(lang, s.title)}</h1>
       <p className="text-muted-foreground">{pick(lang, s.summary)}</p>

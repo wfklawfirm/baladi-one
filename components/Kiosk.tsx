@@ -171,7 +171,6 @@ export function Kiosk({
                 <p className="text-[1.1rem] text-primary">{catLabel(lang, service.category)}</p>
                 <h2 className="text-[2.4rem] font-bold leading-tight">{pick(lang, service.title)}</h2>
                 <p className="mt-1 text-[1.3rem] text-muted-foreground">{pick(lang, service.summary)}</p>
-                {service.demo && <p className="mt-2 rounded-xl bg-accent px-4 py-2 text-[1.1rem] text-accent-foreground">{t(lang, "draftNote")}</p>}
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto pb-2"><ServiceBody s={service} lang={lang} scale="kiosk" /></div>
             </div>
