@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
 import { Clock, FileCheck2, Landmark, LayoutList, UserCog, Users } from "lucide-react";
-import Emblem from "@/components/Emblem";
 import { loadMunicipality } from "@/lib/catalog";
 import { enterDemo } from "./actions";
 
@@ -36,7 +35,6 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
   return (
     <main dir="rtl" lang="ar" className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-6xl flex-col justify-center gap-5 px-4 py-4 lg:gap-[clamp(0.75rem,2.4vh,2.25rem)]">
       <section className="flex flex-col items-center gap-3 text-center">
-        <Emblem size={96} />
         <h1 className="text-4xl font-bold leading-tight text-primary [text-shadow:0_1px_0_rgb(122_31_46/0.08)] lg:text-[clamp(2.75rem,3.6vw,4rem)]">منصتكم البلدية الذكية</h1>
         <p className="text-lg font-medium text-foreground/75 lg:text-[clamp(1.375rem,1.6vw,1.75rem)]">خدمات ومعاملات البلدية بسهولة وأمان</p>
         <span aria-hidden className="h-1 w-16 rounded-full bg-primary" />

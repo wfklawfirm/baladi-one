@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ClipboardList, FileSearch, Scale, Search, Siren } from "lucide-react";
-import Emblem from "@/components/Emblem";
 import PortalFooter from "@/components/PortalFooter";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { t } from "@/lib/i18n";
@@ -25,7 +24,6 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
       <section className="px-4 pb-8 pt-10">
         <div className="mx-auto max-w-2xl space-y-6 text-center">
           {muni.isDemo && <div className="text-start"><Link href={`/m/${slug}`} className="text-sm text-muted-foreground hover:text-primary">← {lang === "ar" ? "تغيير الدور" : "Change role"}</Link></div>}
-          <div className="flex justify-center"><Emblem size={128} /></div>
           <p className="flex items-center justify-center gap-3 text-xs font-medium tracking-[0.25em] text-muted-foreground" dir="ltr">
             <span className="h-px w-8 bg-border" />BY AIJUR · INTELLIGENT MUNICIPAL SERVICES<span className="h-px w-8 bg-border" />
           </p>
