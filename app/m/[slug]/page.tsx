@@ -44,7 +44,8 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
         </div>
       </header>
 
-      <main className="ch-main mx-auto flex w-full max-w-[72.5rem] flex-1 flex-col items-center justify-center gap-8 px-6 py-6 text-center lg:gap-8">
+      <div className="flex flex-1 flex-col justify-center">
+      <main className="ch-main mx-auto flex w-full max-w-[72.5rem] flex-col items-center gap-8 px-6 pt-6 text-center lg:gap-8">
         <section className="flex max-w-3xl flex-col items-center gap-4">
           <h1 className="sr-only">البلدية الذكية</h1>
           <div className="ch-logo min-[2400px]:[zoom:1.9]"><Emblem size={170} /></div>
@@ -69,16 +70,16 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
 
         <section aria-label="الموقع الرسمي للبلدية" className="ch-qr flex w-full max-w-3xl items-center justify-center gap-6 rounded-2xl border border-border bg-background px-6 py-4 shadow-[0_1px_8px_rgb(0_0_0/0.04)] max-sm:flex-col max-sm:text-center lg:gap-8 lg:px-8">
           <div role="img" aria-label="رمز QR للموقع الرسمي للبلدية" className="size-32 shrink-0 lg:size-[9.5rem] [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
-          <div className="flex flex-col items-start gap-1.5 max-sm:items-center">
+          <div className="flex flex-col items-start gap-2 max-sm:items-center">
             <h2 className="text-xl font-bold text-primary lg:text-2xl">اكتشف الموقع الرسمي للبلدية</h2>
-            <p className="text-base text-foreground/80">تابع أخبار البلدية وإعلاناتها ومشاريعها وخدماتها الرسمية.</p>
-            <p className="text-sm text-muted-foreground max-sm:hidden">امسح الرمز بهاتفك لزيارة الموقع الرسمي</p>
-            <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-12 items-center justify-center rounded-xl max-sm:w-full max-sm:bg-primary max-sm:text-primary-foreground border-2 border-primary px-6 text-base font-bold text-primary max-sm:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:bg-accent">زيارة الموقع الرسمي</a>
+            <p className="max-w-md text-lg leading-relaxed text-foreground/80">تابع أخبار البلدية وإعلاناتها ومشاريعها وخدماتها الرسمية.</p>
+            <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl max-sm:w-full max-sm:bg-primary max-sm:text-primary-foreground border-2 border-primary px-6 text-base font-bold text-primary max-sm:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:bg-accent">زيارة الموقع الرسمي</a>
           </div>
         </section>
       </main>
 
-      <footer className="ch-footer py-5 text-center text-base text-muted-foreground">من تطوير AIJUR</footer>
+      <footer className="ch-footer pb-5 pt-6 text-center text-base text-muted-foreground">من تطوير AIJUR</footer>
+      </div>
     </div>
   );
 }
