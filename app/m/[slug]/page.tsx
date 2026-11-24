@@ -48,8 +48,8 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
         </section>
 
         <section aria-label="اختر نوع المستخدم" className="grid w-full grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
-          <Link href={`/m/${slug}/citizen`} className={`${card} border-primary bg-gradient-to-b from-[#86233a] to-[#6b1a29] text-primary-foreground shadow-[0_10px_28px_rgb(122_31_46/0.30)]`}>
-            {body(Users, "مواطن", "المعاملات والخدمات البلدية", "ابدأ الآن", true)}
+          <Link href={`/m/${slug}/citizen`} className={light}>
+            {body(Users, "مواطن", "المعاملات والخدمات البلدية", "ابدأ الآن")}
           </Link>
           {muni.isDemo ? (
             <>
