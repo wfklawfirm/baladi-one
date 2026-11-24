@@ -19,7 +19,7 @@
   --shadow-hover: 0 6px 20px rgba(24,24,31,.10), 0 2px 8px rgba(24,24,31,.06);
   --shadow-modal: 0 24px 60px -12px rgba(24,24,31,.28), 0 8px 24px -8px rgba(24,24,31,.16);
   --ring-focus: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
-  --font-sans: var(--font-manrope), var(--font-arabic), system-ui, sans-serif;
+  --font-sans: var(--font-arabic), var(--font-manrope), system-ui, sans-serif;
 }
 @theme inline {
   --color-page: var(--page);

@@ -12,9 +12,9 @@ export default function SiteNav() {
   const path = usePathname() ?? "";
   // A new page can open slightly scrolled (the browser clamps the old offset on a shorter page), leaving its heading under this sticky bar.
   useEffect(() => { if (window.scrollY > 0 && window.scrollY < 140 && !window.location.hash) window.scrollTo(0, 0); }, [path]);
-  if (path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
-  // The role chooser is a single decision: the other links live inside the citizen portal, so the bar is just the two logos there.
+  // The role chooser is a single decision with its own logo block; the other links live inside the citizen portal.
   const chooser = path === home;
+  if (chooser || path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
       <div className={`mx-auto flex ${chooser ? "max-w-[1200px]" : "max-w-5xl"} items-center justify-between gap-3 px-4 py-2`}>

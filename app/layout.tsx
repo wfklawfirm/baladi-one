@@ -5,7 +5,7 @@ import SiteNav from "@/components/SiteNav";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const arabic = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic"], weight: ["400", "500", "600", "700"], variable: "--font-arabic", display: "swap",
+  subsets: ["arabic"], weight: ["400", "500", "600", "700"], variable: "--font-arabic", display: "block",
 });
 
 export const metadata: Metadata = {
