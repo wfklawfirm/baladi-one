@@ -35,15 +35,15 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
   return (
     <div dir="rtl" lang="ar" className="flex min-h-dvh flex-col bg-background">
       <header className="h-28 border-b border-border/70 lg:h-32">
-        <div className="mx-auto flex h-full max-w-[77.5rem] items-center justify-between px-6">
-          <div className="min-[2400px]:[zoom:1.9]"><Emblem size={92} /></div>
-          <img src="/aijur-logo.png" alt="AIJUR" className="h-[4.5rem] w-auto" />
+        <div className="mx-auto flex h-full max-w-[77.5rem] items-center justify-end px-6">
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-24 w-auto" />
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-[72.5rem] flex-1 flex-col items-center justify-center gap-10 px-6 py-8 text-center lg:gap-12">
         <section className="flex max-w-3xl flex-col items-center gap-4">
-          <h1 className="text-4xl font-bold leading-tight text-primary lg:text-5xl">البلدية الذكية</h1>
+          <h1 className="sr-only">البلدية الذكية</h1>
+          <div className="min-[2400px]:[zoom:1.9]"><Emblem size={170} /></div>
         </section>
 
         <section aria-label="اختر نوع المستخدم" className="grid w-full grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
