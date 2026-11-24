@@ -48,3 +48,6 @@ button, [role=button] { touch-action: manipulation; }
 .anim-fade-in { animation: anim-fade-in 150ms ease-out; }
 .anim-rise { animation: anim-rise 160ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .anim-fade-in, .anim-rise { animation: none; } * { transition: none !important; } }
+
+/* Kiosk on a 4K panel: everything is rem-based, so scale the root (a 4K screen at 100% scaling would otherwise show a small page). */
+@media (min-width: 2400px) { html { font-size: 32px; } }
