@@ -1,8 +1,7 @@
 // Server-rendered SVG charts (no client JS). Colours are paired with text labels/legends, never colour alone.
 export const C = { primary: "#7a1f2e", soft: "#d9a3ac", ink: "#374151", grid: "#e5e7eb", green: "#2f7d4f", amber: "#b7791f", grey: "#9ca3af", blue: "#3b5b8c" };
-const short = (d: string) => d.slice(5).replace("-", "/");
 
-export function IntakeChart({ data }: { data: { day: string; intake: number; closed: number }[] }) {
+export function IntakeChart({ data }: { data: { key: string; label: string; intake: number; closed: number }[] }) {
   const W = 720, H = 220, L = 28, B = 28, T = 10, R = 8;
   const max = Math.max(4, ...data.flatMap((d) => [d.intake, d.closed]));
   const bw = (W - L - R) / data.length;
@@ -12,10 +11,10 @@ export function IntakeChart({ data }: { data: { day: string; intake: number; clo
   return (
     <svg style={{ direction: "ltr" }} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="الطلبات الواردة والمنجزة خلال ٣٠ يومًا" className="h-auto w-full">
       {ticks.map((t) => <g key={t}><line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke={C.grid} /><text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill={C.ink}>{t}</text></g>)}
-      {data.map((d, i) => <rect key={d.day} x={L + bw * i + bw * 0.15} y={y(d.intake)} width={bw * 0.7} height={H - B - y(d.intake)} rx="2" fill={C.soft}><title>{`${d.day}: ${d.intake} واردة، ${d.closed} منجزة`}</title></rect>)}
+      {data.map((d, i) => <rect key={d.key} x={L + bw * i + bw * 0.15} y={y(d.intake)} width={bw * 0.7} height={H - B - y(d.intake)} rx="2" fill={C.soft}><title>{`${d.label}: ${d.intake} واردة، ${d.closed} منجزة`}</title></rect>)}
       <path d={line} fill="none" stroke={C.primary} strokeWidth="2.5" strokeLinejoin="round" />
-      {data.map((d, i) => d.closed > 0 && <circle key={d.day} cx={L + bw * (i + 0.5)} cy={y(d.closed)} r="3" fill={C.primary} />)}
-      {data.map((d, i) => i % 5 === 0 && <text key={d.day} x={L + bw * (i + 0.5)} y={H - 8} textAnchor="middle" fontSize="11" fill={C.ink}>{short(d.day)}</text>)}
+      {data.map((d, i) => d.closed > 0 && <circle key={d.key} cx={L + bw * (i + 0.5)} cy={y(d.closed)} r="3" fill={C.primary} />)}
+      {data.map((d, i) => i % Math.max(1, Math.ceil(data.length / 7)) === 0 && <text key={d.key} x={L + bw * (i + 0.5)} y={H - 8} textAnchor="middle" fontSize="11" fill={C.ink}>{d.label}</text>)}
     </svg>
   );
 }
@@ -46,14 +45,21 @@ export function HBars({ items, color = C.primary }: { items: { label: string; n:
   );
 }
 
-export function Columns({ data, label }: { data: { day: string; v: number }[]; label: string }) {
+export function Columns({ data, label }: { data: { key: string; label: string; v: number }[]; label: string }) {
   const W = 720, H = 150, B = 22, T = 8;
   const max = Math.max(1, ...data.map((d) => d.v)); const bw = W / data.length;
   return (
     <svg style={{ direction: "ltr" }} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="h-auto w-full">
       <line x1="0" x2={W} y1={H - B} y2={H - B} stroke={C.grid} />
-      {data.map((d, i) => { const h = ((H - B - T) * d.v) / max; return <rect key={d.day} x={bw * i + bw * 0.15} y={H - B - h} width={bw * 0.7} height={h} rx="2" fill={C.primary}><title>{`${d.day}: ${d.v.toLocaleString("en-US")}`}</title></rect>; })}
-      {data.map((d, i) => i % 5 === 0 && <text key={d.day} x={bw * (i + 0.5)} y={H - 6} textAnchor="middle" fontSize="11" fill={C.ink}>{short(d.day)}</text>)}
+      {data.map((d, i) => { const h = ((H - B - T) * d.v) / max; return <rect key={d.key} x={bw * i + bw * 0.15} y={H - B - h} width={bw * 0.7} height={h} rx="2" fill={C.primary}><title>{`${d.label}: ${d.v.toLocaleString("en-US")}`}</title></rect>; })}
+      {data.map((d, i) => i % Math.max(1, Math.ceil(data.length / 7)) === 0 && <text key={d.key} x={bw * (i + 0.5)} y={H - 6} textAnchor="middle" fontSize="11" fill={C.ink}>{d.label}</text>)}
     </svg>
   );
+}
+
+export function Spark({ values }: { values: number[] }) {
+  if (values.length < 2 || Math.max(...values) === 0) return null;
+  const W = 80, H = 24, max = Math.max(...values);
+  const pts = values.map((v, i) => `${((W * i) / (values.length - 1)).toFixed(1)},${(H - 2 - ((H - 4) * v) / max).toFixed(1)}`).join(" ");
+  return <svg style={{ direction: "ltr" }} viewBox={`0 0 ${W} ${H}`} className="h-6 w-20" aria-hidden><polyline points={pts} fill="none" stroke={C.primary} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }

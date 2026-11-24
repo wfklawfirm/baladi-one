@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { Md, Doc, Sources, splitTemplates, callBrain, type Src } from "./Answer";
 import Mic from "@/components/Mic";
@@ -7,9 +7,11 @@ import Mic from "@/components/Mic";
 type Turn = { role: "user" | "assistant"; content: string; sources?: Src[]; confidence?: string; clarify?: { questions: string[]; original: string } };
 const IDEAS = ["ما صلاحيات رئيس البلدية في منح رخص البناء؟", "كيف تُجرى المناقصة العمومية وما عتبات الشراء؟", "أنشئ نموذج قرار تعيين موظف مؤقت", "ما مهل الطعن بقرارات المجلس البلدي؟"];
 
-export default function Assistant() {
+export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }: { ideas?: string[]; ctx?: Record<string, string | undefined>; auto?: { id: number; text: string } | null; compact?: boolean }) {
   const [turns, setTurns] = useState<Turn[]>([]); const [q, setQ] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const end = useRef<HTMLDivElement>(null);
+  const lastAuto = useRef(0);
+  useEffect(() => { if (auto && auto.id !== lastAuto.current) { lastAuto.current = auto.id; void send(auto.text); } }, [auto]); // eslint-disable-line react-hooks/exhaustive-deps
   // display: undefined → show the query; null → no user bubble (skipping the clarifying questions)
   async function send(text: string, o: { noClarify?: boolean; display?: string | null } = {}) {
     const query = text.trim(); if (!query || busy) return;
@@ -17,14 +19,14 @@ export default function Assistant() {
     const history = turns.map((t) => ({ role: t.role, content: t.content }));
     if (o.display !== null) setTurns((t) => [...t, { role: "user", content: o.display ?? query }]);
     try {
-      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; clarify?: string[] }>("/api/brain/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify }) });
+      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; clarify?: string[] }>("/api/brain/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify, ctx }) });
       if (r.clarify?.length) setTurns((t) => [...t, { role: "assistant", content: "أسئلة توضيحية:\n" + r.clarify!.map((x, i) => `${i + 1}. ${x}`).join("\n"), clarify: { questions: r.clarify!, original: query } }]);
       else setTurns((t) => [...t, { role: "assistant", content: r.answer ?? "", sources: r.sources, confidence: r.confidence }]);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); setTimeout(() => end.current?.scrollIntoView({ behavior: "smooth" }), 50); }
   }
   return (
     <div className="space-y-4">
-      {!turns.length && <div className="grid gap-2 sm:grid-cols-2">{IDEAS.map((i) => <button key={i} onClick={() => send(i)} className="elev rounded-2xl border bg-background p-4 text-start text-sm leading-7 active:bg-muted">{i}</button>)}</div>}
+      {!turns.length && <div className={`grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>{ideas.map((i) => <button key={i} onClick={() => send(i)} className="elev rounded-2xl border bg-background p-4 text-start text-sm leading-7 active:bg-muted">{i}</button>)}</div>}
       {turns.map((t, i) => {
         if (t.role === "user") return <p key={i} className="ms-auto w-fit max-w-[90%] rounded-2xl bg-primary px-4 py-3 text-sm leading-7 text-primary-foreground">{t.content}</p>;
         if (t.clarify) return <ClarifyCard key={i} id={i} c={t.clarify} live={i === turns.length - 1 && !busy} onSend={(a) => send(a.length ? `${t.clarify!.original}\n\nتوضيحات:\n${a.map(([x, y]) => `- ${x} ${y}`).join("\n")}` : t.clarify!.original, { noClarify: true, display: a.length ? a.map(([, y]) => y).join("\n") : null })} />;

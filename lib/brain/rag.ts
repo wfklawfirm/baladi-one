@@ -97,7 +97,7 @@ export async function clarify(query: string, history: Turn[]): Promise<string[]>
   } catch { return []; }
 }
 
-export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean } = {}) {
+export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string } = {}) {
   if (!opts.noClarify) {
     const questions = await clarify(query, history);
     if (questions.length) return { clarify: questions };
@@ -109,7 +109,8 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]" : "[تلميح: لا مصادر مسترجعة — استخدم الهيكل الكامل دون اقتباس حرفي لنصوص المواد]";
   const msgs: Msg[] = [{ role: "system", content: SYSTEM_PROMPT }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
-  msgs.push({ role: "user", content: `${HINT}\n\n=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
+  const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
+  msgs.push({ role: "user", content: `${HINT}\n\n${FACTS}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
   const j = await openai("chat/completions", { model: complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL, messages: msgs, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 });
   return { answer: (j.choices[0].message.content as string) || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
 }

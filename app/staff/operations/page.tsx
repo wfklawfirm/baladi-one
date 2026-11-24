@@ -3,69 +3,121 @@ import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import { REPORT_TYPES, STATUS_AR } from "@/lib/reports";
-import { computeOps, FIRST_RESPONSE_H, SLA_DAYS, type Coll, type Hist, type Person, type Req } from "@/lib/ops";
-import { C, Columns, Donut, HBars, IntakeChart } from "@/components/ops/Charts";
+import { FIRST_RESPONSE_H, PERIODS, SLA_DAYS, parsePeriod } from "@/lib/ops";
+import { buildCards, decisionStats, loadOps } from "@/lib/opsData";
+import AnalyzeButton from "@/components/ops/AnalyzeButton";
+import { C, Columns, Donut, HBars, IntakeChart, Spark } from "@/components/ops/Charts";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { assignRequest } from "./actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "لوحة الأداء — BALADI ONE", referrer: "no-referrer" as const };
+export const metadata = { title: "مركز القيادة والأداء — BALADI ONE", referrer: "no-referrer" as const };
 const STATUS_COLOR: Record<string, string> = { received: C.amber, in_progress: C.blue, needs_info: C.grey, done: C.green, rejected: C.primary, cancelled: "#d1d5db" };
 const ROLE_AR: Record<string, string> = { staff: "موظف", mayor: "رئيس", admin: "مدير" };
 const nf = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1 });
 const money = (n: number, c: string) => `${nf(Math.round(n))} ${c === "USD" ? "$" : "ل.ل."}`;
 const typeLabel = (r: { kind: string; report_type: string | null }) => REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? (r.kind === "service_request" ? "طلب خدمة" : "بلاغ");
 
-function Card({ title, sub, children, className = "" }: { title: string; sub?: string; children: React.ReactNode; className?: string }) {
-  return <section className={`elev rounded-2xl border bg-background p-4 md:p-5 ${className}`}><h2 className="font-bold">{title}</h2>{sub && <p className="mb-3 text-xs text-muted-foreground">{sub}</p>}<div className={sub ? "" : "mt-3"}>{children}</div></section>;
-}
-function Kpi({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "bad" }) {
-  return <div className="elev rounded-2xl border bg-background p-4 text-center"><b className={`block text-3xl ${tone === "bad" ? "text-destructive" : "text-primary"}`}>{value}</b><span className="block text-sm font-medium">{label}</span>{hint && <span className="block text-xs text-muted-foreground">{hint}</span>}</div>;
+function Card({ title, sub, children, className = "", analyze }: { title: string; sub?: string; children: React.ReactNode; className?: string; analyze?: string }) {
+  return <section className={`elev rounded-2xl border bg-background p-4 md:p-5 ${className}`}><div className="flex items-start justify-between gap-2"><h2 className="font-bold">{title}</h2>{analyze && <AnalyzeButton prompt={analyze} />}</div>{sub && <p className="mb-3 text-xs text-muted-foreground">{sub}</p>}<div className={sub ? "" : "mt-3"}>{children}</div></section>;
 }
 
-export default async function Operations() {
+const MODULES = [
+  { n: "01", t: "مركز القيادة", href: "/staff/operations", on: true },
+  { n: "02", t: "المجلس والحوكمة", href: "/staff/council", on: true },
+  { n: "03", t: "المالية والتحصيل", href: "/staff/collections", on: true },
+  { n: "04", t: "التشغيل والتنفيذ", href: "/staff/requests", on: true },
+  { n: "05", t: "المواطن والخدمات", href: "/staff/services", on: true },
+  { n: "06", t: "التخطيط والتقارير", href: "", on: false },
+];
+const fmtDate = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "medium", timeZone: "Asia/Beirut" }).format(new Date(d));
+
+export default async function Operations({ searchParams }: { searchParams: Promise<{ p?: string; from?: string; to?: string }> }) {
   const { sb, memberships } = await requireStaff();
   if (!memberships.some((m) => m.role === "mayor" || m.role === "admin")) redirect("/staff");
-  const since = new Date(Date.now() - 62 * 86_400_000).toISOString();
-  const [rq, hs, rs, cl] = await Promise.all([
-    sb.from("citizen_request").select("id,kind,report_type,status,assigned_to,created_at,updated_at").order("created_at", { ascending: false }).limit(3000),
-    sb.from("request_status_history").select("request_id,from_status,to_status,actor,created_at").order("created_at", { ascending: true }).limit(8000),
-    sb.rpc("ops_roster"),
-    sb.from("collection_entry").select("amount,currency,method,collected_by,created_at").gte("created_at", since).limit(5000),
-  ]);
-  const people = ((rs.data ?? []) as Person[]).map((p) => ({ ...p, display_name: p.display_name || ROLE_AR[p.role] || "موظف" }));
+  const sp = await searchParams;
+  const range = parsePeriod(sp.p, sp.from, sp.to);
+  const d = await loadOps(sb, range);
+  const { o, people, decisions, sessions } = d;
+  const cards = buildCards(d);
+  const ds = decisionStats(decisions);
   const name = (id: string | null) => people.find((p) => p.user_id === id)?.display_name ?? "—";
-  const o = computeOps((rq.data ?? []) as Req[], (hs.data ?? []) as Hist[], people, (cl.data ?? []) as Coll[]);
-  const byType = Object.values(o.openList.concat([]).reduce<Record<string, { label: string; n: number }>>((m, r) => { const l = typeLabel(r); (m[l] ??= { label: l, n: 0 }).n++; return m; }, {})).sort((a, b) => b.n - a.n);
+  const byType = Object.values(o.openList.reduce<Record<string, { label: string; n: number }>>((m, r) => { const l = typeLabel(r); (m[l] ??= { label: l, n: 0 }).n++; return m; }, {})).sort((a, b) => b.n - a.n);
   const hasColl = o.collections.some((c) => c.count > 0);
+  const updated = new Intl.DateTimeFormat("ar-LB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date());
+  const actions = [
+    ...o.overdue.slice(0, 5).map((r) => ({ key: `r${r.id}`, kind: "شكوى متأخرة", title: `${typeLabel(r)} — منذ ${Math.floor((Date.now() - +new Date(r.created_at)) / 86_400_000)} يومًا`, why: `تجاوزت مهلة المعالجة (${SLA_DAYS} أيام)`, who: name(r.assigned_to) === "—" ? "غير مُسند" : name(r.assigned_to), href: `/staff/r/${r.id}`, pri: "عالية" })),
+    ...((ds?.late ?? []).slice(0, 5).map((x) => ({ key: `d${x.id}`, kind: "قرار متأخر", title: `قرار ${x.decision_no}/${x.year}: ${x.title}`, why: `انقضى موعد التنفيذ ${x.execution_due ? fmtDate(x.execution_due) : ""}`, who: x.responsible || "غير محدد", href: `/staff/council/decisions/${x.id}`, pri: "عالية" }))),
+    ...((sessions ?? []).slice(0, 3).map((x) => ({ key: `s${x.id}`, kind: "جلسة مقبلة", title: `${x.title}${x.session_no ? ` (${x.session_no})` : ""}`, why: `بتاريخ ${fmtDate(x.held_on)}`, who: "رئيس البلدية", href: `/staff/council/${x.id}`, pri: "عادية" }))),
+    ...(o.unassigned > 0 ? [{ key: "un", kind: "طلبات", title: `${o.unassigned} طلبًا مفتوحًا بلا مسؤول`, why: "لا يمكن المساءلة دون إسناد", who: "رئيس البلدية", href: "#tracking", pri: "متوسطة" }] : []),
+  ];
+  const q = (p: string) => `/staff/operations?p=${p}`;
 
   return (
     <><StaffHeader back="/staff" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-6xl space-y-5 p-4 md:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div><h1 className="text-2xl font-bold">لوحة الأداء والعمليات</h1><p className="text-sm text-muted-foreground">مؤشرات حيّة من الطلبات وسجلّ المعالجة. المعاملة المتأخرة: مفتوحة أكثر من {SLA_DAYS} أيام.</p></div>
-        <Link href="/staff/requests" className="rounded-xl border px-4 py-2 text-sm active:bg-muted">كل الطلبات ←</Link>
+      <nav aria-label="وحدات مساحة الرئيس" className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+        {MODULES.map((m) => m.on
+          ? <Link key={m.n} href={m.href} aria-current={m.n === "01" ? "page" : undefined} className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-semibold active:bg-muted ${m.n === "01" ? "border-primary bg-accent text-primary" : "bg-background"}`}><span className="text-xs text-muted-foreground">{m.n}</span>{m.t}</Link>
+          : <span key={m.n} aria-disabled className="flex min-h-12 items-center gap-2 rounded-xl border border-dashed px-3 text-sm text-muted-foreground"><span className="text-xs">{m.n}</span>{m.t}<span className="ms-auto text-[10px]">قريبًا</span></span>)}
+      </nav>
+
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><h1 className="text-2xl font-bold">مركز القيادة والأداء</h1><p className="text-xs text-muted-foreground">آخر تحديث: {updated} · المصدر: طلبات المواطنين، سجل المعالجة، إيصالات التحصيل، سجل القرارات · الفترة: {range.label}</p></div>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="الفترة">
+          {PERIODS.filter(([k]) => k !== "custom").map(([k, v]) => <Link key={k} href={q(k)} aria-current={range.key === k ? "true" : undefined} className={`min-h-10 rounded-full border px-4 py-2 text-sm ${range.key === k ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{v}</Link>)}
+          <form action="/staff/operations" className="flex items-center gap-1.5">
+            <input type="hidden" name="p" value="custom" />
+            <input type="date" name="from" required defaultValue={sp.from} aria-label="من" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
+            <input type="date" name="to" required defaultValue={sp.to} aria-label="إلى" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
+            <button className={`min-h-10 rounded-full border px-4 text-sm ${range.key === "custom" ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>تطبيق</button>
+          </form>
+        </div>
       </div>
 
-      <section aria-label="المؤشرات" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Kpi label="طلبات مفتوحة" value={String(o.open)} hint={`من ${o.total} إجمالًا`} />
-        <Kpi label="واردة (٣٠ يومًا)" value={String(o.last30)} />
-        <Kpi label="متأخرة" value={String(o.overdue.length)} hint={`> ${SLA_DAYS} أيام`} tone={o.overdue.length ? "bad" : undefined} />
-        <Kpi label="غير مُسندة" value={String(o.unassigned)} tone={o.unassigned ? "bad" : undefined} />
-        <Kpi label="نسبة الإنجاز" value={o.completionRate === null ? "—" : `${o.completionRate}%`} />
-        <Kpi label="متوسط زمن المعالجة" value={o.resolutionDays === null ? "—" : nf(o.resolutionDays)} hint="يوم" />
+      <section aria-label="المؤشرات الرئيسية" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {cards.map((c) => {
+          const D = c.delta;
+          const Ar = D?.dir === "up" ? ArrowUpRight : D?.dir === "down" ? ArrowDownRight : Minus;
+          const inner = (
+            <>
+              <div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{c.def.ar}</span>{c.spark && <Spark values={c.spark} />}</div>
+              {c.value !== null ? <b className="mt-2 block text-3xl text-primary">{c.value}</b> : <b className="mt-2 block text-base text-muted-foreground">بيانات غير متوفرة</b>}
+              {c.value !== null && c.lines?.map((l) => <span key={l} className="block text-xs text-muted-foreground">{l}</span>)}
+              {c.value === null && <span className="mt-1 block text-xs text-muted-foreground">{c.reason}</span>}
+              {D && <span className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${D.good === null ? "text-muted-foreground" : D.good ? "text-[#2f7d4f]" : "text-destructive"}`}><Ar className="size-4" aria-hidden />{D.text} عن الفترة السابقة</span>}
+              {c.def.target !== null && <span className="mt-1 block text-xs text-muted-foreground">المستهدف: {c.def.target}{c.def.unit}</span>}
+            </>
+          );
+          const cls = "elev block rounded-2xl border bg-background p-4";
+          return c.def.href === "#" ? <div key={c.def.id} className={`${cls} opacity-80`}>{inner}</div> : <Link key={c.def.id} href={c.def.href} className={`${cls} elev-hover active:bg-muted`}>{inner}</Link>;
+        })}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="الوارد والمنجز يوميًا" sub="أعمدة: واردة · خط: منجزة (آخر ٣٠ يومًا)" className="lg:col-span-2"><IntakeChart data={o.series} /></Card>
-        <Card title="توزيع الحالات"><Donut parts={o.status.map(({ s, n }) => ({ label: STATUS_AR[s], n, color: STATUS_COLOR[s] }))} /></Card>
+        <Card title="الوارد والمنجز" sub={`أعمدة: واردة · خط: منجزة (${range.label}، مقارنة بالسابقة: ${o.intakePrev} واردة / ${o.processedPrev} منجزة)`} className="lg:col-span-2" analyze="حلّل مؤشر الوارد والمنجز في الفترة المحددة: الاتجاه والانحرافات وحدود البيانات ثم اقترح إجراءات"><IntakeChart data={o.series} /></Card>
+        <Card title="توزيع الحالات (الكل)" analyze="حلّل توزيع حالات الطلبات الحالي وما يستدعي تدخل الرئيس"><Donut parts={o.status.map(({ s, n }) => ({ label: STATUS_AR[s], n, color: STATUS_COLOR[s] }))} /></Card>
       </div>
 
+      <Card title="مركز الإجراءات" sub="ما يستدعي تدخل رئيس البلدية الآن. كل بند يقود إلى سجله الأصلي.">
+        {actions.length === 0 ? <p className="text-sm text-muted-foreground">لا بنود تستدعي تدخلًا حاليًا.</p> : (
+          <ul className="divide-y">
+            {actions.map((a) => (
+              <li key={a.key}><Link href={a.href} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm hover:text-primary">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${a.pri === "عالية" ? "bg-destructive/10 text-destructive" : "bg-muted"}`}>{a.pri}</span>
+                <b>{a.kind}</b><span>{a.title}</span><span className="text-muted-foreground">{a.why}</span><span className="ms-auto text-xs text-muted-foreground">المسؤول: {a.who}</span>
+              </Link></li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="أعمار الطلبات المفتوحة" sub="كم مضى على الطلبات التي لم تُنجز"><HBars items={o.aging.map((a) => ({ label: a.label, n: a.n }))} /></Card>
+        <Card title="أعمار الطلبات المفتوحة" sub="كم مضى على الطلبات التي لم تُنجز" analyze="حلّل أعمار الطلبات المفتوحة وأسباب التأخير المحتملة"><HBars items={o.aging.map((a) => ({ label: a.label, n: a.n }))} /></Card>
         <Card title="المفتوح حسب النوع">{byType.length ? <HBars items={byType} color={C.blue} /> : <p className="text-sm text-muted-foreground">لا طلبات مفتوحة.</p>}</Card>
       </div>
 
-      <Card title="تتبّع المعاملات" sub="الأقدم أولًا. يمكن إسناد كل طلب إلى موظف ومتابعته.">
+      <Card title="تتبّع المعاملات" sub="الأقدم أولًا. يمكن إسناد كل طلب إلى موظف ومتابعته." className="scroll-mt-4"><div id="tracking" />
         {o.openList.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد طلبات مفتوحة.</p> : (
           <ul className="divide-y">
             {o.openList.slice(0, 15).map((r) => (
@@ -95,13 +147,13 @@ export default async function Operations() {
         )}
       </Card>
 
-      <Card title="التحصيل" sub="إيصالات مسجّلة من الموظفين. الشهر الحالي مقارنة بالسابق.">
+      <Card title="التحصيل" sub="إيصالات مسجّلة من الموظفين. الفترة المختارة مقارنة بالسابقة.">
         <div className="mb-3 flex justify-end"><Link href="/staff/collections" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground active:opacity-90">تسجيل إيصال</Link></div>
         {!hasColl ? <p className="text-sm text-muted-foreground">لم تُسجَّل مبالغ بعد.</p> : (
           <div className="grid gap-5 md:grid-cols-2">
             {o.collections.filter((c) => c.count > 0).map((c) => (
               <div key={c.currency} className="space-y-3">
-                <div className="flex items-baseline justify-between"><b className="text-2xl text-primary">{money(c.month, c.currency)}</b><span className="text-xs text-muted-foreground">الشهر الماضي: {money(c.prev, c.currency)}</span></div>
+                <div className="flex items-baseline justify-between"><b className="text-2xl text-primary">{money(c.month, c.currency)}</b><span className="text-xs text-muted-foreground">الفترة السابقة: {money(c.prev, c.currency)}</span></div>
                 <Columns data={c.series} label={`التحصيل اليومي بـ${c.currency === "USD" ? "الدولار" : "الليرة"}`} />
                 {c.byCollector.length > 0 && <HBars items={c.byCollector.map((x) => ({ label: name(x.id), n: x.v }))} color={C.green} />}
               </div>

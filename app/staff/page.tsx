@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote } from "lucide-react";
+import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote, Landmark } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
 import { STATUS_AR } from "@/lib/reports";
 import { BRAND, OFFICIAL } from "@/lib/brand";
@@ -27,7 +27,7 @@ export default async function StaffHome() {
     { href: "/staff/analyze", Icon: ScanSearch, title: "قراءة المعاملة", sub: "ملاحظات وخيارات قرار جاهزة" },
     { href: "/staff/decisions", Icon: FileSignature, title: "مولّد القرارات", sub: "قرارات وكتب ومحاضر للتوقيع" },
     { href: "/staff/requests", Icon: Inbox, title: "الطلبات الواردة", sub: `${rows.filter((r) => r.status === "received").length} جديدة` },
-    ...(top ? [{ href: "/staff/operations", Icon: Gauge, title: "لوحة الأداء", sub: "مؤشرات وتتبع وتقييم" }] : []),
+    ...(top ? [{ href: "/staff/operations", Icon: Gauge, title: "مركز القيادة", sub: "مؤشرات وتتبع وتقييم" }, { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" }] : []),
     { href: "/staff/collections", Icon: Banknote, title: "التحصيل", sub: "تسجيل الإيصالات" },
     ...(top ? [{ href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" }] : []),
     ...(admin ? [{ href: "/staff/brain", Icon: DatabaseZap, title: "قاعدة معرفة الذكاء", sub: "تحميل مكتبة القوانين" }] : []),

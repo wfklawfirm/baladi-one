@@ -15,11 +15,38 @@ const isOpen = (s: string) => (OPEN as readonly string[]).includes(s);
 const isTerminal = (s: string) => (TERMINAL as readonly string[]).includes(s);
 const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
 
-export function lastDays(n: number, now: Date): string[] {
-  return Array.from({ length: n }, (_, i) => dayKey(now.getTime() - (n - 1 - i) * DAY));
+export type Range = { key: string; label: string; from: Date; to: Date };
+export const PERIODS = [["month", "هذا الشهر"], ["quarter", "هذا الربع"], ["year", "هذه السنة"], ["custom", "فترة مخصصة"]] as const;
+/** Period from the URL (month | quarter | year | custom with from/to). Defaults to the current month. Dates are Beirut calendar days. */
+export function parsePeriod(p: string | undefined, from: string | undefined, to: string | undefined, now = new Date()): Range {
+  const [y, m] = dayKey(now).split("-").map(Number);
+  const at = (yy: number, mm: number, dd = 1) => new Date(Date.UTC(yy, mm - 1, dd, -2));  // 00:00 Beirut ≈ UTC-2 (fixed offset is fine for day buckets here)
+  const end = new Date(now);
+  if (p === "year") return { key: "year", label: `سنة ${y}`, from: at(y, 1), to: end };
+  if (p === "quarter") { const q = Math.floor((m - 1) / 3) * 3 + 1; return { key: "quarter", label: `الربع ${Math.floor((m - 1) / 3) + 1} من ${y}`, from: at(y, q), to: end }; }
+  if (p === "custom" && from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    const f = new Date(`${from}T00:00:00+02:00`), t = new Date(`${to}T23:59:59+02:00`);
+    if (+t >= +f && +t - +f <= 800 * DAY) return { key: "custom", label: `${from} → ${to}`, from: f, to: t };
+  }
+  return { key: "month", label: "هذا الشهر", from: at(y, m), to: end };
+}
+export const previousRange = (r: Range): Range => { const len = +r.to - +r.from; return { key: "prev", label: "الفترة السابقة", from: new Date(+r.from - len), to: new Date(+r.from) }; };
+const inR = (d: string | Date | number, r: Range) => { const x = +new Date(d); return x >= +r.from && x < +r.to + 1; };
+/** Daily buckets for ranges up to ~2 months, otherwise monthly. */
+export function buckets(r: Range) {
+  const days = Math.ceil((+r.to - +r.from) / DAY) + 1;
+  if (days <= 62) {
+    const out: { key: string; label: string }[] = [];
+    for (let t = +r.from; t <= +r.to + DAY - 1 && out.length < 63; t += DAY) { const k = dayKey(t); if (!out.some((o) => o.key === k)) out.push({ key: k, label: k.slice(5).replace("-", "/") }); }
+    return { monthly: false, list: out };
+  }
+  const out: { key: string; label: string }[] = []; const d = new Date(r.from);
+  while (+d <= +r.to && out.length < 30) { const k = dayKey(d).slice(0, 7); if (!out.some((o) => o.key === k)) out.push({ key: k, label: k.slice(2).replace("-", "/") }); d.setUTCDate(d.getUTCDate() + 20); }
+  const last = dayKey(r.to).slice(0, 7); if (!out.some((o) => o.key === last)) out.push({ key: last, label: last.slice(2).replace("-", "/") });
+  return { monthly: true, list: out };
 }
 
-export function computeOps(reqs: Req[], hist: Hist[], people: Person[], colls: Coll[], now = new Date()) {
+export function computeOps(reqs: Req[], hist: Hist[], people: Person[], colls: Coll[], range: Range, now = new Date()) {
   const t = now.getTime();
   const byReq = new Map<string, Hist[]>();
   for (const h of hist) (byReq.get(h.request_id) ?? byReq.set(h.request_id, []).get(h.request_id)!).push(h);
@@ -36,12 +63,17 @@ export function computeOps(reqs: Req[], hist: Hist[], people: Person[], colls: C
   const terminal = reqs.filter((r) => isTerminal(r.status));
   const resolutionDays = avg(terminal.map((r) => Math.max(0, (closedAt(r) - +new Date(r.created_at)) / DAY)));
 
-  const days = lastDays(30, now);
-  const intake = Object.fromEntries(days.map((d) => [d, 0])) as Record<string, number>;
-  const closed = { ...intake };
-  for (const r of reqs) { const k = dayKey(r.created_at); if (k in intake) intake[k]++; }
-  for (const r of terminal) { const k = dayKey(closedAt(r)); if (k in closed) closed[k]++; }
-  const series = days.map((d) => ({ day: d, intake: intake[d], closed: closed[d] }));
+  const prev = previousRange(range);
+  const bk = buckets(range);
+  const keyOf = (d: string | number) => (bk.monthly ? dayKey(d).slice(0, 7) : dayKey(d));
+  const intake: Record<string, number> = Object.fromEntries(bk.list.map((x) => [x.key, 0]));
+  const closed: Record<string, number> = { ...intake };
+  for (const r of reqs) { if (inR(r.created_at, range)) { const k = keyOf(r.created_at as string); if (k in intake) intake[k]++; } }
+  for (const r of terminal) { const c = closedAt(r); if (inR(c, range)) { const k = keyOf(c); if (k in closed) closed[k]++; } }
+  const series = bk.list.map((x) => ({ key: x.key, label: x.label, intake: intake[x.key], closed: closed[x.key] }));
+  const cohort = (r: Range) => { const c = reqs.filter((q) => inR(q.created_at, r)); return { total: c.length, done: c.filter((q) => q.status === "done").length }; };
+  const processedIn = (r: Range) => terminal.filter((q) => inR(closedAt(q), r)).length;
+  const cNow = cohort(range), cPrev = cohort(prev);
 
   const aging = [
     { label: "٠–٢ يوم", n: open.filter((r) => ageDays(r) <= 2).length },
@@ -68,24 +100,26 @@ export function computeOps(reqs: Req[], hist: Hist[], people: Person[], colls: C
     return { ...p, handled, closed: closedN, onTime: closedN ? Math.round((100 * closedOnTime) / closedN) : null, fast: first ? Math.round((100 * firstFast) / first) : null, openAssigned: mine.length, overdueAssigned: mine.filter((r) => ageDays(r) > SLA_DAYS).length, score };
   }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.closed - a.closed);
 
-  // Collections
-  const month = dayKey(now).slice(0, 7);
-  const prevMonth = dayKey(new Date(now.getFullYear(), now.getMonth() - 1, 15)).slice(0, 7);
-  const sum = (f: (c: Coll) => boolean, cur: string) => colls.filter((c) => c.currency === cur && f(c)).reduce((s, c) => s + Number(c.amount), 0);
+  // Collections (never sums different currencies)
+  const sumIn = (r: Range, cur: string, who?: string) => colls.filter((c) => c.currency === cur && inR(c.created_at, r) && (!who || c.collected_by === who)).reduce((s, c) => s + Number(c.amount), 0);
   const collections = (["LBP", "USD"] as const).map((cur) => ({
     currency: cur,
-    month: sum((c) => dayKey(c.created_at).startsWith(month), cur),
-    prev: sum((c) => dayKey(c.created_at).startsWith(prevMonth), cur),
+    month: sumIn(range, cur),
+    prev: sumIn(prev, cur),
     count: colls.filter((c) => c.currency === cur).length,
-    series: days.map((d) => ({ day: d, v: sum((c) => dayKey(c.created_at) === d, cur) })),
-    byCollector: people.map((p) => ({ name: p.display_name ?? "", id: p.user_id, v: sum((c) => c.collected_by === p.user_id && dayKey(c.created_at).startsWith(month), cur) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v),
+    series: bk.list.map((x) => ({ key: x.key, label: x.label, v: colls.filter((c) => c.currency === cur && keyOf(c.created_at) === x.key && inR(c.created_at, range)).reduce((s, c) => s + Number(c.amount), 0) })),
+    byCollector: people.map((p) => ({ name: p.display_name ?? "", id: p.user_id, v: sumIn(range, cur, p.user_id) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v),
   }));
 
   const statusCount = (s: string) => reqs.filter((r) => r.status === s).length;
   return {
     total: reqs.length, open: open.length, overdue, unassigned: unassigned.length,
-    last30: series.reduce((s, d) => s + d.intake, 0),
-    completionRate: reqs.length ? Math.round((100 * statusCount("done")) / reqs.length) : null,
+    intakeNow: cNow.total, intakePrev: cPrev.total,
+    processedNow: processedIn(range), processedPrev: processedIn(prev),
+    // complaint processing rate = done / all requests created in the period (cohort); null when the denominator is 0
+    completionRate: cNow.total ? Math.round((100 * cNow.done) / cNow.total) : null,
+    completionPrev: cPrev.total ? Math.round((100 * cPrev.done) / cPrev.total) : null,
+    cohort: cNow, range, prev,
     resolutionDays, series, aging, perf, collections,
     status: ["received", "in_progress", "needs_info", "done", "rejected", "cancelled"].map((s) => ({ s, n: statusCount(s) })),
     openList: [...open].sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at)).map((r) => ({ ...r, age: Math.floor(ageDays(r)) })),
