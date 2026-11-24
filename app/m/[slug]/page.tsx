@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
-import { Clock, FileCheck2, Landmark, LayoutList, UserCog, Users } from "lucide-react";
+import { Landmark, UserCog, Users } from "lucide-react";
 import { loadMunicipality } from "@/lib/catalog";
 import { enterDemo } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const FEATURES = [
-  { Icon: LayoutList, text: "دليل معاملات منظّم" },
-  { Icon: FileCheck2, text: "مستندات وخطوات واضحة" },
-  { Icon: Clock, text: "معلومات الخدمات متاحة في أي وقت" },
-];
+const card = "group flex h-full w-full flex-col items-center gap-4 rounded-2xl border px-6 py-8 text-center transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 lg:py-10";
+const cta = "mt-2 flex h-14 w-full max-w-56 items-center justify-center rounded-xl text-lg font-bold";
 
 export default async function RoleChooser({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,33 +16,29 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
   if (!muni) { if (slug !== BRAND.slug) redirect(`/m/${BRAND.slug}`); notFound(); }
 
   // Exhibition mode: employee / mayor open a restricted demo session; otherwise they lead to the normal login.
-  const base = "group flex h-full w-full flex-col items-center justify-center gap-3 rounded-3xl border px-6 py-6 text-center transition active:scale-[0.99] min-h-64 lg:min-h-[clamp(12rem,27vh,19rem)]";
-  const light = `${base} elev elev-hover bg-background`;
-  const staffBody = (Icon: typeof Users, title: string, desc: string, cta: string) => (
+  // The whole card is the touch target; the "button" is a label inside it, so there is one interaction, not two.
+  const light = `${card} border-border bg-background shadow-sm active:bg-accent/60`;
+  const body = (Icon: typeof Users, title: string, desc: string, label: string, dark = false) => (
     <>
-      <span className="grid size-20 place-items-center rounded-2xl bg-accent text-primary"><Icon className="size-10" aria-hidden /></span>
-      <b className="text-2xl font-bold lg:text-[clamp(1.75rem,2vw,2.25rem)]">{title}</b>
-      <span className="text-base font-medium text-muted-foreground lg:text-xl">{desc}</span>
-      <span className="mt-2 w-full max-w-60 rounded-xl border-2 border-primary px-6 py-3.5 text-lg font-bold lg:text-xl text-primary group-active:bg-accent">{cta}</span>
+      <Icon className={`size-12 ${dark ? "text-white" : "text-primary"}`} strokeWidth={1.5} aria-hidden />
+      <b className="text-3xl font-bold">{title}</b>
+      <span className={`text-lg ${dark ? "text-white/85" : "text-muted-foreground"}`}>{desc}</span>
+      <span className={`${cta} ${dark ? "bg-white text-primary" : "border-2 border-primary text-primary group-active:bg-accent"}`}>{label}</span>
     </>
   );
-  const staff = staffBody(UserCog, "موظف البلدية", "معالجة الطلبات وإدارة الخدمات", "دخول النظام");
-  const mayor = staffBody(Landmark, "رئيس البلدية", "إدارة الخدمات ومتابعة الأداء", "دخول الإدارة");
+  const staff = body(UserCog, "موظف البلدية", "إدارة الطلبات والخدمات", "دخول النظام");
+  const mayor = body(Landmark, "رئيس البلدية", "متابعة الأعمال والأداء", "دخول الإدارة");
 
   return (
-    <main dir="rtl" lang="ar" className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-6xl flex-col justify-center gap-5 px-4 py-4 lg:gap-[clamp(0.75rem,2.4vh,2.25rem)]">
+    <main dir="rtl" lang="ar" className="mx-auto flex min-h-[calc(100dvh-4.25rem)] max-w-[1200px] flex-col justify-center gap-10 px-4 py-8 lg:gap-12">
       <section className="flex flex-col items-center gap-3 text-center">
-        <h1 className="text-4xl font-bold leading-tight text-primary [text-shadow:0_1px_0_rgb(122_31_46/0.08)] lg:text-[clamp(2.75rem,3.6vw,4rem)]">منصتكم البلدية الذكية</h1>
-        <p className="text-lg font-medium text-foreground/75 lg:text-[clamp(1.375rem,1.6vw,1.75rem)]">خدمات ومعاملات البلدية بسهولة وأمان</p>
-        <span aria-hidden className="h-1 w-16 rounded-full bg-primary" />
+        <h1 className="text-4xl font-bold leading-tight text-primary lg:text-[clamp(2.25rem,2.2vw,2.75rem)]">منصتكم البلدية الذكية</h1>
+        <p className="text-lg text-muted-foreground lg:text-xl">اختر طريقة الدخول إلى خدمات البلدية</p>
       </section>
 
-      <section aria-label="اختر نوع المستخدم" className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
-        <Link href={`/m/${slug}/citizen`} className={`${base} relative overflow-hidden bg-gradient-to-br from-[#8b2335] to-[#5c1420] text-white shadow-xl before:pointer-events-none before:absolute before:-top-24 before:-start-24 before:size-64 before:rounded-full before:bg-white/10 before:blur-2xl`}>
-          <span className="grid size-20 place-items-center rounded-2xl bg-white/15"><Users className="size-10" aria-hidden /></span>
-          <b className="text-3xl font-bold lg:text-[clamp(2.25rem,2.6vw,2.75rem)]">مواطن</b>
-          <span className="text-base font-medium text-white/90 lg:text-xl">اطّلع على المعاملات وقدّم طلبك</span>
-          <span className="mt-2 w-full max-w-60 rounded-xl bg-white px-6 py-3.5 text-lg font-bold text-primary lg:text-xl">ابدأ الآن</span>
+      <section aria-label="اختر نوع المستخدم" className="grid grid-cols-1 gap-5 md:grid-cols-3 lg:gap-8">
+        <Link href={`/m/${slug}/citizen`} className={`${card} border-primary bg-primary text-primary-foreground shadow-sm active:bg-[#5c1420]`}>
+          {body(Users, "مواطن", "المعاملات والخدمات البلدية", "ابدأ الآن", true)}
         </Link>
         {muni.isDemo ? (
           <>
@@ -60,13 +53,7 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
         )}
       </section>
 
-      <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-medium text-foreground/80 lg:text-lg">
-        {FEATURES.map(({ Icon, text }) => (
-          <li key={text} className="flex items-center gap-2.5"><span className="grid size-10 place-items-center rounded-full bg-accent text-primary"><Icon className="size-5" aria-hidden /></span>{text}</li>
-        ))}
-      </ul>
-
-      <p className="flex items-center justify-center gap-4 text-sm font-medium text-muted-foreground lg:text-base"><span className="h-px w-12 bg-border" />من تطوير AIJUR<span className="h-px w-12 bg-border" /></p>
+      <p className="text-center text-sm text-muted-foreground">من تطوير AIJUR</p>
     </main>
   );
 }

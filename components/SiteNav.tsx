@@ -13,23 +13,25 @@ export default function SiteNav() {
   // A new page can open slightly scrolled (the browser clamps the old offset on a shorter page), leaving its heading under this sticky bar.
   useEffect(() => { if (window.scrollY > 0 && window.scrollY < 140 && !window.location.hash) window.scrollTo(0, 0); }, [path]);
   if (path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
+  // The role chooser is a single decision: the other links live inside the citizen portal, so the bar is just the two logos there.
+  const chooser = path === home;
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+    <header className="sticky top-0 z-30 border-b bg-background">
+      <div className={`mx-auto flex ${chooser ? "max-w-[1200px]" : "max-w-5xl"} items-center justify-between gap-3 px-4 py-2`}>
         <Link href={home} className="flex items-center gap-2.5">
-          <Emblem size={44} />
+          <Emblem size={chooser ? 40 : 44} />
         </Link>
-        <nav className="hidden items-center gap-1 text-sm sm:flex lg:text-lg">
+        {!chooser && <nav className="hidden items-center gap-1 text-sm sm:flex lg:text-lg">
           {LINKS.map(([href, label]) => {
             const active = href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"));
             return <Link key={href} href={href} className={`rounded-lg px-3 py-2 ${active ? "font-bold text-primary" : "text-muted-foreground hover:text-foreground"}`}>{label}</Link>;
           })}
-        </nav>
-        <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
+        </nav>}
+        <img src="/aijur-logo.png" alt="AIJUR" className={`${chooser ? "h-9" : "h-10"} w-auto`} />
       </div>
-      <nav className="flex justify-around border-t text-xs sm:hidden">
+      {!chooser && <nav className="flex justify-around border-t text-xs sm:hidden">
         {LINKS.map(([href, label]) => <Link key={href} href={href} className={`flex-1 py-2 text-center ${(href === home ? path === href || path === `${href}/citizen` : path.startsWith(href) || (href.endsWith("/services") && path.startsWith("/catalog"))) ? "font-bold text-primary" : "text-muted-foreground"}`}>{label}</Link>)}
-      </nav>
+      </nav>}
     </header>
   );
 }
