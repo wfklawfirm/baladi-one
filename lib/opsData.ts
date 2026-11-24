@@ -1,6 +1,8 @@
 import "server-only";
 import { computeOps, type Coll, type Hist, type Person, type Range, type Req } from "./ops";
 import { delta, KPI_REGISTRY, type Card } from "./kpi";
+import { financeCards } from "./financeData";
+import { projectStats } from "./projectsData";
 
 const ROLE_AR: Record<string, string> = { staff: "موظف", mayor: "رئيس", admin: "مدير" };
 export type Dec = { id: string; decision_no: string; year: number; title: string; legal_status: string; execution_status: string; execution_due: string | null; responsible: string | null };
@@ -22,7 +24,11 @@ export async function loadOps(sb: any, range: Range) {
   const decisions: Dec[] | null = dc.error ? null : ((dc.data ?? []) as Dec[]);
   const collAll = ((cl.data ?? []) as Coll[]).length;
   const sessions = ss.error ? null : ((ss.data ?? []) as { id: string; session_no: string | null; title: string; held_on: string; status: string }[]);
-  return { o, people, decisions, collAll, sessions };
+  const [fin, proj] = await Promise.all([
+    financeCards(sb, range).catch(() => null),
+    projectStats(sb).catch(() => null),
+  ]);
+  return { o, people, decisions, collAll, sessions, fin, proj };
 }
 
 /** Decisions due = legally effective with an execution deadline that has arrived. Executed = completed. */
@@ -36,7 +42,7 @@ export function decisionStats(decs: Dec[] | null) {
 }
 
 export function buildCards(d: Awaited<ReturnType<typeof loadOps>>): Card[] {
-  const { o, decisions, collAll } = d;
+  const { o, decisions, collAll, fin, proj } = d;
   const ds = decisionStats(decisions);
   const fmtMoney = (n: number, c: string) => `${Math.round(n).toLocaleString("en-US")} ${c === "USD" ? "$" : "ل.ل."}`;
   const cards: Card[] = [];
@@ -47,15 +53,21 @@ export function buildCards(d: Awaited<ReturnType<typeof loadOps>>): Card[] {
   cards.push(collAll > 0 && main
     ? { def: def("REV_COLLECTED"), value: fmtMoney(main.month, main.currency), lines: colls.filter((c) => c !== main).map((c) => fmtMoney(c.month, c.currency)), delta: delta(main.month, main.prev === 0 && main.month === 0 ? null : main.prev, "up", ""), spark: main.series.map((s) => s.v) }
     : { def: def("REV_COLLECTED"), value: null, delta: null, spark: null, reason: "لم تُسجَّل إيصالات بعد" });
-  cards.push({ def: def("COLLECTION_RATE"), value: null, delta: null, spark: null, reason: "يتطلب سجل مستحقات (غير مفعّل بعد)" });
+  cards.push(fin
+    ? { def: def("COLLECTION_RATE"), value: fin.COLLECTION_RATE.value, lines: fin.COLLECTION_RATE.lines, reason: fin.COLLECTION_RATE.reason, delta: null, spark: null }
+    : { def: def("COLLECTION_RATE"), value: null, delta: null, spark: null, reason: "سجل المستحقات غير متاح" });
   cards.push(ds && ds.rate !== null
     ? { def: def("DECISIONS_EXEC_RATE"), value: `${ds.rate}%`, lines: [`${ds.done} من ${ds.due} مستحقة`], delta: null, spark: null }
     : { def: def("DECISIONS_EXEC_RATE"), value: null, delta: null, spark: null, reason: ds ? "لا قرارات نافذة مستحقة بعد" : "سجل القرارات غير مفعّل بعد" });
   cards.push(o.completionRate !== null
     ? { def: def("COMPLAINT_RATE"), value: `${o.completionRate}%`, lines: [`${o.cohort.done} من ${o.cohort.total} واردة`, `أُنجز في الفترة: ${o.processedNow}`], delta: delta(o.completionRate, o.completionPrev, "up", "%"), spark: o.series.map((s) => s.closed) }
     : { def: def("COMPLAINT_RATE"), value: null, delta: null, spark: null, reason: "لا طلبات واردة في الفترة" });
-  cards.push({ def: def("PROJECT_PROGRESS"), value: null, delta: null, spark: null, reason: "وحدة المشاريع غير مفعّلة بعد" });
-  cards.push({ def: def("BUDGET_EXEC"), value: null, delta: null, spark: null, reason: "وحدة الموازنة غير مفعّلة بعد" });
+  cards.push(proj && proj.avgProgress !== null
+    ? { def: def("PROJECT_PROGRESS"), value: `${proj.avgProgress}%`, lines: [`${proj.activeCount} مشروعًا قيد التنفيذ`, ...(proj.delayedList.length ? [`${proj.delayedList.length} متأخر`] : [])], delta: null, spark: null }
+    : { def: def("PROJECT_PROGRESS"), value: null, delta: null, spark: null, reason: proj ? "لا مشاريع لها مراحل مسجّلة بعد" : "سجل المشاريع غير متاح" });
+  cards.push(fin
+    ? { def: def("BUDGET_EXEC"), value: fin.BUDGET_EXEC.value, lines: fin.BUDGET_EXEC.lines, reason: fin.BUDGET_EXEC.reason, delta: null, spark: null }
+    : { def: def("BUDGET_EXEC"), value: null, delta: null, spark: null, reason: "سجل الموازنة غير متاح" });
   return cards;
 }
 
@@ -72,7 +84,8 @@ export function opsFacts(d: Awaited<ReturnType<typeof loadOps>>): string {
     `الحالات: ${o.status.map((s) => `${s.s}=${s.n}`).join("، ")}`,
     ...o.collections.filter((c) => c.count > 0).map((c) => `التحصيل ${c.currency} في الفترة: ${Math.round(c.month)} (السابقة: ${Math.round(c.prev)})`),
     ds ? `القرارات: الإجمالي ${ds.total}، نافذة مستحقة ${ds.due}، منفذة ${ds.done}، متأخرة ${ds.late.length}` : "سجل القرارات غير مفعّل",
-    "غير متوفر في النظام بعد: الموازنة، المستحقات، المشاريع.",
+    ...(d.fin ? [`نسبة التحصيل: ${d.fin.COLLECTION_RATE.value ?? "غير متوفرة (" + (d.fin.COLLECTION_RATE.reason ?? "") + ")"}`, `تنفيذ الموازنة: ${d.fin.BUDGET_EXEC.value ?? "غير متوفر (" + (d.fin.BUDGET_EXEC.reason ?? "") + ")"}`] : ["الموازنة والمستحقات غير متاحة"]),
+    d.proj ? `المشاريع: قيد التنفيذ ${d.proj.activeCount}، متأخرة ${d.proj.delayedList.length}، متوسط الإنجاز ${d.proj.avgProgress === null ? "غير متوفر" : d.proj.avgProgress + "%"}` : "سجل المشاريع غير متاح",
   ];
   return L.join("\n");
 }

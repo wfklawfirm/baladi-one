@@ -25,10 +25,10 @@ function Card({ title, sub, children, className = "", analyze }: { title: string
 const MODULES = [
   { n: "01", t: "مركز القيادة", href: "/staff/operations", on: true },
   { n: "02", t: "المجلس والحوكمة", href: "/staff/council", on: true },
-  { n: "03", t: "المالية والتحصيل", href: "/staff/collections", on: true },
-  { n: "04", t: "التشغيل والتنفيذ", href: "/staff/requests", on: true },
+  { n: "03", t: "المالية والموازنة", href: "/staff/finance", on: true },
+  { n: "04", t: "المشاريع والعقود", href: "/staff/projects", on: true },
   { n: "05", t: "المواطن والخدمات", href: "/staff/services", on: true },
-  { n: "06", t: "التخطيط والتقارير", href: "", on: false },
+  { n: "06", t: "التخطيط والتقارير", href: "/staff/reports", on: true },
 ];
 const fmtDate = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "medium", timeZone: "Asia/Beirut" }).format(new Date(d));
 
@@ -66,10 +66,10 @@ export default async function Operations({ searchParams }: { searchParams: Promi
         <div><h1 className="text-2xl font-bold">مركز القيادة والأداء</h1><p className="text-xs text-muted-foreground">آخر تحديث: {updated} · المصدر: طلبات المواطنين، سجل المعالجة، إيصالات التحصيل، سجل القرارات · الفترة: {range.label}</p></div>
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="الفترة">
           {PERIODS.filter(([k]) => k !== "custom").map(([k, v]) => <Link key={k} href={q(k)} aria-current={range.key === k ? "true" : undefined} className={`min-h-10 rounded-full border px-4 py-2 text-sm ${range.key === k ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{v}</Link>)}
-          <form action="/staff/operations" className="flex items-center gap-1.5">
+          <form action="/staff/operations" className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
             <input type="hidden" name="p" value="custom" />
-            <input type="date" name="from" required defaultValue={sp.from} aria-label="من" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
-            <input type="date" name="to" required defaultValue={sp.to} aria-label="إلى" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
+            <input type="date" name="from" required defaultValue={sp.from} aria-label="من" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
+            <input type="date" name="to" required defaultValue={sp.to} aria-label="إلى" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
             <button className={`min-h-10 rounded-full border px-4 text-sm ${range.key === "custom" ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>تطبيق</button>
           </form>
         </div>

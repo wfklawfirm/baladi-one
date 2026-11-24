@@ -75,3 +75,16 @@ button, [role=button] { touch-action: manipulation; }
   .ch-card { padding-block: 1rem 1.1rem; }
   .ch-main { gap: 0.75rem; }
 }
+
+.chart-t{font-size:20px}
+@media (min-width:640px){.chart-t{font-size:11px}}
+
+@media screen and (max-width:639px){
+  table.rt{min-width:0!important}
+  table.rt thead{display:none}
+  table.rt,table.rt tbody{display:block}
+  table.rt tr{display:block;border:1px solid var(--border,#e5e7eb);border-radius:14px;padding:6px 12px;margin-bottom:10px}
+  table.rt td{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:5px 0!important;border:0!important;text-align:end}
+  table.rt td::before{content:attr(data-label);color:#6b7280;font-size:12px;flex-shrink:0;text-align:start}
+  table.rt td:empty{display:none}
+}

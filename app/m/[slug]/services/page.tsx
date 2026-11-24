@@ -64,15 +64,15 @@ export default async function ServicesHome({ params, searchParams }: { params: P
           </section>
         ) : (
           <section className="space-y-3">
-                        <div className="grid grid-cols-5 gap-1.5 sm:gap-4 lg:gap-6">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5 lg:gap-6">
               {CATEGORIES.map((c) => {
                 const Icon = TOPIC_ICON[c];
                 return (
                   <Link key={c} href={`/m/${slug}/services/${c}${lang === "en" ? "?lang=en" : ""}`}
-                    className="elev elev-hover flex min-h-36 flex-col items-center justify-start gap-2 rounded-2xl border bg-background px-1 py-4 text-center sm:min-h-52 sm:justify-center sm:gap-3 sm:rounded-3xl sm:px-3 sm:py-8 active:bg-muted">
-                    <span className="grid size-11 place-items-center rounded-xl bg-accent text-primary sm:size-20 sm:rounded-2xl"><Icon className="size-6 sm:size-10" aria-hidden /></span>
-                    <b className="text-[11px] leading-tight sm:text-lg sm:leading-snug">{catLabel(lang, c)}</b>
-                    <span className="text-[10px] text-muted-foreground sm:text-sm">{countAr(counts[c])}</span>
+                    className="elev elev-hover flex min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border bg-background px-3 py-5 text-center last:odd:col-span-2 sm:last:odd:col-span-1 sm:min-h-52 sm:gap-3 sm:rounded-3xl sm:py-8 active:bg-muted">
+                    <span className="grid size-14 place-items-center rounded-2xl bg-accent text-primary sm:size-20 sm:rounded-2xl"><Icon className="size-7 sm:size-10" aria-hidden /></span>
+                    <b className="text-base leading-snug sm:text-lg sm:leading-snug">{catLabel(lang, c)}</b>
+                    <span className="text-xs text-muted-foreground sm:text-sm">{countAr(counts[c])}</span>
                   </Link>
                 );
               })}
