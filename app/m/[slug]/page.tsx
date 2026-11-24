@@ -21,8 +21,8 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
   const light = `${card} border-border bg-background shadow-[0_4px_18px_rgb(0_0_0/0.07)] hover:border-primary hover:bg-gradient-to-b hover:from-[#86233a] hover:to-[#6b1a29] hover:text-white hover:shadow-[0_10px_28px_rgb(122_31_46/0.30)]`;
   const body = (Icon: typeof Users, title: string, desc: string, label: string, dark = false) => (
     <>
-      <span className={`grid size-24 place-items-center rounded-3xl ${dark ? "bg-white/15" : "bg-accent group-hover:bg-white/15"}`}>
-        <Icon className={`size-12 ${dark ? "text-white" : "text-primary group-hover:text-white"}`} strokeWidth={1.6} aria-hidden />
+      <span className={`grid size-20 place-items-center rounded-3xl ${dark ? "bg-white/15" : "bg-accent group-hover:bg-white/15"}`}>
+        <Icon className={`size-9 ${dark ? "text-white" : "text-primary group-hover:text-white"}`} strokeWidth={1.6} aria-hidden />
       </span>
       <b className="mt-2 text-3xl font-bold leading-snug">{title}</b>
       <span className={`mb-4 text-xl font-medium ${dark ? "text-white/90" : "text-muted-foreground group-hover:text-white/90"}`}>{desc}</span>
@@ -34,10 +34,10 @@ export default async function RoleChooser({ params }: { params: Promise<{ slug: 
 
   return (
     <div dir="rtl" lang="ar" className="flex min-h-dvh flex-col bg-background">
-      <header className="h-20 border-b border-border/70 lg:h-24">
+      <header className="h-28 border-b border-border/70 lg:h-32">
         <div className="mx-auto flex h-full max-w-[77.5rem] items-center justify-between px-6">
-          <div className="min-[2400px]:[zoom:1.9]"><Emblem size={60} /></div>
-          <img src="/aijur-logo.png" alt="AIJUR" className="h-14 w-auto" />
+          <div className="min-[2400px]:[zoom:1.9]"><Emblem size={92} /></div>
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-[4.5rem] w-auto" />
         </div>
       </header>
 
