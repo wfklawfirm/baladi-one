@@ -11,7 +11,7 @@ export default function DecisionGen() {
   async function run(e: React.FormEvent) {
     e.preventDefault(); if (busy || !subject.trim()) return; setBusy(true); setErr(""); setR(null);
     const query = `أنشئ نموذج ${kind} رسمي كامل جاهز للتوقيع بخصوص: ${subject.trim()}.${details.trim() ? `\nالتفاصيل والوقائع: ${details.trim()}` : ""}\nاذكر السند القانوني والمواد المنطبقة وأي موافقات مطلوبة.`;
-    try { setR(await callBrain("/api/brain/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query }) })); } catch (x: any) { setErr(x.message); } finally { setBusy(false); }
+    try { setR(await callBrain("/api/brain/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, noClarify: true }) })); } catch (x: any) { setErr(x.message); } finally { setBusy(false); }
   }
   const parts = r ? splitTemplates(r.answer) : null;
   return (
