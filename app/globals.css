@@ -91,3 +91,5 @@ button, [role=button] { touch-action: manipulation; }
 
 /* a lone last card in a two-column grid spans the full row (no orphan gap) */
 @media (min-width: 768px) { .fill-odd > :last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+@media (max-width: 639px) { body { padding-bottom: 4.5rem; } }

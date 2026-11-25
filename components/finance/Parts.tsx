@@ -21,7 +21,8 @@ export function Flash({ ok, err }: { ok?: string; err?: string }) {
   return null;
 }
 
-export function Panel({ title, sub, children, className = "" }: { title: string; sub?: string; children: React.ReactNode; className?: string }) {
+export function Panel({ title, sub, children, className = "", fold = false }: { title: string; sub?: string; children: React.ReactNode; className?: string; fold?: boolean }) {
+  if (fold) return <details className={`elev group rounded-2xl border bg-background p-4 md:p-5 ${className}`}><summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-bold text-primary"><span>{title}</span><span className="text-xl leading-none transition group-open:rotate-45" aria-hidden>+</span></summary>{sub && <p className="mt-2 text-xs text-muted-foreground">{sub}</p>}<div className="mt-3">{children}</div></details>;
   return <section className={`elev rounded-2xl border bg-background p-4 md:p-5 ${className}`}><h2 className="font-bold">{title}</h2>{sub && <p className="mb-3 text-xs text-muted-foreground">{sub}</p>}<div className={sub ? "" : "mt-3"}>{children}</div></section>;
 }
 

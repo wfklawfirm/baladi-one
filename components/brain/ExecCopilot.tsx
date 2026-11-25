@@ -27,7 +27,7 @@ export default function ExecCopilot() {
   return (
     <>
       {!open && (
-        <button type="button" onClick={() => setOpen(true)} aria-label="المساعد البلدي الذكي" title="المساعد البلدي الذكي" className="fixed bottom-5 left-5 z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg active:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] print:hidden">
+        <button type="button" onClick={() => setOpen(true)} aria-label="المساعد البلدي الذكي" title="المساعد البلدي الذكي" className="fixed bottom-4 left-4 z-40 grid size-12 sm:size-14 sm:bottom-5 sm:left-5 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg active:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring-focus)] print:hidden">
           <Sparkles className="size-7" aria-hidden />
         </button>
       )}

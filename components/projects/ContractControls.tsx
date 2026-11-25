@@ -12,11 +12,11 @@ export default function ContractControls({ c, back, decisions }: { c: CC; back?:
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">أسلوب التلزيم: <b>{c.procurement_method ? METHOD[c.procurement_method] ?? c.procurement_method : "غير محدد"}</b>{c.published_on ? ` · نُشر ${c.published_on}` : ""}{c.award_notice_on ? ` · إشعار الترسية ${c.award_notice_on}` : ""}{c.signed_on ? ` · وُقّع ${c.signed_on}` : ""}{earliest && c.status === "draft" ? ` · أبكر توقيع مقبول ${earliest}` : ""}</p>
       {c.status === "draft" && !c.decision_id && c.procurement_method && !["quotations", "invoice"].includes(c.procurement_method) && <p className="text-xs font-semibold text-destructive">⚠ غير مربوط بقرار من المجلس البلدي.</p>}
-      <form action={setContractStatus} className="flex flex-wrap items-center gap-2">{hid}
-        <select name="value" defaultValue={c.status} aria-label="حالة العقد" className={f}>{Object.entries(CONTRACT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-        {c.status === "draft" && <label className="text-xs">تاريخ التوقيع <input type="date" name="signed" className={f} /></label>}
-        <input name="note" maxLength={500} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${f} min-w-0 flex-1`} />
-        <button className={b}>تحديث الحالة</button></form>
+      <form action={setContractStatus} className="grid grid-cols-[1fr_auto] items-end gap-2">{hid}
+        <select name="value" defaultValue={c.status} aria-label="حالة العقد" className={`${f} w-full`}>{Object.entries(CONTRACT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        <button className={b}>تحديث</button>
+        {c.status === "draft" && <label className="col-span-2 text-xs sm:col-span-1">تاريخ التوقيع (عند اختيار «موقَّع»)<input type="date" name="signed" className={`${f} block w-full`} /></label>}
+        <input name="note" maxLength={500} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${f} col-span-2 min-w-0 sm:col-span-1`} /></form>
       {c.status === "draft" && <details><summary className="cursor-pointer text-xs font-bold text-primary">تواريخ الإجراءات (النشر، الترسية، إبلاغ هيئة الشراء)</summary>
         <form action={setContractDates} className="mt-2 flex flex-wrap items-end gap-2">{hid}
           <label className="text-xs">نشر الإعلان<input type="date" name="published" defaultValue={c.published_on ?? ""} className={`${f} block`} /></label>

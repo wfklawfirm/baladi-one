@@ -32,7 +32,7 @@ export default async function Receivables({ searchParams }: { searchParams: Prom
       {arr.length > 0 && <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">متأخرات: {arr.map((a) => `${a.count} مستحق بقيمة ${money(a.total, a.currency)}`).join(" · ")}</p>}
 
       <div className="fill-odd grid gap-4 md:grid-cols-2">
-        <Panel title="إضافة مستحق" sub="مرجع المكلّف رمز (رقم ملف أو معاملة) فقط: لا أسماء ولا أرقام هواتف.">
+        <Panel fold title="إضافة مستحق" sub="مرجع المكلّف رمز (رقم ملف أو معاملة) فقط: لا أسماء ولا أرقام هواتف.">
           <form action={addReceivable} className="grid gap-3 sm:grid-cols-2">{back}
             <label className="space-y-1 text-sm font-medium sm:col-span-2">نوع الرسم<input name="fee_type" required maxLength={200} placeholder="مثال: رسم رخصة بناء" className={field} /></label>
             <label className="space-y-1 text-sm font-medium">المبلغ<input name="amount" inputMode="decimal" required className={field} /></label>
@@ -42,7 +42,7 @@ export default async function Receivables({ searchParams }: { searchParams: Prom
             <button className={`${btn} sm:col-span-2`}>إضافة</button>
           </form>
         </Panel>
-        <Panel title="تسديد مستحق" sub="يُنشئ إيصال تحصيل مرتبطًا بالمستحق بعملته؛ التسديد الجزئي مسموح ولا يتجاوز المتبقي.">
+        <Panel fold title="تسديد مستحق" sub="يُنشئ إيصال تحصيل مرتبطًا بالمستحق بعملته؛ التسديد الجزئي مسموح ولا يتجاوز المتبقي.">
           <form action={settleReceivable} className="grid gap-3">{back}
             <label className="space-y-1 text-sm font-medium">المستحق<select name="receivable" required className={field}>{open.map(({ r, remaining }) => <option key={r.id} value={r.id}>{r.fee_type}{r.payer_ref ? ` · ${r.payer_ref}` : ""} — متبقٍ {money(remaining, r.currency)}</option>)}</select></label>
             <label className="space-y-1 text-sm font-medium">المبلغ المحصّل<input name="amount" inputMode="decimal" required className={field} /></label>

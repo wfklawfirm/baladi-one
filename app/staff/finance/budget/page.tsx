@@ -49,7 +49,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
       </Panel>
 
       <div className="fill-odd grid gap-4 md:grid-cols-2">
-        <Panel title="إضافة بند موازنة">
+        <Panel fold title="إضافة بند موازنة">
           <form action={addLine} className="grid gap-3 sm:grid-cols-2">{back}
             <label className="space-y-1 text-sm font-medium">السنة المالية<input name="year" type="number" min={1990} max={2100} defaultValue={year} required className={field} /></label>
             <label className="space-y-1 text-sm font-medium">الرمز<input name="code" required maxLength={40} className={field} /></label>
@@ -61,7 +61,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
             <button className={`${btn} sm:col-span-2`}>إضافة</button>
           </form>
         </Panel>
-        <Panel title="تعديل اعتماد" sub="تعديل الموازنة يصدر بقرار عن المجلس البلدي ويخضع لتصديق سلطة الرقابة. اختر القرار؛ إن لم يُصدَّق بعد يبقى التعديل معلّقًا ولا يُطبَّق على الاعتماد حتى تسجّل تاريخ التصديق.">
+        <Panel fold title="تعديل اعتماد" sub="تعديل الموازنة يصدر بقرار عن المجلس البلدي ويخضع لتصديق سلطة الرقابة. اختر القرار؛ إن لم يُصدَّق بعد يبقى التعديل معلّقًا ولا يُطبَّق على الاعتماد حتى تسجّل تاريخ التصديق.">
           <form action={amendLine} className="grid gap-3">{back}
             <label className="space-y-1 text-sm font-medium">البند<select name="line" required className={field}>{lines.map(lineOpt)}</select></label>
             <label className="space-y-1 text-sm font-medium">التغيير (سالب للنقصان)<input name="delta" inputMode="decimal" required placeholder="مثال: -500000" className={field} /></label>
@@ -73,7 +73,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
             {decs.length === 0 && <p className="text-xs text-destructive">لا يوجد قرار معتمد في سجل المجلس؛ سجّل القرار أولًا.</p>}
           </form>
         </Panel>
-        <Panel title="تسجيل التزام" sub="يحجز جزءًا من الاعتماد المتاح؛ لا يتجاوز المتاح.">
+        <Panel fold title="تسجيل التزام" sub="يحجز جزءًا من الاعتماد المتاح؛ لا يتجاوز المتاح.">
           <form action={commitLine} className="grid gap-3">{back}
             <label className="space-y-1 text-sm font-medium">بند النفقة<select name="line" required className={field}>{expLines.map(lineOpt)}</select></label>
             <label className="space-y-1 text-sm font-medium">المبلغ<input name="amount" inputMode="decimal" required className={field} /></label>

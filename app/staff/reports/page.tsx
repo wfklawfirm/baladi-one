@@ -20,24 +20,23 @@ export default async function Reports() {
         <h1 className="flex items-center gap-2 text-2xl font-bold"><ClipboardList className="size-6 text-primary" aria-hidden />مركز التقارير والتصدير</h1>
         <p className="text-sm text-muted-foreground">تقارير من بيانات النظام الفعلية، بصيغة Excel وصفحة طباعة A4 (احفظها PDF من المتصفح). كل تقرير بحالة «{REVIEW_STATUS}» حتى يراجعه مسؤول، وتُسجَّل عمليات التصدير.</p>
       </div>
+      <form id="rp" method="get" className="elev sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-2xl border bg-background p-3">
+        <label className="text-sm font-bold" htmlFor="rp-p">فترة كل التقارير</label>
+        <select id="rp-p" name="p" defaultValue="month" className="min-h-10 rounded-lg border bg-background px-2 text-sm">{PERIODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+        <span className="flex w-full items-center gap-2 sm:w-auto"><input type="date" name="from" aria-label="من (للفترة المخصصة)" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" /><input type="date" name="to" aria-label="إلى (للفترة المخصصة)" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" /></span>
+        <span className="text-xs text-muted-foreground">التاريخان لـ«فترة مخصصة» فقط.</span>
+      </form>
       <div className="fill-odd grid gap-4 md:grid-cols-2">
         {REPORT_KINDS.map((k) => {
           const m = KIND_META[k], Icon = ICON[m.icon as keyof typeof ICON];
           return (
-            <form key={k} method="get" className="elev space-y-3 rounded-2xl border bg-background p-4 md:p-5">
+            <div key={k} className="elev space-y-3 rounded-2xl border bg-background p-4 md:p-5">
               <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span><div><h2 className="font-bold">{m.title}</h2><p className="text-sm text-muted-foreground">{m.description}</p></div></div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="text-sm font-medium" htmlFor={`p-${k}`}>الفترة</label>
-                <select id={`p-${k}`} name="p" defaultValue="month" className="min-h-10 rounded-lg border bg-background px-2 text-sm">{PERIODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-                <input type="date" name="from" aria-label="من (للفترة المخصصة)" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
-                <input type="date" name="to" aria-label="إلى (للفترة المخصصة)" className="min-h-10 rounded-lg border bg-background px-2 text-sm" />
-              </div>
-              <p className="text-xs text-muted-foreground">التاريخان يُستخدمان عند اختيار «فترة مخصصة» فقط.</p>
               <div className="flex flex-wrap gap-2">
-                <button formAction={`/api/reports/${k}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:opacity-90"><FileSpreadsheet className="size-4" aria-hidden />تنزيل Excel</button>
-                <button formAction={`/staff/reports/print/${k}`} formTarget="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 font-bold active:bg-muted"><Printer className="size-4" aria-hidden />عرض للطباعة / PDF</button>
+                <button form="rp" formAction={`/api/reports/${k}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:opacity-90"><FileSpreadsheet className="size-4" aria-hidden />تنزيل Excel</button>
+                <button form="rp" formAction={`/staff/reports/print/${k}`} formTarget="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 font-bold active:bg-muted"><Printer className="size-4" aria-hidden />عرض للطباعة / PDF</button>
               </div>
-            </form>
+            </div>
           );
         })}
       </div>
