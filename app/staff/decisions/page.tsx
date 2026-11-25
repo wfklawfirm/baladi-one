@@ -15,7 +15,6 @@ type SP = { c?: string; q?: string; s?: string; err?: string };
 export default async function Page({ searchParams }: { searchParams: Promise<SP> }) {
   const { sb, memberships } = await requireStaff();
   const sp = await searchParams;
-  const isAdmin = memberships.some((m) => m.role === "admin");
   const canCreate = memberships.some((m) => m.role === "admin" || m.role === "mayor");
   const { rows } = await loadTemplates(sb);
   const all = bestVersions(rows);
@@ -32,13 +31,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
       <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-bold">منشئ القرارات البلدية</h1>
-          <div className="flex gap-2 text-sm"><Link href="/staff/council/decisions" className="min-h-10 rounded-xl border px-3 py-2 hover:bg-muted">سجل القرارات</Link>{isAdmin && <Link href="/staff/decisions/templates" className="min-h-10 rounded-xl border px-3 py-2 hover:bg-muted">إدارة القوالب</Link>}</div>
+          <div className="flex gap-2 text-sm"><Link href="/staff/council/decisions" className="min-h-10 rounded-xl border px-3 py-2 hover:bg-muted">سجل القرارات</Link>{canCreate && <Link href="/staff/decisions/templates" className="min-h-10 rounded-xl border px-3 py-2 hover:bg-muted">إدارة القوالب</Link>}</div>
         </div>
         <p className="text-sm text-muted-foreground">اختر القالب فيُنشأ مسودة قرار تُملأ حقولها من سجلات البلدية والجلسة. المراجع القانونية لا تظهر في الصيغة الرسمية إلا إذا تحقق منها محامٍ في سجل القواعد، والقوالب لا تُعتمد إلا بمراجعة قانونية بمراجعَين مختلفَين.</p>
         {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{errText({ message: sp.err })}</p>}
         {all.length === 0 ? (
           <div className="rounded-2xl border p-8 text-center text-sm text-muted-foreground">
-            المكتبة فارغة بعد. {isAdmin ? <>استورد القوالب من <Link className="font-semibold text-primary underline" href="/staff/decisions/templates">إدارة القوالب</Link>؛ تدخل كلها «بانتظار المراجعة القانونية».</> : "يستوردها مسؤول النظام ثم تُراجَع قانونيًا."}
+            المكتبة فارغة بعد. <>استورد القوالب من <Link className="font-semibold text-primary underline" href="/staff/decisions/templates">إدارة القوالب</Link>؛ تدخل كلها «بانتظار المراجعة القانونية».</>
           </div>
         ) : (
           <>

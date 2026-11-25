@@ -34,12 +34,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
         {sp.imported && <p role="status" className="rounded-xl border p-3 text-sm">استُورد {sp.imported} قالبًا بحالة «بانتظار المراجعة القانونية». لم يُعتمد أي منها.</p>}
         {sp.profile && <p role="status" className="rounded-xl border p-3 text-sm">حُفظ البيان القانوني للبلدية.</p>}
 
-        {isAdmin && <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">استيراد المكتبة التأسيسية</h2>
+        <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">استيراد المكتبة التأسيسية</h2>
           <p className="text-sm text-muted-foreground">الملف المرفق ({seed.total} قالبًا، بتاريخ {seed.asOf}) مسودات تأسيسية وليست نصوصًا رسمية. {toImport > 0 ? `${toImport} قالبًا لم يُستورد بعد.` : "كل القوالب مستوردة."} الاستيراد مكرَّر الأمان (لا يكتب فوق قالب موجود) ويُسجَّل في سجل التدقيق.</p>
-          {toImport > 0 && <form action={importSeed}><button className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground">استيراد {toImport} قالبًا</button></form>}</section>}
+          {toImport > 0 && <form action={importSeed}><button className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground">استيراد {toImport} قالبًا</button></form>}</section>
 
         <section className="grid gap-4 md:grid-cols-2">
-          {isAdmin && <form action={setLegalProfile} className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">البيان القانوني للبلدية (الترويس)</h2>
+          {<form action={setLegalProfile} className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">البيان القانوني للبلدية (الترويس)</h2>
             <label className="block text-sm">المحافظة<input name="governorate" defaultValue={muni.data?.governorate_ar ?? ""} className={`${inp} mt-1`} /></label>
             <label className="block text-sm">القضاء<input name="district" defaultValue={muni.data?.district_ar ?? ""} className={`${inp} mt-1`} /></label>
             <label className="block text-sm">ملاحظة<input name="note" defaultValue={muni.data?.legal_profile_note ?? ""} className={`${inp} mt-1`} /></label>
