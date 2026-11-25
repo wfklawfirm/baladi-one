@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ChevronLeft, ClipboardCheck, FileSearch, Home, Languages, Megaphone, Search, Smartphone } from "lucide-react";
+import { ArrowRight, Building2, ChevronLeft, ClipboardCheck, FileBadge, FileSearch, HardHat, Home, Languages, Megaphone, Search, Smartphone, Store } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { CATEGORIES, catLabel, pick, t } from "@/lib/i18n";
 import { filterServices } from "@/lib/search";
 import type { CategoryId, Lang, Municipality, Service } from "@/lib/types";
@@ -11,6 +12,7 @@ import Mic from "@/components/Mic";
 type View = { name: "home" } | { name: "list" } | { name: "service"; slug: string } | { name: "report" } | { name: "track" };
 
 const WARN_SECONDS = 15;
+const CAT_ICON: Record<CategoryId, LucideIcon> = { licenses: Building2, certificates: FileBadge, shops: Store, public_works: HardHat, reports: Megaphone };
 const SUGGESTIONS = ["رخصة بناء", "رخصة ترميم", "براءة ذمة", "تسجيل عقود الإيجار"];
 
 export function Kiosk({
@@ -44,6 +46,8 @@ export function Kiosk({
 
   const results = useMemo(() => filterServices(services, query, cat, lang), [services, query, cat, lang]);
   const service = view.name === "service" ? services.find((s) => s.slug === view.slug) : undefined;
+  // One step back: service -> list -> home; report/track -> home.
+  const goBack = () => setView(view.name === "service" ? { name: "list" } : { name: "home" });
   const goList = (q?: string) => { if (q !== undefined) setQuery(q); setView({ name: "list" }); };
 
   // Primary = the one action that always works; secondary cards become "coming soon" (not clickable) until enabled.
@@ -57,7 +61,7 @@ export function Kiosk({
             : <ChevronLeft className={`size-10 text-primary ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />}
         </span>
         <span className="mt-auto flex flex-col gap-2">
-          <span className={`font-bold leading-tight ${primary ? "text-[2.3rem]" : "text-[1.9rem]"}`}>{title}</span>
+          <span className="text-[2rem] font-bold leading-tight">{title}</span>
           <span className="text-[1.3rem] leading-snug text-muted-foreground">{hint}</span>
         </span>
       </>
@@ -92,7 +96,12 @@ export function Kiosk({
           <p className="hidden text-[1.6rem] font-semibold text-muted-foreground lg:block">{t(lang, "headerTitle")}</p>
         </div>
         <div className="flex items-center gap-4">
-          {view.name !== "home" && <Btn variant="secondary" onClick={reset}><Home className="size-6" />{t(lang, "home")}</Btn>}
+          {view.name !== "home" && (
+            <nav aria-label={t(lang, "home")} className="flex items-center gap-3">
+              <Btn variant="secondary" onClick={goBack}><ArrowRight className={`size-7 ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />{t(lang, "back")}</Btn>
+              <Btn onClick={reset}><Home className="size-7" aria-hidden />{t(lang, "home")}</Btn>
+            </nav>
+          )}
           <button onClick={() => setLang(lang === "ar" ? "en" : "ar")}
             className="inline-flex min-h-16 items-center gap-3 rounded-2xl border bg-background px-6 text-[1.25rem] font-semibold transition active:scale-[0.98] active:bg-muted">
             <Languages className="size-6" />{t(lang, "language")}
@@ -125,10 +134,10 @@ export function Kiosk({
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr_1fr]">
-              <Card primary icon={<FileSearch className="size-12" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
-              <Card icon={<Megaphone className="size-10" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
-              <Card icon={<ClipboardCheck className="size-10" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Card primary icon={<FileSearch className="size-11" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
+              <Card icon={<Megaphone className="size-11" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
+              <Card icon={<ClipboardCheck className="size-11" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
             </div>
           </div>
         )}
@@ -144,7 +153,8 @@ export function Kiosk({
             <div className="flex flex-wrap gap-3">
               {(["all", ...CATEGORIES] as const).map((c) => (
                 <button key={c} onClick={() => setCat(c)}
-                  className={`min-h-14 rounded-2xl border px-6 text-[1.2rem] font-semibold ${cat === c ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+                  className={`inline-flex min-h-14 items-center gap-2 rounded-2xl border px-6 text-[1.2rem] font-semibold ${cat === c ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+                  {c !== "all" && (() => { const Ic = CAT_ICON[c]; return <Ic className="size-6" aria-hidden />; })()}
                   {c === "all" ? t(lang, "all") : catLabel(lang, c)}
                 </button>
               ))}
@@ -154,10 +164,14 @@ export function Kiosk({
               {services.length > 0 && results.length === 0 && <p className="col-span-full py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noResults")}</p>}
               {results.map((s) => (
                 <button key={s.slug} onClick={() => setView({ name: "service", slug: s.slug })}
-                  className="elev elev-hover flex min-h-28 flex-col items-start gap-1 rounded-2xl border bg-background p-5 text-start transition active:scale-[0.99]">
-                  <span className="text-[1.5rem] font-bold">{pick(lang, s.title)}</span>
-                  <span className="text-[1.1rem] text-primary">{catLabel(lang, s.category)}</span>
-                  <span className="line-clamp-2 text-[1.15rem] text-muted-foreground">{pick(lang, s.summary)}</span>
+                  className="elev elev-hover flex min-h-28 items-center gap-5 rounded-2xl border bg-background p-5 text-start transition active:scale-[0.99]">
+                  {(() => { const Ic = CAT_ICON[s.category] ?? FileSearch; return <span className="grid size-[4.5rem] shrink-0 place-items-center rounded-2xl bg-accent text-primary"><Ic className="size-9" aria-hidden /></span>; })()}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="text-[1.5rem] font-bold">{pick(lang, s.title)}</span>
+                    <span className="text-[1.1rem] text-primary">{catLabel(lang, s.category)}</span>
+                    <span className="line-clamp-2 text-[1.15rem] text-muted-foreground">{pick(lang, s.summary)}</span>
+                  </span>
+                  <ChevronLeft className={`size-9 shrink-0 text-primary ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />
                 </button>
               ))}
             </div>
@@ -182,7 +196,6 @@ export function Kiosk({
               {service.onlineEnabled && reportsEnabled
                 ? <Btn>{t(lang, "startOnline")}</Btn>
                 : <p className="rounded-xl bg-muted p-3 text-center text-[1.05rem] text-muted-foreground">{t(lang, "notOnline")}</p>}
-              <Btn variant="secondary" onClick={() => setView({ name: "list" })}><ArrowRight className={`size-6 ${dir === "ltr" ? "rotate-180" : ""}`} />{t(lang, "back")}</Btn>
             </aside>
           </div>
         )}
@@ -197,7 +210,6 @@ export function Kiosk({
                   <p className="text-[1.3rem] text-muted-foreground">{t(lang, view.name === "report" ? "scanReport" : "scanTrack")}</p>
                 </>
               ) : <p className="mt-3 text-[1.4rem] text-muted-foreground">{t(lang, "unavailable")}</p>}
-              <Btn variant="secondary" onClick={() => setView({ name: "home" })}>{t(lang, "home")}</Btn>
             </div>
           </div>
         )}
