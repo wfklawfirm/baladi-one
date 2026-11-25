@@ -4,6 +4,8 @@ import { FileText, ListChecks, Clock, Building2, Scale } from "lucide-react";
 import { getTx, lawsFor } from "@/lib/draft";
 import { BRAND, OFFICIAL } from "@/lib/brand";
 import PortalFooter from "@/components/PortalFooter";
+import { reportsEnabled } from "@/lib/reports";
+import { t as tr } from "@/lib/i18n";
 
 const Card = ({ icon, title, items, ordered }: { icon: React.ReactNode; title: string; items: string[]; ordered?: boolean }) => {
   if (!items.length) return null;
@@ -20,6 +22,8 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
   const t = getTx((await params).id);
   if (!t) notFound();
   const laws = lawsFor(t.id);
+  const applyHref = `/s/${BRAND.slug}/${t.id.toLowerCase()}/apply`;
+  const canApply = reportsEnabled();
   const extra = [...t.extra, ...t.extra_stages].map((d) => d.t).concat(t.extra_timeline.map((d) => d.value));
   return (
     <main className="pb-16">
@@ -29,6 +33,9 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
           <p className="text-sm font-semibold text-primary">{t.category}</p>
           <h1 className="text-3xl font-bold leading-snug text-foreground lg:text-4xl">{t.title}</h1>
           {t.authority && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="size-4" />{t.authority}</p>}
+          {canApply
+            ? <Link href={applyHref} className="flex min-h-14 w-full flex-col items-center justify-center rounded-2xl bg-primary px-6 text-center font-bold text-primary-foreground shadow active:opacity-90 lg:max-w-md"><span className="text-lg">{tr("ar", "startTx")}</span><span className="text-sm font-normal opacity-90">{tr("ar", "startTxSub")}</span></Link>
+            : <p className="rounded-xl bg-muted p-4 text-center font-semibold lg:max-w-md">{tr("ar", "regSoon")}</p>}
         </div>
       </section>
       <div className="mx-auto mt-6 max-w-3xl space-y-4 px-4 lg:max-w-7xl lg:columns-2 lg:gap-6 lg:space-y-0 [&>*]:break-inside-avoid lg:[&>*]:mb-6">
@@ -47,6 +54,7 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
         <a href={OFFICIAL.forms} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">النماذج الرسمية على موقع البلدية ↗</a>
         {t.notes && <p className="whitespace-pre-line rounded-2xl bg-muted p-4 text-sm leading-7">{t.notes}</p>}
       </div>
+      {canApply && <div className="sticky bottom-0 z-10 border-t bg-background/95 p-3 backdrop-blur lg:hidden"><Link href={applyHref} className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-primary px-6 text-lg font-bold text-primary-foreground shadow active:opacity-90">{tr("ar", "startTx")}</Link></div>}
       <PortalFooter />
     </main>
   );
