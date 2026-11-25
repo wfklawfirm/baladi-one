@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import StaffHeader from "@/components/StaffHeader";
 import { requireStaff } from "@/lib/supabase-server";
@@ -15,7 +16,7 @@ export default async function LegalRegistry() {
   return (
     <><StaffHeader />
       <main className="mx-auto max-w-7xl space-y-4 p-4">
-        <h1 className="text-xl font-bold">⚖ سجل القواعد القانونية</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-xl font-bold">⚖ سجل القواعد القانونية</h1><Link href="/staff/legal/updates" className="rounded-xl border px-4 py-2 text-sm font-semibold text-primary active:bg-muted">مستجدات التشريع ←</Link></div>
         <p className="rounded-2xl border border-amber-400/60 bg-amber-50 p-3 text-sm leading-7 text-amber-950">{rules.length} قاعدة، منها {pending} بانتظار المراجعة القانونية. لا قاعدة هنا مؤكَّدة نهائيًا قبل اعتماد محامٍ مختص وتحميل النص الرسمي من الجريدة الرسمية. لا مبالغ أو سقوف مالية مثبتة في الشيفرة.</p>
         {rules.length === 0 ? <p className="text-sm text-muted-foreground">لا قواعد مسجّلة.</p> : (
           <ul className="grid gap-3 md:grid-cols-2">{rules.map((r) => (

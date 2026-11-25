@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import { recordCollection } from "./actions";
@@ -17,6 +18,7 @@ export default async function Collections({ searchParams }: { searchParams: Prom
     <><StaffHeader back="/staff" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <h1 className="text-2xl font-bold">تسجيل التحصيل</h1>
+      <Link href="/staff/revenue" className="inline-flex min-h-11 items-center rounded-full border border-primary px-4 text-sm font-semibold text-primary active:bg-accent">الإيرادات والتكليف (أوامر القبض، الإيصالات المرقَّمة، مطابقة الصندوق) ←</Link>
       {sp.ok && <p role="status" className="rounded-xl border border-primary/40 bg-accent p-3 text-sm font-medium">تم تسجيل الإيصال.</p>}
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر التسجيل، تحقق من المبلغ وحاول مجددًا.</p>}
       <form action={recordCollection} className="elev grid gap-3 rounded-2xl border bg-background p-4 sm:grid-cols-2">

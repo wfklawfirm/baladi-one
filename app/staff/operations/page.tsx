@@ -7,6 +7,8 @@ import { FIRST_RESPONSE_H, PERIODS, SLA_DAYS, parsePeriod } from "@/lib/ops";
 import { buildCards, decisionStats, loadOps } from "@/lib/opsData";
 import KpiGrid from "@/components/ops/KpiGrid";
 import AnalyzeButton from "@/components/ops/AnalyzeButton";
+import ComplianceSection from "@/components/ops/ComplianceSection";
+import { loadCompliance } from "@/lib/compliance";
 import { C, Columns, Donut, HBars, IntakeChart, Spark } from "@/components/ops/Charts";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { assignRequest } from "./actions";
@@ -38,7 +40,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
   if (!memberships.some((m) => m.role === "mayor" || m.role === "admin")) redirect("/staff");
   const sp = await searchParams;
   const range = parsePeriod(sp.p, sp.from, sp.to);
-  const d = await loadOps(sb, range);
+  const [d, compliance] = await Promise.all([loadOps(sb, range), loadCompliance(sb).catch(() => null)]);
   const { o, people, decisions, sessions } = d;
   const cards = buildCards(d);
   const ds = decisionStats(decisions);
@@ -77,6 +79,8 @@ export default async function Operations({ searchParams }: { searchParams: Promi
       </div>
 
       <KpiGrid cards={cards} />
+
+      <ComplianceSection checks={compliance} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="الوارد والمنجز" sub={`أعمدة: واردة · خط: منجزة (${range.label}، مقارنة بالسابقة: ${o.intakePrev} واردة / ${o.processedPrev} منجزة)`} className="lg:col-span-2" analyze="حلّل مؤشر الوارد والمنجز في الفترة المحددة: الاتجاه والانحرافات وحدود البيانات ثم اقترح إجراءات"><IntakeChart data={o.series} /></Card>

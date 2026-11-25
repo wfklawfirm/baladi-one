@@ -39,6 +39,7 @@ export default async function StaffHome() {
       { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" },
       { href: "/staff/finance", Icon: Wallet, title: "المالية والموازنة", sub: "اعتمادات ومستحقات وتحصيل" },
       { href: "/staff/projects", Icon: HardHat, title: "المشاريع والعقود", sub: "إنجاز وتأخر وعقود" },
+      { href: "/staff/admin", Icon: ClipboardCheck, title: "الإدارة البلدية", sub: "مراسلات وأملاك وشؤون قانونية ورقابة وشفافية" },
       { href: "/staff/legal", Icon: Scale, title: "المرجعية القانونية", sub: "سجل القواعد وحالة مراجعتها" },
       { href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" },
     ] }] : []),

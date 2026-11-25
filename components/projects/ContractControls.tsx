@@ -2,6 +2,9 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { amendContract, setContractDates, setContractStatus, setObjection } from "@/app/staff/projects/actions";
 import { METHOD, earliestSigning } from "@/lib/council";
 import { CONTRACT_STATUS } from "@/lib/projects";
+import Link from "next/link";
+import CompletionForm, { acceptanceState } from "@/components/projects/procurement/CompletionForm";
+import { LateBadge, LateLinkForm, readLate } from "@/components/projects/procurement/LateLink";
 const f = "min-h-10 rounded-xl border-2 bg-background px-2";
 const b = "min-h-10 rounded-xl border px-4 text-sm font-semibold active:bg-muted";
 export type CC = { id: string; status: string; procurement_method: string | null; published_on: string | null; award_notice_on: string | null; ppa_notice_on: string | null; signed_on: string | null; decision_id: string | null; justification: string | null; objection_pending?: boolean; objection_resolved_on?: string | null };
@@ -10,16 +13,23 @@ export default async function ContractControls({ c, back, decisions }: { c: CC; 
   const hid = <><input type="hidden" name="id" value={c.id} />{back && <input type="hidden" name="back" value={back} />}</>;
   const sb = await supabaseServer();
   const { data: hol } = await sb.from("legal_holiday").select("day");
+  const acc = c.status === "signed" || c.status === "active" ? await acceptanceState(c.id) : null;
+  const late = await readLate(c.id);
+  const statusOpts = Object.entries(CONTRACT_STATUS).filter(([k]) => !(k === "completed" && acc !== null && c.status !== "completed"));
   const earliest = earliestSigning(c, (hol ?? []).map((h: { day: string }) => h.day));
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">أسلوب التلزيم: <b>{c.procurement_method ? METHOD[c.procurement_method] ?? c.procurement_method : "غير محدد"}</b>{c.published_on ? ` · نُشر ${c.published_on}` : ""}{c.award_notice_on ? ` · نشر قبول العرض ${c.award_notice_on}` : ""}{c.signed_on ? ` · وُقّع ${c.signed_on}` : ""}{earliest && c.status === "draft" ? ` · أبكر توقيع يقبله النظام ${earliest} (لا يكفي وحده)` : ""}</p>
       {c.status === "draft" && !c.decision_id && c.procurement_method && !["quotations", "invoice"].includes(c.procurement_method) && <p className="text-xs font-semibold text-destructive">⚠ غير مربوط بقرار من المجلس البلدي — تحقّق من الاختصاص (يُراجع قانونيًا).</p>}
+      <LateBadge late={late} />
+      {!c.decision_id && <LateLinkForm contractId={c.id} back={back ? `/staff/projects/${back}` : undefined} decisions={decisions} />}
+      <Link href={`/staff/projects/procurement/contract/${c.id}`} className="inline-block text-xs font-bold text-primary">ملف الشراء (المراحل، اللجان، النشر الرسمي) ←</Link>
       <form action={setContractStatus} className="grid grid-cols-[1fr_auto] items-end gap-2">{hid}
-        <select name="value" defaultValue={c.status} aria-label="حالة العقد" className={`${f} w-full`}>{Object.entries(CONTRACT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        <select name="value" defaultValue={c.status} aria-label="حالة العقد" className={`${f} w-full`}>{statusOpts.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
         <button className={b}>تحديث</button>
         {c.status === "draft" && <label className="col-span-2 text-xs sm:col-span-1">تاريخ التوقيع (عند اختيار «موقَّع»)<input type="date" name="signed" className={`${f} block w-full`} /></label>}
         <input name="note" maxLength={500} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${f} col-span-2 min-w-0 sm:col-span-1`} /></form>
+      {acc !== null && <CompletionForm contractId={c.id} back={back ? `/staff/projects/${back}` : undefined} has={acc} />}
       {c.objection_pending && <p className="text-xs font-semibold text-destructive">⛔ اعتراض قائم: التوقيع ممنوع حتى البتّ فيه.</p>}
       {c.status === "draft" && <details><summary className="cursor-pointer text-xs font-bold text-primary">اعتراض على الترسية (هيئة الاعتراضات)</summary>
         <form action={setObjection} className="mt-2 flex flex-wrap items-end gap-2">{hid}

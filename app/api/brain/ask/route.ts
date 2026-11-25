@@ -3,6 +3,7 @@ import { ask, type Turn } from "@/lib/brain/rag";
 import { supabaseServer } from "@/lib/supabase-server";
 import { parsePeriod } from "@/lib/ops";
 import { loadOps, opsFacts } from "@/lib/opsData";
+import { buildLegalPrompt, isLegalQuestion, selectRules, type RuleCtx } from "@/lib/legalContext";
 
 export const maxDuration = 60;
 export async function POST(req: Request) {
@@ -24,5 +25,15 @@ export async function POST(req: Request) {
       }
     } catch { /* answer without operational facts */ }
   }
-  try { return Response.json(await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts })); } catch { return Response.json({ error: "تعذّر الوصول إلى المساعد، حاول مجدداً" }, { status: 502 }); }
+  // Legal/financial/procedural questions: load matching rows of the legal_rule registry (tolerates a missing table) and constrain how the model may use them.
+  let legalPrompt: string | undefined;
+  const path = typeof ctx?.path === "string" ? ctx.path.slice(0, 120) : undefined;
+  if (isLegalQuestion(query, path)) {
+    try {
+      const sb = await supabaseServer();
+      const { data, error } = await sb.from("legal_rule").select("rule_id,instrument,instrument_no,article,topic,summary_ar,conditions_ar,exceptions_ar,deadline_ar,required_docs_ar,enforcement,review_status,original_text_loaded,workflow").limit(200);
+      legalPrompt = buildLegalPrompt(error ? null : selectRules(query, (data ?? []) as RuleCtx[], path));
+    } catch { legalPrompt = buildLegalPrompt(null); }
+  }
+  try { return Response.json(await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts, legalPrompt })); } catch { return Response.json({ error: "تعذّر الوصول إلى المساعد، حاول مجدداً" }, { status: 502 }); }
 }

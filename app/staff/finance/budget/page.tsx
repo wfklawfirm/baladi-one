@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
@@ -31,6 +32,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
     <><StaffHeader back="/staff/finance" backLabel="المالية" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <FinanceNav current="budget" />
+      <p className="text-sm"><Link href="/staff/finance/lifecycle" className="font-semibold text-primary underline">دورة الموازنة والاعتمادات</Link> · <Link href="/staff/finance/closing" className="font-semibold text-primary underline">إقفال السنة وقطع الحساب</Link></p>
       <h1 className="text-2xl font-bold">الموازنة والاعتمادات — {year}</h1>
       <Flash ok={sp.ok} err={sp.err} />
       {pending.length > 0 && <Panel title="تعديلات بانتظار التصديق" sub="لم تُطبَّق على الاعتماد بعد.">

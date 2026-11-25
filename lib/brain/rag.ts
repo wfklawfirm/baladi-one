@@ -97,7 +97,7 @@ export async function clarify(query: string, history: Turn[]): Promise<string[]>
   } catch { return []; }
 }
 
-export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string } = {}) {
+export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string } = {}) {
   if (!opts.noClarify) {
     const questions = await clarify(query, history);
     if (questions.length) return { clarify: questions };
@@ -107,7 +107,7 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* answer from legal knowledge without sources */ }
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني (قانون البلديات 118/1977 وسائر القوانين ذات الصلة)، وصرّح بأن هذا النص مسودة أولية وفق المعايير القانونية المعتمدة، وأنشئ النموذج كاملاً. لا تقتبس نص أي مادة حرفياً ولا تنسب صياغة إلى مادة بعينها: اذكر اسم القانون ورقمه، ورقم المادة فقط حين تكون متأكداً منه، ونبّه إلى وجوب مراجعة النص الرسمي.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]" : "[تلميح: لا مصادر مسترجعة — استخدم الهيكل الكامل دون اقتباس حرفي لنصوص المواد]";
-  const msgs: Msg[] = [{ role: "system", content: SYSTEM_PROMPT }];
+  const msgs: Msg[] = [{ role: "system", content: opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
   msgs.push({ role: "user", content: `${HINT}\n\n${FACTS}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });

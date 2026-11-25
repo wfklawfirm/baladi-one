@@ -52,6 +52,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
     <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <FinanceNav current="overview" />
+      <p className="text-sm"><Link href="/staff/finance/lifecycle" className="font-semibold text-primary underline">دورة الموازنة والاعتمادات</Link> · <Link href="/staff/finance/closing" className="font-semibold text-primary underline">إقفال السنة وقطع الحساب</Link></p>
       {header}
       {d.partial && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر تحميل جزء من البيانات؛ قد تكون الأرقام ناقصة.</p>}
       <p className="text-xs text-muted-foreground">السنة المالية: {d.fy ? d.fy.year : NA}{d.years.length > 1 && <> · {d.years.map((y) => <Link key={y.id} href={`/staff/finance?p=${range.key}&fy=${y.year}`} className={`mx-1 underline ${y.year === d.fy?.year ? "font-bold text-primary" : ""}`}>{y.year}</Link>)}</>} · تنفيذ الموازنة تراكمي للسنة ولا يتأثر باختيار الفترة.</p>
@@ -137,6 +138,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
           ))}
         </Panel>
       </div>
+      <p className="text-sm"><Link href="/staff/finance/expenditure" className="font-semibold text-primary">دورة الإنفاق العام: التزام ← تصفية ← أمر صرف ← دفع ← مطابقة ←</Link></p>
     </main></>
   );
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import { dateOk, uuidOk } from "@/lib/council";
+import { checkResult, errCode, tally, VOTE_KEYS } from "@/lib/votes";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const opt = (v: string) => (v ? v : null);
@@ -79,4 +80,58 @@ export async function setReview(fd: FormData) {
   const { error } = await sb.rpc("decision_set_review", { p_id: id, p_category: s(fd, "category"), p_level: s(fd, "level"), p_sent: optDate(s(fd, "sent")), p_received: optDate(s(fd, "received")), p_validated: optDate(s(fd, "validated")), p_note: opt(s(fd, "note")), p_audit_required: fd.get("audit") === "on", p_audit_notice: optDate(s(fd, "audit_notice")), p_tacit_notified: optDate(s(fd, "tacit")) });
   if (error) redirect(`/staff/council/decisions/${id}?err=1`);
   revalidatePath(`/staff/council/decisions/${id}`);
+}
+
+// ---- Voting engine + minutes (migration 0026). Every action maps a missing RPC to err=unavailable instead of crashing. ----
+const votesBack = (sid: string) => `/staff/council/${sid}/votes`;
+const minutesBack = (sid: string) => `/staff/council/${sid}/votes/minutes`;
+
+export async function recordVotes(fd: FormData) {
+  const sid = s(fd, "session"), agenda = s(fd, "agenda"); if (!uuidOk(sid) || !uuidOk(agenda)) return;
+  const names = fd.getAll("member").map(String), votes = fd.getAll("vote").map(String), reasons = fd.getAll("reason").map(String);
+  const rows = names.map((m, i) => ({ member: m.trim(), vote: votes[i] ?? "", reason: (reasons[i] ?? "").trim() })).filter((r) => r.member || r.reason);
+  const back = (e: string) => redirect(`${votesBack(sid)}?err=${e}&item=${agenda}`);
+  if (rows.length === 0 || rows.some((r) => !r.member || !VOTE_KEYS.includes(r.vote))) back("1");
+  const result = s(fd, "result"), tieBreak = fd.get("tie_break") === "on", cat = s(fd, "category");
+  if (result && checkResult(result, tally(rows), tieBreak).length) back("result_matches_counts");
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("council_record_votes", { p_agenda: agenda, p_votes: rows.map((r) => ({ member: r.member, vote: r.vote, reason: r.reason || null })), p_category: cat || null, p_result: result || null, p_tie_break: tieBreak, p_note: opt(s(fd, "note")) });
+  if (error) back(errCode(error.message));
+  revalidatePath(votesBack(sid));
+  redirect(`${votesBack(sid)}?ok=1&item=${agenda}`);
+}
+export async function setMajorityRule(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("council_set_majority_rule", { p_category: s(fd, "category"), p_kind: opt(s(fd, "kind")), p_note: opt(s(fd, "note")), p_verified: fd.get("verified") === "on" });
+  if (error) redirect(`${votesBack(sid)}?err=${errCode(error.message)}`);
+  revalidatePath(votesBack(sid));
+}
+async function minutesRpc(sid: string, fn: string, args: Record<string, unknown>, ok: string) {
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc(fn, args);
+  if (error) redirect(`${minutesBack(sid)}?err=${errCode(error.message)}`);
+  revalidatePath(minutesBack(sid));
+  redirect(`${minutesBack(sid)}?ok=${ok}`);
+}
+export async function saveMinutes(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  if (!s(fd, "body")) redirect(`${minutesBack(sid)}?err=1`);
+  await minutesRpc(sid, "council_minutes_save", { p_session: sid, p_body: String(fd.get("body")), p_confidential: fd.get("confidential") === "on" }, "saved");
+}
+export async function setMinutesConfidential(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  await minutesRpc(sid, "council_minutes_set_confidential", { p_session: sid, p_flag: s(fd, "flag") === "1" }, "conf");
+}
+export async function approveMinutes(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  await minutesRpc(sid, "council_minutes_approve", { p_session: sid }, "approved");
+}
+export async function attachSignedMinutes(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  await minutesRpc(sid, "council_minutes_attach_signed", { p_session: sid, p_ref: s(fd, "ref") }, "signed");
+}
+export async function correctMinutes(fd: FormData) {
+  const sid = s(fd, "session"); if (!uuidOk(sid)) return;
+  await minutesRpc(sid, "council_minutes_correct", { p_session: sid, p_section: opt(s(fd, "section")), p_original: opt(s(fd, "original")), p_corrected: s(fd, "corrected"), p_reason: s(fd, "reason"), p_authority: opt(s(fd, "authority")) }, "corrected");
 }
