@@ -29,7 +29,7 @@ export default async function Contracts({ searchParams }: { searchParams: Promis
   const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-10 rounded-full border px-3.5 py-2 text-sm ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
   return (
     <><StaffHeader back="/staff/projects" backLabel="المشاريع" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-4 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8">
       <h1 className="text-2xl font-bold">سجل العقود</h1>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{contractErr(sp.err)}</p>}
       {(soon.size > 0 || over.size > 0) && <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm font-semibold">{soon.size > 0 && `${soon.size} عقد ينتهي خلال ${DAYS} يومًا. `}{over.size > 0 && `${over.size} عقد تجاوز تاريخ نهايته دون إغلاق.`}</p>}

@@ -15,7 +15,7 @@ export default async function Reports() {
   if (!memberships.some((m) => m.role === "mayor" || m.role === "admin")) redirect("/staff");
   return (
     <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><ClipboardList className="size-6 text-primary" aria-hidden />مركز التقارير والتصدير</h1>
         <p className="text-sm text-muted-foreground">تقارير من بيانات النظام الفعلية، بصيغة Excel وصفحة طباعة A4 (احفظها PDF من المتصفح). كل تقرير بحالة «{REVIEW_STATUS}» حتى يراجعه مسؤول، وتُسجَّل عمليات التصدير.</p>

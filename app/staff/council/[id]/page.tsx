@@ -26,7 +26,7 @@ export default async function SessionPage({ params, searchParams }: { params: Pr
   const so = summonsOk(s.summoned_on, s.held_on);
   return (
     <><StaffHeader back="/staff/council" backLabel="الجلسات" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <div><h1 className="text-2xl font-bold">{s.title}{s.session_no ? ` (${s.session_no})` : ""}</h1><p className="text-sm text-muted-foreground">{fmt(s.held_on)}{s.is_demo ? " · تجريبي" : ""}</p></div>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "dup" ? "رقم القرار مستخدم في هذه السنة." : "تحقق من الحقول المطلوبة."}</p>}
 

@@ -24,7 +24,7 @@ export default async function Receivables({ searchParams }: { searchParams: Prom
 
   return (
     <><StaffHeader back="/staff/finance" backLabel="المالية" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <FinanceNav current="receivables" />
       <h1 className="text-2xl font-bold">المستحقات والتحصيل</h1>
       <Flash ok={sp.ok} err={sp.err} />

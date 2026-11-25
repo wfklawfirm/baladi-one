@@ -56,7 +56,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
 
   return (
     <><StaffHeader back="/staff" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-6xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <nav aria-label="وحدات مساحة الرئيس" className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
         {MODULES.map((m) => m.on
           ? <Link key={m.n} href={m.href} aria-current={m.n === "01" ? "page" : undefined} className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-semibold active:bg-muted ${m.n === "01" ? "border-primary bg-accent text-primary" : "bg-background"}`}><span className="text-xs text-muted-foreground">{m.n}</span>{m.t}</Link>

@@ -10,7 +10,7 @@ export default async function Page() {
   return (
     <>
       <StaffHeader />
-      <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:max-w-5xl">
+      <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-4 px-4 py-6 lg:max-w-7xl">
         <h1 className="text-2xl font-bold">مولّد القرارات</h1><p className="text-sm text-muted-foreground">اختر نوع الوثيقة واكتب الموضوع لتحصل على مسودة رسمية كاملة.</p>
         {brainConfigured() ? <DecisionGen /> : <p className="rounded-2xl border p-8 text-center text-muted-foreground">قريبًا — الأداة قيد التفعيل.</p>}
       </main>

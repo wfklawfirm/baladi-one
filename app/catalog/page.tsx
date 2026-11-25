@@ -13,7 +13,7 @@ export default async function CatalogHome({ searchParams }: { searchParams: Prom
   const byCat = new Map<string, typeof list>();
   for (const t of list) byCat.set(t.category, [...(byCat.get(t.category) ?? []), t]);
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-6xl">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-7xl">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">كتالوج المعاملات البلدية</h1>
       </header>

@@ -36,7 +36,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   );
 
   if (d.error) {
-    return <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" /><main dir="rtl" lang="ar" className="mx-auto max-w-6xl space-y-5 p-4 md:p-8"><FinanceNav current="overview" />{header}<p role="alert" className="rounded-xl border border-destructive/40 p-4 text-sm">{NA}: وحدة المالية غير مفعّلة بعد في قاعدة البيانات.</p></main></>;
+    return <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" /><main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8"><FinanceNav current="overview" />{header}<p role="alert" className="rounded-xl border border-destructive/40 p-4 text-sm">{NA}: وحدة المالية غير مفعّلة بعد في قاعدة البيانات.</p></main></>;
   }
 
   const cards = await financeCards(sb, range);
@@ -50,7 +50,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
 
   return (
     <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-6xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <FinanceNav current="overview" />
       {header}
       {d.partial && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر تحميل جزء من البيانات؛ قد تكون الأرقام ناقصة.</p>}

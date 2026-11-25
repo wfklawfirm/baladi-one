@@ -32,7 +32,7 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
   return (
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
       <section className="border-b bg-background px-4 pb-6 pt-6">
-        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-6xl">
+        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-7xl">
           <Link href={only ? base : `/m/${slug}/services`} className="text-sm text-muted-foreground hover:text-primary">← {only ? catLabel(lang, tp) : t(lang, "transactions")}</Link>
           <div className="flex items-center gap-4">
             <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><Icon className="size-9" aria-hidden /></span>
@@ -46,7 +46,7 @@ export default async function TopicPage({ params, searchParams }: { params: Prom
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-8 px-4 pt-6 lg:max-w-6xl lg:pt-10">
+      <div className="mx-auto max-w-3xl space-y-8 px-4 pt-6 lg:max-w-7xl lg:pt-10">
         {(only ? [only] : subs).map((s) => {
           const list = all.filter((x) => x.sub === s.id);
           const shown = only ? list : list.slice(0, PREVIEW);

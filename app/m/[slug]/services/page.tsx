@@ -33,7 +33,7 @@ export default async function ServicesHome({ params, searchParams }: { params: P
   return (
     <main dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="flex min-h-[calc(100dvh-5.5rem)] flex-col">
       <section className="border-b bg-background px-4 pb-6 pt-6">
-        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-6xl">
+        <div className="mx-auto max-w-3xl space-y-4 lg:max-w-7xl">
           <Link href={`/m/${slug}${lang === "en" ? "?lang=en" : ""}`} className="text-sm text-muted-foreground hover:text-primary">← {lang === "ar" ? "الرئيسية" : "Home"}</Link>
           <h1 className="text-3xl font-bold lg:text-4xl">{t(lang, "transactions")}</h1>
           <form action={`/m/${slug}/services`} className="flex items-center gap-2 rounded-2xl border-2 bg-background p-2 focus-within:border-primary lg:max-w-3xl" role="search">
@@ -46,7 +46,7 @@ export default async function ServicesHome({ params, searchParams }: { params: P
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 lg:max-w-6xl lg:pt-10">
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 lg:max-w-7xl lg:pt-10">
         {found ? (
           <section className="space-y-3" aria-label="نتائج البحث">
             <p className="text-sm text-muted-foreground">

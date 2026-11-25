@@ -38,7 +38,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const label = (kind: string, v: string | null) => (v ? (kind === "status" ? PROJECT_STATUS[v] ?? v : kind === "contract" ? CONTRACT_STATUS[v] ?? v : kind === "progress" ? `${v}%` : v) : "");
   return (
     <><StaffHeader back="/staff/projects" backLabel="المشاريع" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <div className="space-y-2"><h1 className="text-2xl font-bold">{p.title}</h1>
         <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">{PROJECT_STATUS[p.status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">أولوية {PRIORITY[p.priority]}</span>
           {isDelayed(p, t) && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">تجاوز الموعد المحدد</span>}{p.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>

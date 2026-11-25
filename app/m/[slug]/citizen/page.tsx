@@ -37,7 +37,7 @@ export default async function CitizenHome({ params, searchParams }: { params: Pr
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 lg:max-w-5xl lg:space-y-6">
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 lg:max-w-7xl lg:space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-5">
           {[
             { h: `/m/${slug}/services?lang=${lang}`, Icon: FileSearch, l: t(lang, "transactions"), sub: countAr(total), main: true },

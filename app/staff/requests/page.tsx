@@ -20,7 +20,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const oversight = memberships.some((m) => m.role === "mayor" || m.role === "admin") && !filter;
   return (
     <><StaffHeader back="/staff" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8 lg:max-w-5xl">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8 lg:max-w-7xl">
       <h1 className="text-2xl font-bold">طلبات وبلاغات المواطنين</h1>
       {oversight && (
         <section aria-label="نظرة عامة" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

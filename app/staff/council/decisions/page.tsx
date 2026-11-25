@@ -23,7 +23,7 @@ export default async function Registry({ searchParams }: { searchParams: Promise
   const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-10 rounded-full border px-3.5 py-2 text-sm ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
   return (
     <><StaffHeader back="/staff/council" backLabel="المجلس" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-4 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8">
       <h1 className="text-2xl font-bold">سجل القرارات البلدية</h1>
       <p className="text-sm text-muted-foreground">الحالة القانونية (نافذ؟) منفصلة عن حالة التنفيذ (نُفّذ؟). اتخاذ القرار لا يعني نفاذه، ونفاذه لا يعني تنفيذه.</p>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "dup" ? "رقم القرار مستخدم في هذه السنة." : "تحقق من الحقول المطلوبة."}</p>}

@@ -38,7 +38,7 @@ export default async function Accounts({ searchParams }: { searchParams: Promise
   const { data } = await sb.rpc("admin_list_staff");
   const rows = (data ?? []) as any[];
   return (
-    <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <Link href="/staff" className="text-sm text-primary">← الطلبات</Link>
       <h1 className="text-2xl font-bold">الحسابات</h1>
       {sp.e && <p role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">{ERR[sp.e] ?? ERR.failed}</p>}

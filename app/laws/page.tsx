@@ -8,7 +8,7 @@ export default async function LawsHome({ searchParams }: { searchParams: Promise
   const q = ((await searchParams).q ?? "").trim();
   const hits = q ? searchLaws(q) : [];
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-6xl">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8 lg:max-w-7xl">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">المكتبة القانونية البلدية</h1>
         <p className="text-muted-foreground">قانون البلديات، قانون المحاسبة العمومية، قانون الشراء العام، ومرسوم أصول المحاسبة في البلديات — مادة بمادة وقابلة للبحث.</p>

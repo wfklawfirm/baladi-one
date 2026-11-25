@@ -18,7 +18,7 @@ export default async function Council({ searchParams }: { searchParams: Promise<
   const rows = data ?? [];
   return (
     <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-2xl font-bold">المجلس والحوكمة</h1>
         <Link href="/staff/council/decisions" className="rounded-xl border px-4 py-2 text-sm font-semibold text-primary active:bg-muted">سجل القرارات ←</Link></div>
       {error && <p role="alert" className="rounded-xl border p-3 text-sm">تعذّر تحميل الجلسات.</p>}

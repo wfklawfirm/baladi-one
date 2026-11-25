@@ -59,12 +59,12 @@ export default async function StaffHome() {
   ];
   return (
     <>
-      <header className="border-b bg-background"><div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+      <header className="border-b bg-background"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5">
         <Emblem size={44} />
         <p className="text-sm font-bold text-primary">مساحة العمل</p>
         <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
       </div></header>
-      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-5 md:py-8">
+      <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-6 px-4 py-5 md:py-8">
         {admin && on && <AutoIngest />}
         <section className="overflow-hidden rounded-3xl bg-primary text-primary-foreground shadow-sm">
           <div className="space-y-1 px-5 pb-4 pt-5 sm:px-7">
@@ -93,10 +93,11 @@ export default async function StaffHome() {
             <KpiGrid cards={cards} />
           </section>
         )}
+        <div className="grid items-start gap-5 lg:grid-cols-2">
         {groups.map((g) => (
-          <section key={g.title} aria-label={g.title} className="rounded-3xl border bg-muted/40 p-3 sm:p-5">
+          <section key={g.title} aria-label={g.title} className={`rounded-3xl border bg-muted/40 p-3 sm:p-5 ${groups.length === 3 && g.title === "إدارة النظام" ? "lg:col-span-2" : ""}`}>
             <h2 className="mb-3 flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden />{g.title}</h2>
-            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-1">
               {g.items.map(({ href, Icon, title, sub }) => (
                 <Link key={href} href={href} className="elev elev-hover flex min-h-[4.5rem] items-center gap-3.5 rounded-2xl border bg-background px-4 py-3 active:bg-muted sm:last:odd:col-span-2">
                   <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
@@ -107,6 +108,7 @@ export default async function StaffHome() {
             </div>
           </section>
         ))}
+        </div>
         <h2 className="flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden />مراجع وروابط سريعة</h2>
         <section className="-mt-4 grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           {links.map(({ href, Icon, title, sub, external }) => (

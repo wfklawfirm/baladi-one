@@ -15,7 +15,7 @@ export default async function Collections({ searchParams }: { searchParams: Prom
   const rows = data ?? [];
   return (
     <><StaffHeader back="/staff" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <h1 className="text-2xl font-bold">تسجيل التحصيل</h1>
       {sp.ok && <p role="status" className="rounded-xl border border-primary/40 bg-accent p-3 text-sm font-medium">تم تسجيل الإيصال.</p>}
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر التسجيل، تحقق من المبلغ وحاول مجددًا.</p>}

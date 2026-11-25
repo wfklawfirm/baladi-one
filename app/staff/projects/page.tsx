@@ -29,7 +29,7 @@ export default async function Projects({ searchParams }: { searchParams: Promise
   const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-10 rounded-full border px-3.5 py-2 text-sm ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
   return (
     <><StaffHeader />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-4 p-4 md:p-8">
+    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-2xl font-bold">المشاريع والعقود</h1><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">سجل العقود ←</Link></div>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تحقق من الحقول المطلوبة (العنوان، الموازنة، التواريخ).</p>}
       <form className="flex flex-wrap gap-2"><input name="q" defaultValue={sp.q} placeholder="بحث بالعنوان أو الموقع" aria-label="بحث" className="min-h-11 min-w-0 flex-1 rounded-xl border-2 bg-background px-3 outline-none focus:border-primary" />
