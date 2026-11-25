@@ -9,7 +9,7 @@ export const RENDER = {
   resolvedOpening: "{{verified_competent_authority}}،",
   councilProcedure: ["بناءً على الدعوة رقم {{invitation_ref}} تاريخ {{invitation_date}}،", "وبعد الاطلاع على محضر الجلسة {{session_ref}} المنعقدة بتاريخ {{session_date}} وبيانات النصاب والتصويت المثبتة فيه،"],
   transition: "يقرر ما يأتي:",
-  watermark: "مسودة — غير صالحة للإصدار الرسمي",
+  watermark: "مسودة",
   signatureNote: "التوقيع والختم يضعهما صاحب الاختصاص على النسخة المطبوعة؛ لا يُحاكى توقيع ولا ختم رقميًا.",
 } as const;
 

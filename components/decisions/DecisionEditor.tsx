@@ -135,7 +135,7 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
             <button type="button" onClick={adopt} disabled={pending || !date} className="min-h-11 rounded-xl border-2 border-primary px-4 font-semibold text-primary disabled:opacity-40">اعتماد واتخاذ القرار</button>
             <p className="w-full text-xs text-muted-foreground">الاعتماد يتم بيد المختص فقط، ويُرفض آليًا إن كان القالب غير معتمد أو الحقول ناقصة أو المراجع غير متحقق منها. لا شيء يُعتمد تلقائيًا.</p></div>}
         </section>
-        <section className="rounded-2xl border bg-neutral-100 p-3"><h2 className="mb-2 font-bold">معاينة</h2><div className="max-h-[70vh] overflow-auto"><DecisionDoc r={view} /></div></section>
+        <section className="rounded-2xl border bg-neutral-100 p-3"><h2 className="mb-2 font-bold">معاينة</h2><div className="max-h-[75vh] overflow-y-auto overflow-x-hidden"><DecisionDoc r={view} /></div></section>
         <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">المساعد الذكي (يقترح فقط)</h2>
           {!aiOn ? <p className="text-sm text-muted-foreground">المساعد غير مفعّل في هذه البيئة.</p> : <>
             <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={2} placeholder="اختياري: انسخ هنا الفقرة المراد تحسينها" className={`${inp} py-2`} />
