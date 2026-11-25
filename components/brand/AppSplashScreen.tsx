@@ -13,5 +13,5 @@ export function AppSplashScreen({ preview = false, onDone }: { preview?: boolean
     return () => window.clearTimeout(id);
   }, [preview, onDone]);
   if (gone) return null;
-  return <div className="brand-stage splash" aria-hidden="true"><AIJURBrandMotion priority /></div>;
+  return <div className="brand-stage splash" aria-hidden="true"><AIJURBrandMotion priority showQr /></div>;
 }

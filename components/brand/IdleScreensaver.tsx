@@ -6,7 +6,7 @@ const FADE_MS = 350;
 
 /** Full-screen white screensaver with the breathing logo. The first touch/click/key/mouse move only closes it (the overlay stays mounted
  *  for the fade so the tap that closed it cannot reach the page behind). Nothing is reloaded: page state is preserved underneath. */
-export function IdleScreensaver({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
+export function IdleScreensaver({ open, onDismiss, showQr = true }: { open: boolean; onDismiss: () => void; showQr?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false);
 
@@ -29,7 +29,7 @@ export function IdleScreensaver({ open, onDismiss }: { open: boolean; onDismiss:
   const stop = (e: React.SyntheticEvent) => { e.preventDefault(); e.stopPropagation(); if (open) onDismiss(); };
   return (
     <div className="brand-stage saver" data-open={shown} role="presentation" onPointerDown={stop} onTouchStart={stop} onClick={stop} onContextMenu={stop}>
-      <AIJURBrandMotion />
+      <AIJURBrandMotion showQr={showQr} />
     </div>
   );
 }

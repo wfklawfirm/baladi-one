@@ -13,7 +13,7 @@ export function BrandMotionProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     let live = true;
-    fetch("/api/display").then((r) => (r.ok ? r.json() : null)).then((j) => { if (live && j) setSettings({ enabled: j.enabled !== false, idleSeconds: normalizeIdle(j.idleSeconds) }); }).catch(() => {});
+    fetch("/api/display").then((r) => (r.ok ? r.json() : null)).then((j) => { if (live && j) setSettings({ enabled: j.enabled !== false, idleSeconds: normalizeIdle(j.idleSeconds), qr: j.qr !== false }); }).catch(() => {});
     return () => { live = false; };
   }, []);
 
@@ -29,5 +29,5 @@ export function BrandMotionProvider({ children }: { children: React.ReactNode })
   const dismiss = useCallback(() => setOpen(false), []);
   useEffect(() => { if (!isPublic) setOpen(false); }, [isPublic]);
 
-  return <>{children}<IdleScreensaver open={open} onDismiss={dismiss} /></>;
+  return <>{children}<IdleScreensaver open={open} onDismiss={dismiss} showQr={settings.qr} /></>;
 }

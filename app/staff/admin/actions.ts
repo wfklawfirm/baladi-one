@@ -139,6 +139,6 @@ export async function endPosition(fd: FormData) {
 // ── display (conference mode): screensaver on/off + idle seconds (30/60/120/300; the RPC enforces the same list)
 export async function saveDisplay(fd: FormData) {
   const idle = Number(s(fd, "idle"));
-  await run("adm_display_set", { p_enabled: flag(fd, "enabled"), p_idle: idle }, BACK_DISPLAY, ![30, 60, 120, 300].includes(idle));
+  await run("adm_display_set", { p_enabled: flag(fd, "enabled"), p_idle: idle, p_qr: flag(fd, "qr") }, BACK_DISPLAY, ![30, 60, 120, 300].includes(idle));
   redirect(`${BACK_DISPLAY}?ok=1`);
 }
