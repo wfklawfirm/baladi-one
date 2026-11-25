@@ -57,7 +57,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
             <label className="space-y-1 text-sm font-medium">النوع<select name="kind" className={field}><option value="expense">نفقة</option><option value="revenue">إيراد</option></select></label>
             <label className="space-y-1 text-sm font-medium">القطاع<input name="sector" maxLength={100} className={field} /></label>
             <label className="space-y-1 text-sm font-medium">الاعتماد<input name="amount" inputMode="decimal" required className={field} /></label>
-            <label className="space-y-1 text-sm font-medium">العملة<select name="currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي</option></select></label>
+            <label className="space-y-1 text-sm font-medium">العملة<select name="currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي (تنبيه: موازنة البلدية قانونًا بالليرة)</option></select></label>
             <button className={`${btn} sm:col-span-2`}>إضافة</button>
           </form>
         </Panel>
@@ -85,7 +85,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
         <Panel title="تسجيل دفعة (نفقة)" sub="مرتبطة بالتزام قائم (ضمن المتبقي منه) أو مباشرة (ضمن المتاح).">
           <form action={payLine} className="grid gap-3">{back}
             <label className="space-y-1 text-sm font-medium">بند النفقة<select name="line" required className={field}>{expLines.map(lineOpt)}</select></label>
-            <label className="space-y-1 text-sm font-medium">الالتزام (اختياري)<select name="commitment" className={field}><option value="">دفعة مباشرة بلا التزام</option>{commits.map((c) => { const l = lines.find((x) => x.id === c.line_id); const paid = exps.filter((e) => e.commitment_id === c.id).reduce((s, e) => s + Number(e.amount), 0); return l ? <option key={c.id} value={c.id}>{l.code} · {c.description} — متبقٍ {money(Number(c.amount) - paid, l.currency)}</option> : null; })}</select></label>
+            <label className="space-y-1 text-sm font-medium">الالتزام (اختياري)<select name="commitment" className={field}><option value="">⚠ دفعة بلا التزام مسبق (مخالفة للأصول المالية، مبرَّر استثنائي فقط)</option>{commits.map((c) => { const l = lines.find((x) => x.id === c.line_id); const paid = exps.filter((e) => e.commitment_id === c.id).reduce((s, e) => s + Number(e.amount), 0); return l ? <option key={c.id} value={c.id}>{l.code} · {c.description} — متبقٍ {money(Number(c.amount) - paid, l.currency)}</option> : null; })}</select></label>
             <label className="space-y-1 text-sm font-medium">المبلغ<input name="amount" inputMode="decimal" required className={field} /></label>
             <label className="space-y-1 text-sm font-medium">المستفيد<input name="beneficiary" required maxLength={200} className={field} /></label>
             <label className="space-y-1 text-sm font-medium">تاريخ الدفع<input name="paid_on" type="date" defaultValue={today()} required className={field} /></label>
