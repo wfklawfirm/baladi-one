@@ -5,9 +5,10 @@ const norm = (t: string) => t.replace(/[\u0610-\u061A\u064B-\u065F\u0670]/g, "")
 const WORKFLOW_KEYS: Record<string, string[]> = {
   council: ["جلسه", "جلسات", "مجلس", "نصاب", "دعوه", "محضر", "تصويت", "اصوات", "جدول اعمال", "اجتماع"],
   decisions: ["قرار", "تصديق", "مصدق", "سلطه الرقابه", "قائمقام", "محافظ", "ديوان المحاسبه", "نفاذ", "ارسال", "مهله", "موازنه", "نقل اعتمادات", "قرض", "تنظيم مدني", "رسوم", "ضريبه"],
+  waste: ["نفايات", "نفايه", "كنس", "رسم جمع", "رسم النفايات", "الرسم البيئي", "80/2018", "38/2026", "استرداد الكلفه", "طمر", "فرز", "مكب", "نظافه"],
   procurement: ["عقد", "مناقصه", "شراء", "تلزيم", "لزمه", "تجميد", "اعتراض", "عرض", "استدراج", "رضائي", "دفتر شروط", "مورد", "متعهد", "244", "تعديل قيمه", "صرف", "دفع", "فاتوره"],
 };
-const PATH_WORKFLOW: [string, string[]][] = [["/staff/council", ["council", "decisions"]], ["/staff/projects", ["procurement"]], ["/staff/finance", ["decisions", "procurement"]], ["/staff/legal", ["council", "decisions", "procurement"]]];
+const PATH_WORKFLOW: [string, string[]][] = [["/staff/council", ["council", "decisions"]], ["/staff/projects", ["procurement"]], ["/staff/finance", ["decisions", "procurement"]], ["/staff/revenue", ["waste"]], ["/staff/legal", ["council", "decisions", "procurement", "waste"]]];
 const GENERIC = ["قانون", "قانوني", "مادة", "المادة", "يجوز", "هل يحق", "مرسوم", "اجراء", "اجراءات", "مخالفه", "صلاحيه", "اختصاص", "مالي", "ماليه", "ميزانيه"].map(norm);
 
 /** Legal, financial or procedural question? Operational/number questions (KPIs) are left untouched. */

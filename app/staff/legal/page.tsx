@@ -6,7 +6,7 @@ import { ENFORCE, SURE, type Rule } from "@/components/legal/LegalPanel";
 import { Intro, Chip, Empty, Explain, Notice, BTN_SECONDARY } from "@/components/simple/kit";
 
 export const dynamic = "force-dynamic";
-const WF: Record<string, string> = { council: "المجلس", decisions: "القرارات", procurement: "الشراء والعقود" };
+const WF: Record<string, string> = { council: "المجلس", decisions: "القرارات", procurement: "الشراء والعقود", waste: "النفايات والنظافة" };
 
 export default async function LegalRegistry() {
   const { sb, memberships } = await requireStaff();

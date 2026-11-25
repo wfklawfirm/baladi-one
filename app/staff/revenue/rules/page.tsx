@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import { Intro } from "@/components/simple/kit";
 import { loadRevenue } from "@/lib/revenueData";
 import { NEEDS_LEGAL, NOT_LOADED, RATE_UNIT, rateText, REVIEW_STATUS } from "@/lib/revenue";
@@ -57,6 +58,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
               </li>))}</ul>)}
         </Panel>
       </>}
+    <LegalPanel workflow="waste" />
     </main></>
   );
 }

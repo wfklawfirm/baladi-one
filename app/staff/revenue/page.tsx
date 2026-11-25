@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import { Intro } from "@/components/simple/kit";
 import { loadRevenue } from "@/lib/revenueData";
 import { arrearsByCurrency, NA, NOT_LOADED, orderState } from "@/lib/revenue";
@@ -48,6 +49,7 @@ export default async function Revenue({ searchParams }: { searchParams: Promise<
           <p className="text-sm text-muted-foreground">المسار: <Link href="/staff/revenue/taxpayers" className="underline">مكلّف</Link> ← <Link href="/staff/revenue/assessments" className="underline">تكليف</Link> ← <Link href="/staff/revenue/orders" className="underline">أمر قبض وتبليغ واعتراض</Link> ← <Link href="/staff/revenue/collect" className="underline">تحصيل وإيصال</Link> ← <Link href="/staff/revenue/cash" className="underline">مطابقة الصندوق</Link></p>
         </>;
       })()}
+    <LegalPanel workflow="waste" />
     </main></>
   );
 }

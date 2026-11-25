@@ -30,3 +30,11 @@ describe("legal context for the copilot", () => {
     expect(buildLegalPrompt(null)).toMatch(/لا تقتبس/);
   });
 });
+
+describe("waste workflow", () => {
+  it("routes waste questions and revenue pages to the waste rules", () => {
+    expect(isLegalQuestion("ما رسم جمع النفايات بحسب القانون 38/2026؟")).toBe(true);
+    expect(workflowsFor("رسم النفايات")).toContain("waste");
+    expect(workflowsFor("كم الوارد؟", "/staff/revenue")).toContain("waste");
+  });
+});

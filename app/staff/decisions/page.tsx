@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/supabase-server";
 import { brainConfigured } from "@/lib/brain/rag";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import DecisionGen from "@/components/brain/DecisionGen";
 import { bestVersions, loadTemplates } from "@/lib/decisions/load";
 import { CLASSES, ISSUER_LABEL, KIND_LABEL, STATUS_LABEL, classesOf, type TplStatus } from "@/lib/decisions/model";
@@ -101,7 +102,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         )}
         <details className="rounded-2xl border p-4"><summary className="cursor-pointer text-sm font-semibold">المولّد الحر القديم (مسودة نصية بالذكاء الاصطناعي)</summary>
           <div className="pt-3">{brainConfigured() ? <DecisionGen /> : <p className="text-sm text-muted-foreground">قريبًا — الأداة قيد التفعيل.</p>}</div></details>
-      </main>
+      <LegalPanel workflow="waste" />
+    </main>
     </>
   );
 }
