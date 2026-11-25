@@ -16,7 +16,7 @@ export default function SiteNav() {
   const chooser = path === home;
   if (chooser || path.startsWith("/kiosk") || path.startsWith("/staff")) return null;
   return (
-    <header className="sticky top-0 z-30 border-b bg-background">
+    <header data-site-nav className="sticky top-0 z-30 border-b bg-background">
       <div className={`mx-auto flex ${"max-w-3xl lg:max-w-7xl"} items-center justify-between gap-3 px-4 py-2`}>
         <Link href={home} className="flex items-center gap-2.5">
           <Emblem size={56} />

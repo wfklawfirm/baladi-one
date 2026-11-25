@@ -86,16 +86,15 @@ export function Kiosk({
   return (
     <div dir={dir} lang={lang} className="flex h-dvh w-full select-none flex-col overflow-hidden bg-page px-[4vw] pb-[1.6vh] pt-[2vh]">
       {/* top bar */}
-      <header className="flex shrink-0 items-center justify-between border-b pb-[1.6vh]">
-        <div className="flex items-center gap-6">
+      <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-6 border-b pb-[1.6vh]">
+        <div className="flex items-center justify-self-start">
           {muni.logoUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={muni.logoUrl} alt={lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr} className="h-[5.5rem] w-auto max-w-[12rem] object-contain" />
             : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
-          <span className="hidden h-12 w-px bg-border lg:block" aria-hidden />
-          <p className="hidden text-[1.6rem] font-semibold text-muted-foreground lg:block">{t(lang, "headerTitle")}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <p className="text-center text-[1.9rem] font-bold text-primary">{t(lang, "headerTitle")}</p>
+        <div className="flex items-center justify-self-end gap-4">
           {view.name !== "home" && (
             <nav aria-label={t(lang, "home")} className="flex items-center gap-3">
               <Btn variant="secondary" onClick={goBack}><ArrowRight className={`size-7 ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />{t(lang, "back")}</Btn>
@@ -215,12 +214,12 @@ export function Kiosk({
         )}
       </main>
 
-      <footer className="flex shrink-0 items-center justify-between border-t pt-[1.4vh] text-[1.15rem] text-muted-foreground">
-        <span>{view.name === "home" ? t(lang, "touchHint") : ""}</span>
+      <footer className="flex shrink-0 flex-col items-center justify-center gap-1 border-t pt-[1.2vh] text-[1.15rem] text-muted-foreground">
+        {view.name === "home" && <span>{t(lang, "touchHint")}</span>}
         <span className="flex items-center gap-3">
           {t(lang, "poweredBy")}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/aijur-logo.png" alt="AIJUR" className="h-12 w-auto" />
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
         </span>
       </footer>
 
