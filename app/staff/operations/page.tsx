@@ -96,7 +96,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
         )}
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         <Card title="أعمار الطلبات المفتوحة" sub="كم مضى على الطلبات التي لم تُنجز" analyze="حلّل أعمار الطلبات المفتوحة وأسباب التأخير المحتملة"><HBars items={o.aging.map((a) => ({ label: a.label, n: a.n }))} /></Card>
         <Card title="المفتوح حسب النوع">{byType.length ? <HBars items={byType} color={C.blue} /> : <p className="text-sm text-muted-foreground">لا طلبات مفتوحة.</p>}</Card>
       </div>
@@ -134,7 +134,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
       <Card title="التحصيل" sub="إيصالات مسجّلة من الموظفين. الفترة المختارة مقارنة بالسابقة.">
         <div className="mb-3 flex justify-end"><Link href="/staff/collections" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground active:opacity-90">تسجيل إيصال</Link></div>
         {!hasColl ? <p className="text-sm text-muted-foreground">لم تُسجَّل مبالغ بعد.</p> : (
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="fill-odd grid gap-5 md:grid-cols-2">
             {o.collections.filter((c) => c.count > 0).map((c) => (
               <div key={c.currency} className="space-y-3">
                 <div className="flex items-baseline justify-between"><b className="text-2xl text-primary">{money(c.month, c.currency)}</b><span className="text-xs text-muted-foreground">الفترة السابقة: {money(c.prev, c.currency)}</span></div>

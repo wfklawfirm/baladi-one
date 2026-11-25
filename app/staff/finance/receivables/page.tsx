@@ -31,7 +31,7 @@ export default async function Receivables({ searchParams }: { searchParams: Prom
       {d.error && <p role="alert" className="rounded-xl border border-destructive/40 p-4 text-sm">{NA}: وحدة المالية غير مفعّلة بعد في قاعدة البيانات.</p>}
       {arr.length > 0 && <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">متأخرات: {arr.map((a) => `${a.count} مستحق بقيمة ${money(a.total, a.currency)}`).join(" · ")}</p>}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         <Panel title="إضافة مستحق" sub="مرجع المكلّف رمز (رقم ملف أو معاملة) فقط: لا أسماء ولا أرقام هواتف.">
           <form action={addReceivable} className="grid gap-3 sm:grid-cols-2">{back}
             <label className="space-y-1 text-sm font-medium sm:col-span-2">نوع الرسم<input name="fee_type" required maxLength={200} placeholder="مثال: رسم رخصة بناء" className={field} /></label>

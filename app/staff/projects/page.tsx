@@ -37,7 +37,7 @@ export default async function Projects({ searchParams }: { searchParams: Promise
       <div className="flex flex-wrap gap-2" aria-label="الحالة">{chip("/staff/projects", !sp.s, "الكل")}{Object.entries(PROJECT_STATUS).map(([k, v]) => chip(`/staff/projects?s=${k}`, sp.s === k, v))}</div>
       <p className="text-sm text-muted-foreground">{rows.length} مشروع</p>
       {rows.length === 0 ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">لا مشاريع مسجّلة بعد.</p> : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="fill-odd grid gap-3 md:grid-cols-2">
           {rows.map((p) => {
             const mm = (ms.data ?? []).filter((m) => m.project_id === p.id);
             const actual = physicalProgress(mm);

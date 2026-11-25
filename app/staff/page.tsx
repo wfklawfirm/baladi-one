@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote, Landmark, Wallet, HardHat, FileBarChart } from "lucide-react";
+import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote, Landmark, Wallet, HardHat, FileBarChart, ChevronLeft } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
 import { STATUS_AR } from "@/lib/reports";
 import { BRAND, OFFICIAL } from "@/lib/brand";
@@ -66,7 +66,7 @@ export default async function StaffHome() {
         <p className="text-sm font-bold text-primary">مساحة العمل</p>
         <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
       </div></header>
-      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-7 px-4 py-5 md:py-8">
+      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-5 md:py-8">
         {admin && on && <AutoIngest />}
         <section className="overflow-hidden rounded-3xl bg-primary text-primary-foreground shadow-sm">
           <div className="space-y-1 px-5 pb-4 pt-5 sm:px-7">
@@ -85,29 +85,29 @@ export default async function StaffHome() {
         </section>
         {cards && (
           <section aria-label="مركز القيادة" className="space-y-3">
-            <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>مركز القيادة — المؤشرات</span><span className="h-px flex-1 bg-border" /><Link href="/staff/operations" className="text-primary">التفاصيل الكاملة ←</Link></h2>
+            <h2 className="flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden /><span className="flex-1">مؤشرات مركز القيادة</span><Link href="/staff/operations" className="text-sm font-semibold">التفاصيل ←</Link></h2>
             <KpiGrid cards={cards} />
           </section>
         )}
         {groups.map((g) => (
-          <section key={g.title} aria-label={g.title} className="space-y-3">
-            <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>{g.title}</span><span className="h-px flex-1 bg-border" /></h2>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          <section key={g.title} aria-label={g.title} className="rounded-3xl border bg-muted/40 p-3 sm:p-5">
+            <h2 className="mb-3 flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden />{g.title}</h2>
+            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
               {g.items.map(({ href, Icon, title, sub }) => (
-                <Link key={href} href={href} className="elev elev-hover flex min-h-32 flex-col items-center justify-center gap-2 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-36">
-                  <span className="grid size-12 place-items-center rounded-2xl bg-accent text-primary sm:size-14"><Icon className="size-6 sm:size-7" aria-hidden /></span>
-                  <b className="text-[15px] sm:text-lg">{title}</b>
-                  <span className="text-xs text-muted-foreground sm:text-sm">{aiOff(href) ? "قريبًا" : sub}</span>
+                <Link key={href} href={href} className="elev elev-hover flex min-h-[4.5rem] items-center gap-3.5 rounded-2xl border bg-background px-4 py-3 active:bg-muted sm:last:odd:col-span-2">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
+                  <span className="min-w-0 flex-1"><b className="block text-base leading-snug">{title}</b><span className="block text-xs leading-5 text-muted-foreground sm:text-sm">{aiOff(href) ? "قريبًا" : sub}</span></span>
+                  <ChevronLeft className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 </Link>
               ))}
             </div>
           </section>
         ))}
-        <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>مراجع وروابط سريعة</span><span className="h-px flex-1 bg-border" /></h2>
-        <section className="-mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <h2 className="flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden />مراجع وروابط سريعة</h2>
+        <section className="-mt-4 grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           {links.map(({ href, Icon, title, sub, external }) => (
-            <Link key={href} href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="elev elev-hover flex min-h-20 items-center gap-3 rounded-2xl border bg-background px-4 py-3 text-start active:bg-muted max-sm:flex-col max-sm:text-center">
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-5" aria-hidden /></span>
+            <Link key={href} href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="elev elev-hover flex min-h-[4.5rem] items-center gap-3.5 rounded-2xl border bg-background px-4 py-3 text-start active:bg-muted">
+              <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-6" aria-hidden /></span>
               <span className="min-w-0"><b className="block text-base">{title}</b><span className="block truncate text-xs text-muted-foreground sm:text-sm">{sub}</span></span>
             </Link>
           ))}

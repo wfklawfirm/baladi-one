@@ -56,7 +56,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
       {d.partial && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر تحميل جزء من البيانات؛ قد تكون الأرقام ناقصة.</p>}
       <p className="text-xs text-muted-foreground">السنة المالية: {d.fy ? d.fy.year : NA}{d.years.length > 1 && <> · {d.years.map((y) => <Link key={y.id} href={`/staff/finance?p=${range.key}&fy=${y.year}`} className={`mx-1 underline ${y.year === d.fy?.year ? "font-bold text-primary" : ""}`}>{y.year}</Link>)}</>} · تنفيذ الموازنة تراكمي للسنة ولا يتأثر باختيار الفترة.</p>
 
-      <section aria-label="المؤشرات" className="grid gap-3 sm:grid-cols-2">
+      <section aria-label="المؤشرات" className="fill-odd grid gap-3 sm:grid-cols-2">
         {([["نسبة التحصيل", cards.COLLECTION_RATE, "المحصّل المرتبط بمستحقات ÷ المستحقات التي حلّ موعدها في الفترة"], ["تنفيذ الموازنة", cards.BUDGET_EXEC, "المدفوع ÷ الاعتماد الحالي (الالتزامات مؤشر منفصل)"]] as const).map(([t, c, f]) => (
           <div key={t} className="elev rounded-2xl border bg-background p-4">
             <span className="text-sm font-semibold">{t}</span>
@@ -70,7 +70,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
 
       <Panel title="الاعتمادات والتنفيذ" sub="الاعتماد الحالي، المدفوع، الملتزم به، والمتاح (= الاعتماد − الالتزامات − المدفوعات غير المرتبطة بالتزام). لكل عملة على حدة.">
         {exp.length === 0 && rev.length === 0 ? <p className="text-sm text-muted-foreground">لا بنود موازنة مسجّلة بعد. <Link href="/staff/finance/budget" className="font-semibold text-primary">إضافة بند ←</Link></p> : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="fill-odd grid gap-4 md:grid-cols-2">
             {exp.map((t) => (
               <div key={t.currency} className="space-y-1 rounded-xl border p-3 text-sm">
                 <b>نفقات ({curName(t.currency)}) — {t.lines} بند</b>
@@ -93,7 +93,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
         )}
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         {(["LBP", "USD"] as const).map((cur) => {
           const rows = stats.filter((x) => x.l.currency === cur);
           if (!rows.length) return null;
@@ -109,7 +109,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
 
       <Panel title="الإيرادات مقابل النفقات" sub={`إيصالات التحصيل (كلها) مقابل النفقات المدفوعة خلال ${range.label}، لكل عملة على حدة`}>
         {flow.length === 0 ? <p className="text-sm text-muted-foreground">لا إيصالات ولا نفقات في الفترة.</p> : (
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="fill-odd grid gap-5 md:grid-cols-2">
             {flow.map((f) => (
               <div key={f.currency} className="space-y-2">
                 <div className="flex flex-wrap justify-between gap-2 text-sm"><b>{curName(f.currency)}</b><span>إيرادات <b className="text-primary">{money(f.revenue, f.currency)}</b> · نفقات <b>{money(f.expense, f.currency)}</b></span></div>
@@ -122,7 +122,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
         )}
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         <Panel title="المستحقات مقابل المحصّل" sub="المستحقات التي حلّ موعدها خلال الفترة، والمحصّل المرتبط بها">
           {rate.length === 0 ? <p className="text-sm text-muted-foreground">لا مستحقات حلّ موعدها في الفترة ({NA}).</p> : rate.map((r) => (
             <div key={r.currency} className="mb-4 space-y-2"><div className="flex justify-between text-sm"><b>{curName(r.currency)} · {r.count} مستحق</b><b className="text-primary">{rateText(r.rate)}</b></div>

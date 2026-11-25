@@ -23,17 +23,19 @@ export default async function Council({ searchParams }: { searchParams: Promise<
         <Link href="/staff/council/decisions" className="rounded-xl border px-4 py-2 text-sm font-semibold text-primary active:bg-muted">سجل القرارات ←</Link></div>
       {error && <p role="alert" className="rounded-xl border p-3 text-sm">تعذّر تحميل الجلسات.</p>}
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تحقق من العنوان والتاريخ ثم أعد المحاولة.</p>}
-      <form action={createSession} className="elev grid gap-3 rounded-2xl border bg-background p-4 sm:grid-cols-4">
-        <label className="space-y-1 text-sm font-medium sm:col-span-2">عنوان الجلسة<input name="title" required maxLength={200} placeholder="مثال: الجلسة الاعتيادية الشهرية" className={field} /></label>
-        <label className="space-y-1 text-sm font-medium">التاريخ<input type="date" name="held_on" required className={field} /></label>
-        <label className="space-y-1 text-sm font-medium">رقم الجلسة<input name="no" maxLength={40} className={field} /></label>
-        <button className="min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90 sm:col-span-4">إنشاء جلسة</button>
-      </form>
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا جلسات مسجّلة بعد.</p> : (
         <ul className="divide-y rounded-xl border bg-background">
           {rows.map((r) => <li key={r.id}><Link href={`/staff/council/${r.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-muted"><b>{r.title}</b>{r.session_no && <span className="text-xs text-muted-foreground">({r.session_no})</span>}<span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary">{SESSION_STATUS[r.status]}</span>{r.is_demo && <span className="rounded bg-muted px-2 text-xs">تجريبي</span>}<span className="ms-auto text-sm text-muted-foreground">{fmt(r.held_on)}</span></Link></li>)}
         </ul>
       )}
+      <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer font-bold text-primary">+ جلسة جديدة</summary>
+      <form action={createSession} className="mt-3 grid gap-3 sm:grid-cols-4">
+        <label className="space-y-1 text-sm font-medium sm:col-span-2">عنوان الجلسة<input name="title" required maxLength={200} placeholder="مثال: الجلسة الاعتيادية الشهرية" className={field} /></label>
+        <label className="space-y-1 text-sm font-medium">التاريخ<input type="date" name="held_on" required className={field} /></label>
+        <label className="space-y-1 text-sm font-medium">رقم الجلسة<input name="no" maxLength={40} className={field} /></label>
+        <button className="min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90 sm:col-span-4">إنشاء جلسة</button>
+      </form>
+      </details>
     </main></>
   );
 }

@@ -66,7 +66,7 @@ export default async function DecisionPage({ params, searchParams }: { params: P
 
       <section className="elev space-y-3 rounded-2xl border bg-background p-4">
         <h2 className="font-bold">تحديث الحالة</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="fill-odd grid gap-4 md:grid-cols-2">
           <form action={setDecisionStatus} className="space-y-2"><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="legal" />
             <p className="text-sm font-semibold">الحالة القانونية والإجرائية</p>
             <select name="value" defaultValue={d.legal_status} aria-label="الحالة القانونية" className={`${field} w-full`}>{Object.entries(LEGAL_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>

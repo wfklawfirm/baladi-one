@@ -20,7 +20,7 @@ export default async function Reports() {
         <h1 className="flex items-center gap-2 text-2xl font-bold"><ClipboardList className="size-6 text-primary" aria-hidden />مركز التقارير والتصدير</h1>
         <p className="text-sm text-muted-foreground">تقارير من بيانات النظام الفعلية، بصيغة Excel وصفحة طباعة A4 (احفظها PDF من المتصفح). كل تقرير بحالة «{REVIEW_STATUS}» حتى يراجعه مسؤول، وتُسجَّل عمليات التصدير.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         {REPORT_KINDS.map((k) => {
           const m = KIND_META[k], Icon = ICON[m.icon as keyof typeof ICON];
           return (

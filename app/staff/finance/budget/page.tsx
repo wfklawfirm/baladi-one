@@ -48,7 +48,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
         )}
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         <Panel title="إضافة بند موازنة">
           <form action={addLine} className="grid gap-3 sm:grid-cols-2">{back}
             <label className="space-y-1 text-sm font-medium">السنة المالية<input name="year" type="number" min={1990} max={2100} defaultValue={year} required className={field} /></label>
@@ -94,7 +94,7 @@ export default async function Budget({ searchParams }: { searchParams: Promise<{
         </Panel>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fill-odd grid gap-4 md:grid-cols-2">
         <Panel title="آخر الالتزامات">
           {commits.length === 0 ? <p className="text-sm text-muted-foreground">لا التزامات مسجّلة.</p> : <ul className="divide-y text-sm">{commits.slice(0, 10).map((c) => { const l = lines.find((x) => x.id === c.line_id); return <li key={c.id} className="flex flex-wrap gap-x-3 py-2"><b className="text-primary">{money(Number(c.amount), l?.currency ?? "")}</b><span>{c.description}</span><span className="text-muted-foreground">{l?.code} · {c.committed_on}</span></li>; })}</ul>}
         </Panel>

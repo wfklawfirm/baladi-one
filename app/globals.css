@@ -88,3 +88,6 @@ button, [role=button] { touch-action: manipulation; }
   table.rt td::before{content:attr(data-label);color:#6b7280;font-size:12px;flex-shrink:0;text-align:start}
   table.rt td:empty{display:none}
 }
+
+/* a lone last card in a two-column grid spans the full row (no orphan gap) */
+@media (min-width: 768px) { .fill-odd > :last-child:nth-child(odd) { grid-column: 1 / -1; } }
