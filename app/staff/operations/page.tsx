@@ -12,6 +12,7 @@ import { loadCompliance } from "@/lib/compliance";
 import { C, Columns, Donut, HBars, IntakeChart, Spark } from "@/components/ops/Charts";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { assignRequest } from "./actions";
+import { Empty, Explain, Intro } from "@/components/simple/kit";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "مركز القيادة والأداء — BALADI ONE", referrer: "no-referrer" as const };
@@ -66,7 +67,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
       </nav>
 
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-2xl font-bold">مركز القيادة والأداء</h1><p className="text-xs text-muted-foreground">آخر تحديث: {updated} · المصدر: طلبات المواطنين، سجل المعالجة، إيصالات التحصيل، سجل القرارات · الفترة: {range.label}</p></div>
+        <div className="space-y-2"><Intro title="كيف تسير البلدية؟">ملخّص بسيط في الأعلى، وتحته التفاصيل والرسوم لمن يريد التوسّع. الفترة المعروضة: {range.label}.</Intro><p className="text-sm text-muted-foreground">آخر تحديث: {updated}</p></div>
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="الفترة">
           {PERIODS.filter(([k]) => k !== "custom").map(([k, v]) => <Link key={k} href={q(k)} aria-current={range.key === k ? "true" : undefined} className={`min-h-10 rounded-full border px-4 py-2 text-sm ${range.key === k ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{v}</Link>)}
           <form action="/staff/operations" className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
@@ -78,17 +79,27 @@ export default async function Operations({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
-      <KpiGrid cards={cards} />
+      <section aria-label="الخلاصة" className="space-y-3 rounded-2xl border-2 border-primary/30 bg-accent/40 p-4 md:p-5">
+        <p className="text-xl font-bold leading-9">{o.overdue.length === 0 && o.unassigned === 0 ? "الأمور مستقرّة: لا طلبات متأخرة ولا طلبات بلا مسؤول." : `يحتاج انتباهكم: ${o.overdue.length > 0 ? `${nf(o.overdue.length)} طلبًا متأخرًا` : ""}${o.overdue.length > 0 && o.unassigned > 0 ? " و" : ""}${o.unassigned > 0 ? `${nf(o.unassigned)} طلبًا بلا مسؤول` : ""}.`}</p>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-xl bg-background p-3"><b className="block text-3xl text-primary">{nf(o.openList.length)}</b><span className="text-base">طلب مفتوح</span></div>
+          <div className="rounded-xl bg-background p-3"><b className={`block text-3xl ${o.overdue.length ? "text-destructive" : "text-primary"}`}>{nf(o.overdue.length)}</b><span className="text-base">متأخر</span></div>
+          <div className="rounded-xl bg-background p-3"><b className="block text-3xl text-primary">{nf(o.unassigned)}</b><span className="text-base">بلا مسؤول</span></div>
+        </div>
+        <p className="text-sm text-muted-foreground">«متأخر» أي تجاوز {SLA_DAYS} أيام دون إنجاز. «بلا مسؤول» أي لم يُسنَد إلى موظف بعد. بنود التدخل مفصّلة في «ما يحتاج قرارًا منكم» أدناه.</p>
+      </section>
+
+      <details open className="space-y-3"><summary className="cursor-pointer text-lg font-bold">كل المؤشرات بالتفصيل</summary><div className="pt-3"><KpiGrid cards={cards} /></div></details>
 
       <ComplianceSection checks={compliance} />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="الوارد والمنجز" sub={`أعمدة: واردة · خط: منجزة (${range.label}، مقارنة بالسابقة: ${o.intakePrev} واردة / ${o.processedPrev} منجزة)`} className="lg:col-span-2" analyze="حلّل مؤشر الوارد والمنجز في الفترة المحددة: الاتجاه والانحرافات وحدود البيانات ثم اقترح إجراءات"><IntakeChart data={o.series} /></Card>
-        <Card title="توزيع الحالات (الكل)" analyze="حلّل توزيع حالات الطلبات الحالي وما يستدعي تدخل الرئيس"><Donut parts={o.status.map(({ s, n }) => ({ label: STATUS_AR[s], n, color: STATUS_COLOR[s] }))} /></Card>
+        <Card title="الوارد والمنجز" sub={`أعمدة: واردة · خط: منجزة (${range.label}، مقارنة بالسابقة: ${o.intakePrev} واردة / ${o.processedPrev} منجزة)`} className="lg:col-span-2" analyze="حلّل مؤشر الوارد والمنجز في الفترة المحددة: الاتجاه والانحرافات وحدود البيانات ثم اقترح إجراءات"><IntakeChart data={o.series} /><p className="mt-2 text-sm text-muted-foreground"><b>ماذا يعني هذا؟</b> إن كانت الأعمدة (الوارد) أعلى من الخط (المنجز) باستمرار فالطلبات تتراكم وتحتاج دعمًا.</p></Card>
+        <Card title="توزيع الحالات (الكل)" analyze="حلّل توزيع حالات الطلبات الحالي وما يستدعي تدخل الرئيس"><Donut parts={o.status.map(({ s, n }) => ({ label: STATUS_AR[s], n, color: STATUS_COLOR[s] }))} /><p className="mt-2 text-sm text-muted-foreground"><b>ماذا يعني هذا؟</b> كلما كبر الجزء الأخضر (المنجز) كان الأداء أفضل.</p></Card>
       </div>
 
-      <Card title="مركز الإجراءات" sub="ما يستدعي تدخل رئيس البلدية الآن. كل بند يقود إلى سجله الأصلي.">
-        {actions.length === 0 ? <p className="text-sm text-muted-foreground">لا بنود تستدعي تدخلًا حاليًا.</p> : (
+      <Card title="ما يحتاج قرارًا منكم" sub="اضغطوا على أي بند لفتحه ومعالجته.">
+        {actions.length === 0 ? <Empty>لا شيء يحتاج تدخلكم الآن.</Empty> : (
           <ul className="divide-y">
             {actions.map((a) => (
               <li key={a.key}><Link href={a.href} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm hover:text-primary">
@@ -101,12 +112,12 @@ export default async function Operations({ searchParams }: { searchParams: Promi
       </Card>
 
       <div className="fill-odd grid gap-4 md:grid-cols-2">
-        <Card title="أعمار الطلبات المفتوحة" sub="كم مضى على الطلبات التي لم تُنجز" analyze="حلّل أعمار الطلبات المفتوحة وأسباب التأخير المحتملة"><HBars items={o.aging.map((a) => ({ label: a.label, n: a.n }))} /></Card>
-        <Card title="المفتوح حسب النوع">{byType.length ? <HBars items={byType} color={C.blue} /> : <p className="text-sm text-muted-foreground">لا طلبات مفتوحة.</p>}</Card>
+        <Card title="أعمار الطلبات المفتوحة" sub="كم مضى على الطلبات التي لم تُنجز" analyze="حلّل أعمار الطلبات المفتوحة وأسباب التأخير المحتملة"><HBars items={o.aging.map((a) => ({ label: a.label, n: a.n }))} /><p className="mt-2 text-sm text-muted-foreground"><b>ماذا يعني هذا؟</b> الأعمدة الطويلة للأعمار الكبيرة تعني طلبات تنتظر مدة طويلة.</p></Card>
+        <Card title="المفتوح حسب النوع">{byType.length ? <HBars items={byType} color={C.blue} /> : <Empty>لا طلبات مفتوحة.</Empty>}</Card>
       </div>
 
-      <Card title="تتبّع المعاملات" sub="الأقدم أولًا. يمكن إسناد كل طلب إلى موظف ومتابعته." className="scroll-mt-4"><div id="tracking" />
-        {o.openList.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد طلبات مفتوحة.</p> : (
+      <Card title="الطلبات المفتوحة ومن يتولّاها" sub="الأقدم أولًا. اختاروا موظفًا لكل طلب ثم اضغطوا «احفظ»." className="scroll-mt-4"><div id="tracking" />
+        {o.openList.length === 0 ? <Empty>لا توجد طلبات مفتوحة. أحسنتم.</Empty> : (
           <ul className="divide-y">
             {o.openList.slice(0, 15).map((r) => (
               <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 text-sm">
@@ -115,8 +126,8 @@ export default async function Operations({ searchParams }: { searchParams: Promi
                 <span className="text-muted-foreground">{STATUS_AR[r.status]}</span>
                 <form action={assignRequest} className="ms-auto flex items-center gap-2">
                   <input type="hidden" name="id" value={r.id} />
-                  <select name="to" defaultValue={r.assigned_to ?? ""} aria-label="الموظف المسؤول" className="min-h-10 rounded-lg border bg-background px-2 text-sm"><option value="">غير مُسند</option>{people.map((p) => <option key={p.user_id} value={p.user_id}>{p.display_name}</option>)}</select>
-                  <button className="min-h-10 rounded-lg border px-3 text-sm active:bg-muted">حفظ</button>
+                  <select name="to" defaultValue={r.assigned_to ?? ""} aria-label="الموظف المسؤول" className="min-h-11 rounded-lg border-2 bg-background px-2 text-base"><option value="">غير مُسند</option>{people.map((p) => <option key={p.user_id} value={p.user_id}>{p.display_name}</option>)}</select>
+                  <button className="min-h-11 rounded-lg border-2 px-4 text-base font-semibold active:bg-muted">احفظ</button>
                 </form>
               </li>
             ))}
@@ -125,19 +136,20 @@ export default async function Operations({ searchParams }: { searchParams: Promi
         {o.openList.length > 15 && <Link href="/staff/requests" className="mt-2 inline-block text-sm font-semibold text-primary">عرض الباقي ({o.openList.length - 15}) ←</Link>}
       </Card>
 
-      <Card title="أداء الموظفين" sub={`مؤشر من ١٠٠: ٥٠٪ نسبة الإنجاز مما عالجه · ٣٠٪ الإنجاز خلال ${SLA_DAYS} أيام · ٢٠٪ أول استجابة خلال ${FIRST_RESPONSE_H} ساعة. لا يُحتسب قبل ٣ طلبات معالَجة.`}>
-        {o.perf.length === 0 ? <p className="text-sm text-muted-foreground">لا موظفين مسجّلين.</p> : (
-          <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead className="text-start text-xs text-muted-foreground"><tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-start"><th>الموظف</th><th>عالج</th><th>أنجز</th><th>في الموعد</th><th>استجابة سريعة</th><th>مفتوح عنده</th><th>متأخر</th><th>المؤشر</th></tr></thead>
+      <Card title="أداء الموظفين" sub="كل موظف له علامة من ١٠٠ (الأعلى أفضل). لا تُحتسب قبل أن يعالج ٣ طلبات.">
+        {o.perf.length === 0 ? <Empty>لا موظفين مسجّلين بعد.</Empty> : (
+          <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead className="text-start text-xs text-muted-foreground"><tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-start"><th>الموظف</th><th>عالج</th><th>أنجز</th><th>في الموعد</th><th>ردّ سريع</th><th>مفتوح عنده</th><th>متأخر</th><th>العلامة</th></tr></thead>
             <tbody className="divide-y">{o.perf.map((p) => (
               <tr key={p.user_id} className="[&>td]:px-2 [&>td]:py-2.5"><td className="font-medium">{p.display_name}<span className="ms-2 text-xs text-muted-foreground">{ROLE_AR[p.role]}</span></td><td>{p.handled}</td><td>{p.closed}</td><td>{p.onTime === null ? "—" : `${p.onTime}%`}</td><td>{p.fast === null ? "—" : `${p.fast}%`}</td><td>{p.openAssigned}</td><td className={p.overdueAssigned ? "font-bold text-destructive" : ""}>{p.overdueAssigned}</td>
                 <td>{p.score === null ? <span className="text-xs text-muted-foreground">بيانات غير كافية</span> : <span className="inline-flex items-center gap-2"><b>{p.score}</b><span className="h-2 w-16 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full" style={{ width: `${p.score}%`, background: p.score >= 70 ? C.green : p.score >= 40 ? C.amber : C.primary }} /></span></span>}</td></tr>
             ))}</tbody></table></div>
         )}
+        <div className="mt-3"><Explain term="كيف تُحسب العلامة؟"><p>٥٠٪ لنسبة ما أنجزه مما عالجه، و٣٠٪ للإنجاز خلال {SLA_DAYS} أيام، و٢٠٪ للردّ الأول خلال {FIRST_RESPONSE_H} ساعة.</p></Explain></div>
       </Card>
 
-      <Card title="التحصيل" sub="إيصالات مسجّلة من الموظفين. الفترة المختارة مقارنة بالسابقة.">
-        <div className="mb-3 flex justify-end"><Link href="/staff/collections" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground active:opacity-90">تسجيل إيصال</Link></div>
-        {!hasColl ? <p className="text-sm text-muted-foreground">لم تُسجَّل مبالغ بعد.</p> : (
+      <Card title="ما جُمع من أموال" sub="المبالغ التي سجّلها الموظفون، مقارنةً بالفترة السابقة.">
+        <div className="mb-3 flex justify-end"><Link href="/staff/collections" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground active:opacity-90">سجّل مبلغًا</Link></div>
+        {!hasColl ? <Empty>لم تُسجَّل مبالغ في هذه الفترة.</Empty> : (
           <div className="fill-odd grid gap-5 md:grid-cols-2">
             {o.collections.filter((c) => c.count > 0).map((c) => (
               <div key={c.currency} className="space-y-3">

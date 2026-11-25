@@ -24,31 +24,31 @@ export function Doc({ title, body }: { title: string; body: string }) {
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-bold text-primary">{title}</h3>
         <div className="flex gap-2">
-          <button type="button" onClick={async () => { await navigator.clipboard.writeText(body); setDone(true); setTimeout(() => setDone(false), 1500); }} className="flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-sm active:bg-muted">{done ? <Check className="size-4" /> : <Copy className="size-4" />}{done ? "تم النسخ" : "نسخ"}</button>
-          <button type="button" onClick={print} className="flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-sm active:bg-muted"><Printer className="size-4" />طباعة</button>
+          <button type="button" onClick={async () => { await navigator.clipboard.writeText(body); setDone(true); setTimeout(() => setDone(false), 1500); }} className="flex min-h-12 items-center gap-1.5 rounded-xl border px-3 text-base active:bg-muted">{done ? <Check className="size-4" /> : <Copy className="size-4" />}{done ? "تم النسخ" : "نسخ"}</button>
+          <button type="button" onClick={print} className="flex min-h-12 items-center gap-1.5 rounded-xl border px-3 text-base active:bg-muted"><Printer className="size-4" />طباعة</button>
         </div>
       </div>
-      <pre className="whitespace-pre-wrap rounded-xl bg-muted/50 p-4 font-[inherit] text-sm leading-8">{body}</pre>
+      <pre className="whitespace-pre-wrap rounded-xl bg-muted/50 p-4 font-[inherit] text-base leading-8">{body}</pre>
     </section>
   );
 }
 
 export function Md({ children }: { children: string }) {
   return (
-    <div className="space-y-3 text-sm leading-8 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary [&_li]:ms-5 [&_ol]:list-decimal [&_table]:w-full [&_table]:text-xs [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:bg-muted [&_th]:p-2 [&_ul]:list-disc">
+    <div className="space-y-3 text-base leading-8 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary [&_li]:ms-5 [&_ol]:list-decimal [&_table]:w-full [&_table]:text-sm [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:bg-muted [&_th]:p-2 [&_ul]:list-disc">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
     </div>
   );
 }
 
-export const CONF: Record<string, string> = { high: "ثقة عالية", medium: "ثقة متوسطة", low: "ثقة منخفضة" };
+export const CONF: Record<string, string> = { high: "نثق بهذه الإجابة كثيرًا", medium: "نثق بها بدرجة متوسطة", low: "تحقق منها قبل الاعتماد عليها" };
 export type Src = { title: string; preview: string; domain: string; score: number };
 export function Sources({ list, confidence }: { list: Src[]; confidence?: string }) {
   if (!list?.length) return null;
   return (
-    <details className="rounded-xl border bg-background p-3 text-sm">
-      <summary className="cursor-pointer font-semibold">المصادر ({list.length}){confidence ? ` · ${CONF[confidence] ?? ""}` : ""}</summary>
-      <ul className="mt-2 space-y-2">{list.map((s, i) => <li key={i}><b>{s.title}</b> <span className="text-xs text-muted-foreground">· {s.domain}</span><p className="text-xs leading-6 text-muted-foreground">{s.preview}…</p></li>)}</ul>
+    <details className="rounded-xl border bg-background p-3 text-base">
+      <summary className="cursor-pointer font-semibold">من أين جاء هذا؟ ({list.length}){confidence ? ` · ${CONF[confidence] ?? ""}` : ""}</summary>
+      <ul className="mt-2 space-y-2">{list.map((s, i) => <li key={i}><b>{s.title}</b> <span className="text-sm text-muted-foreground">· {s.domain}</span><p className="text-sm leading-7 text-muted-foreground">{s.preview}…</p></li>)}</ul>
     </details>
   );
 }

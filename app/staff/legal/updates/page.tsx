@@ -2,15 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import StaffHeader from "@/components/StaffHeader";
 import { requireStaff } from "@/lib/supabase-server";
-import { REVIEW } from "@/components/legal/LegalPanel";
+import { REVIEW, SURE } from "@/components/legal/LegalPanel";
+import { Intro, StepCard, Field, Chip, Empty, Notice, Explain, CONTROL, BTN_PRIMARY, BTN_SECONDARY } from "@/components/simple/kit";
 import { addLegalUpdate, reviewLegalUpdate, reviewRule } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "مستجدات التشريع — BALADI ONE", referrer: "no-referrer" as const };
-const ST: Record<string, string> = { received: "مستلم", under_review: "قيد المراجعة", approved: "موافَق عليه", rejected: "مرفوض" };
+const ST: Record<string, [string, "ok" | "wait" | "bad" | "info"]> = { received: ["وصل ولم يُراجَع", "wait"], under_review: ["قيد المراجعة", "wait"], approved: ["تمت الموافقة", "ok"], rejected: ["مرفوض", "bad"] };
 const ERR: Record<string, string> = { forbidden: "هذا الإجراء للمدير (المراجع القانوني) فقط.", note_required: "الملاحظة مطلوبة.", unknown_rule: "قاعدة غير موجودة في السجل.", already_decided: "تم البت في هذا المستجد.", original_text_required: "لا يمكن اعتماد قاعدة «مراجَعة» قبل تحميل نصها الأصلي.", no_change: "الحالة نفسها، لا تغيير.", unavailable: "قيد التفعيل: ترحيل المستجدات (0026) لم يُطبَّق بعد.", "1": "تحقق من الحقول ثم أعد المحاولة." };
 const OK: Record<string, string> = { added: "سُجّل المستجد.", reviewed: "سُجّل القرار على المستجد. لم تتغير أي قاعدة.", rule: "سُجّلت مراجعة القاعدة في سجل التاريخ." };
-const field = "min-h-11 w-full rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
+const field = CONTROL;
 
 export default async function LegalUpdates({ searchParams }: { searchParams: Promise<{ err?: string; ok?: string }> }) {
   const { sb, memberships } = await requireStaff();
@@ -27,52 +28,51 @@ export default async function LegalUpdates({ searchParams }: { searchParams: Pro
   return (
     <><StaffHeader back="/staff/legal" backLabel="سجل القواعد" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-5 p-4 md:p-8">
-      <h1 className="text-2xl font-bold">مستجدات التشريع ومراجعة القواعد</h1>
-      <p className="rounded-2xl border border-amber-400/60 bg-amber-50 p-3 text-sm leading-7 text-amber-950">الموافقة على مستجد تُسجِّل قرار المراجعة فقط ولا تعدّل أي قاعدة تلقائيًا. تعديل القاعدة يتم بترحيل مراجَع، وتغيير حالة مراجعتها يتم من المدير بنموذج «مراجعة قاعدة» أدناه مع حفظ سجل.</p>
-      {sp.ok && <p role="status" className="rounded-xl border border-green-600/40 p-3 text-sm">{OK[sp.ok] ?? "تم."}</p>}
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{ERR[sp.err] ?? ERR["1"]}</p>}
-      {up.error && <p role="status" className="rounded-xl border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-950">قيد التفعيل: جدول المستجدات غير متاح بعد (الترحيل 0026 لم يُطبَّق).</p>}
+      <Intro title="ما الجديد في القانون؟">سجّل هنا أي تعميم أو قانون جديد وصلك، ليراجعه المسؤول القانوني. تسجيله لا يغيّر أي قاعدة تلقائيًا.</Intro>
+      {sp.ok && <Notice>{OK[sp.ok] ?? "تم."}</Notice>}
+      {sp.err && <Notice tone="bad">{ERR[sp.err] ?? ERR["1"]}</Notice>}
+      {up.error && <Notice tone="bad">هذه الميزة لم تُفعَّل بعد. تواصل مع الدعم الفني لتفعيلها.</Notice>}
 
       {!up.error && (
-        <section className="elev space-y-3 rounded-2xl border bg-background p-4"><h2 className="font-bold">تسجيل مستجد</h2>
-          <form action={addLegalUpdate} className="grid gap-2 sm:grid-cols-2">
-            <input name="source" required maxLength={500} placeholder="المصدر (جريدة رسمية، تعميم، قانون…)" aria-label="المصدر" className={field} />
-            <input type="date" name="received_on" required aria-label="تاريخ الاستلام" className={field} />
-            <textarea name="summary" required rows={3} maxLength={5000} placeholder="ملخص المستجد (لا تلصق نصًا غير موثَّق كأنه النص الرسمي)" aria-label="الملخص" className="rounded-xl border-2 bg-background p-3 outline-none focus:border-primary sm:col-span-2" />
-            <label className="space-y-1 text-sm font-medium sm:col-span-2">القواعد المتأثرة (اختياري)
-              <select name="affected" multiple size={Math.min(6, Math.max(2, rules.length))} className="w-full rounded-xl border-2 bg-background p-2">{rules.map((r) => <option key={r.rule_id} value={r.rule_id}>{r.rule_id} — {r.topic}</option>)}</select></label>
-            <button className="min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground sm:col-span-2">تسجيل</button></form>
-        </section>)}
+        <StepCard n={1} title="سجّل خبرًا قانونيًا جديدًا" hint="اكتب من أين وصلك الخبر ومتى، ثم لخّصه بكلماتك.">
+          <form action={addLegalUpdate} className="space-y-3">
+            <Field label="من أين وصلك الخبر؟" example="الجريدة الرسمية، أو تعميم وزارة الداخلية" required><input name="source" required maxLength={500} className={field} /></Field>
+            <Field label="متى وصلك؟" required><input type="date" name="received_on" required className={field} /></Field>
+            <Field label="ما هو الخبر باختصار؟" hint="لخّصه بكلماتك. لا تلصق نصًا غير موثّق على أنه النص الرسمي." required><textarea name="summary" required rows={3} maxLength={5000} className="w-full rounded-xl border-2 bg-background p-3 text-base outline-none focus:border-primary" /></Field>
+            <details className="rounded-xl bg-muted/50 px-3 py-2"><summary className="cursor-pointer font-semibold">حقول إضافية</summary>
+              <div className="pt-3"><Field label="أي قواعد يمسّها هذا الخبر؟" hint="اختياري. اضغط مطوّلًا أو Ctrl لاختيار أكثر من واحدة."><select name="affected" multiple size={Math.min(6, Math.max(2, rules.length))} className="w-full rounded-xl border-2 bg-background p-2 text-base">{rules.map((r) => <option key={r.rule_id} value={r.rule_id}>{r.topic}</option>)}</select></Field></div></details>
+            <button className={BTN_PRIMARY}>حفظ الخبر</button></form>
+        </StepCard>)}
 
-      <section className="space-y-3"><h2 className="font-bold">المستجدات ({updates.length})</h2>
-        {updates.length === 0 && !up.error && <p className="text-sm text-muted-foreground">لا مستجدات مسجّلة.</p>}
+      <section className="space-y-3"><h2 className="text-lg font-bold">الأخبار المسجّلة ({updates.length})</h2>
+        {updates.length === 0 && !up.error && <Empty>لا توجد أخبار مسجّلة بعد. سجّل أول خبر من النموذج أعلاه.</Empty>}
         <ul className="space-y-3">{updates.map((u) => (
-          <li key={u.id} className="elev space-y-2 rounded-2xl border bg-background p-4 text-sm">
-            <p className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-accent px-3 py-0.5 text-xs font-bold text-primary">{ST[u.status]}</span><b>{u.source}</b><span className="text-xs text-muted-foreground">استُلم {fmt(u.received_on)}</span></p>
+          <li key={u.id} className="elev space-y-2 rounded-2xl border bg-background p-4 text-base">
+            <p className="flex flex-wrap items-center gap-2"><Chip tone={(ST[u.status] ?? ["", "info"])[1] as any}>{(ST[u.status] ?? [u.status])[0]}</Chip><b>{u.source}</b><span className="text-sm text-muted-foreground">وصل {fmt(u.received_on)}</span></p>
             <p className="leading-7">{u.summary}</p>
-            {u.affected_rules?.length > 0 && <p className="text-xs">القواعد المتأثرة: {u.affected_rules.map((r: string) => <Link key={r} href="/staff/legal" className="me-2 font-semibold text-primary underline">{r}</Link>)}</p>}
-            {u.reviewer_note && <p className="text-xs text-muted-foreground">ملاحظة المراجع: {u.reviewer_note}{u.reviewed_at ? ` · ${fmt(u.reviewed_at)}` : ""}</p>}
+            {u.affected_rules?.length > 0 && <p className="text-sm">القواعد المتأثرة: {u.affected_rules.map((r: string) => <Link key={r} href="/staff/legal" className="me-2 font-semibold text-primary underline">{r}</Link>)}</p>}
+            {u.reviewer_note && <p className="text-sm text-muted-foreground">ملاحظة المراجع: {u.reviewer_note}{u.reviewed_at ? ` · ${fmt(u.reviewed_at)}` : ""}</p>}
             {isAdmin && (u.status === "received" || u.status === "under_review") && (
               <form action={reviewLegalUpdate} className="flex flex-wrap items-center gap-2 border-t pt-2"><input type="hidden" name="id" value={u.id} />
-                <input name="note" maxLength={1000} placeholder="ملاحظة المراجع (مطلوبة عند الموافقة/الرفض)" aria-label="ملاحظة" className={`${field} min-w-52 flex-1`} />
-                {u.status === "received" && <button name="status" value="under_review" className="min-h-11 rounded-xl border px-3 text-sm active:bg-muted">قيد المراجعة</button>}
-                <button name="status" value="approved" className="min-h-11 rounded-xl border px-3 text-sm active:bg-muted">موافقة (تسجيل فقط)</button>
-                <button name="status" value="rejected" className="min-h-11 rounded-xl border px-3 text-sm active:bg-muted">رفض</button></form>)}
+                <input name="note" maxLength={1000} placeholder="ملاحظتك (مطلوبة عند الموافقة أو الرفض)" aria-label="ملاحظة" className={`${field} min-w-52 flex-1`} />
+                {u.status === "received" && <button name="status" value="under_review" className={BTN_SECONDARY}>أراجعه الآن</button>}
+                <button name="status" value="approved" className={BTN_SECONDARY}>موافقة (تسجيل فقط)</button>
+                <button name="status" value="rejected" className={BTN_SECONDARY}>رفض</button></form>)}
           </li>))}</ul></section>
 
       {isAdmin && rules.length > 0 && (
-        <section className="elev space-y-3 rounded-2xl border bg-background p-4"><h2 className="font-bold">مراجعة قاعدة (المراجع القانوني)</h2>
-          <p className="text-xs text-muted-foreground">يُسجَّل كل تغيير حالة في سجل تاريخ القاعدة. لا يمكن وسم قاعدة «مراجَعة» قبل تحميل نصها الأصلي.</p>
-          <form action={reviewRule} className="grid gap-2 sm:grid-cols-3">
-            <select name="rule" required aria-label="القاعدة" className={field}>{rules.map((r) => <option key={r.rule_id} value={r.rule_id}>{r.rule_id} — {REVIEW[r.review_status]}{r.original_text_loaded ? "" : " (النص غير محمَّل)"}</option>)}</select>
-            <select name="status" aria-label="الحالة الجديدة" className={field}>{Object.entries(REVIEW).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <input name="note" required maxLength={1000} placeholder="سبب/مرجع المراجعة" aria-label="الملاحظة" className={field} />
-            <button className="min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground sm:col-span-3">تسجيل المراجعة</button></form>
-        </section>)}
+        <StepCard n={2} title="هل هذه القاعدة مؤكدة؟" hint="للمسؤول القانوني: اختر القاعدة ثم حالتها الجديدة. كل تغيير يُحفظ في السجل.">
+          <form action={reviewRule} className="space-y-3">
+            <Field label="أي قاعدة؟" required><select name="rule" required className={field}>{rules.map((r) => <option key={r.rule_id} value={r.rule_id}>{r.topic} — {(SURE[r.review_status] ?? SURE.pending_review)[0]}{r.original_text_loaded ? "" : " (النص الرسمي لم يُحمَّل)"}</option>)}</select></Field>
+            <Field label="ما حالتها الآن؟"><select name="status" className={field}>{Object.entries(REVIEW).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+            <Field label="لماذا؟ (السبب أو المرجع)" example="طابقتها مع الجريدة الرسمية العدد ..." required><input name="note" required maxLength={1000} className={field} /></Field>
+            <Explain term="مراجَعة قانونيًا">لا يمكن اختيارها قبل تحميل النص الرسمي للقاعدة، حتى لا تُؤكَّد قاعدة دون مقابلتها بأصلها.</Explain>
+            <button className={BTN_PRIMARY}>حفظ الحالة</button></form>
+        </StepCard>)}
 
       {!hs.error && (hs.data ?? []).length > 0 && (
-        <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer font-bold">سجل مراجعات القواعد</summary>
-          <ul className="mt-3 divide-y text-sm">{(hs.data ?? []).map((h: any) => <li key={h.id} className="py-2"><b>{h.rule_id}</b>: {h.from_status ? REVIEW[h.from_status] : "—"} ← {REVIEW[h.to_status]} <span className="text-xs text-muted-foreground">· {fmt(h.created_at)} · {h.note}</span></li>)}</ul></details>)}
+        <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer text-lg font-bold">من غيّر ماذا؟ (سجل المراجعات)</summary>
+          <ul className="mt-3 divide-y text-base">{(hs.data ?? []).map((h: any) => <li key={h.id} className="py-2"><b>{rules.find((x) => x.rule_id === h.rule_id)?.topic ?? h.rule_id}</b>: {h.from_status ? REVIEW[h.from_status] : "—"} ← {REVIEW[h.to_status]} <span className="text-sm text-muted-foreground">· {fmt(h.created_at)} · {h.note}</span></li>)}</ul></details>)}
     </main></>
   );
 }

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import { Extra } from "@/components/finance/simple";
+import { Empty, Intro } from "@/components/simple/kit";
 import { btn, field, Panel } from "@/components/finance/Parts";
 import { CheckList, CycleFlash, CycleNav, PendingNotice, ReviewBadge, YearPicker } from "@/components/finance/closing/Parts";
 import { blockers, canClose, defaultYearEnd, openCommitments, supplementaryOver, warnings } from "@/lib/budgetCycle";
@@ -22,10 +24,10 @@ export default async function Closing({ searchParams }: { searchParams: Promise<
   const years = yq.error ? [] : yq.years;
   const fy = years.find((y) => y.year === wanted) ?? (wanted ? undefined : years[0]);
   const year = fy?.year ?? wanted ?? new Date().getFullYear();
-  const shell = (body: React.ReactNode) => <><StaffHeader back="/staff/finance" backLabel="المالية" /><main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8"><CycleNav current="closing" year={year} /><h1 className="text-2xl font-bold">إقفال السنة المالية وقطع الحساب — {year}</h1><CycleFlash ok={sp.ok} err={sp.err} />{body}</main></>;
+  const shell = (body: React.ReactNode) => <><StaffHeader back="/staff/finance" backLabel="المالية" /><main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8"><CycleNav current="closing" year={year} /><Intro title={`إغلاق السنة المالية ${year}`}>في نهاية السنة تُنهى الحسابات رسميًا على خمس خطوات مرتّبة: مدة إضافية لإنهاء الدفعات، ثم معالجة ما بقي مفتوحًا، ثم مراجعة الأرقام، ثم اعتماد الحساب النهائي، ثم الإغلاق. الصفحة تقودكم خطوة خطوة.</Intro><CycleFlash ok={sp.ok} err={sp.err} />{body}</main></>;
 
   if (yq.error) return shell(<PendingNotice />);
-  if (!fy) return shell(<p className="text-sm text-muted-foreground">لا سنة مالية مسجّلة بعد.</p>);
+  if (!fy) return shell(<Empty>لا توجد سنة مالية مسجّلة بعد.</Empty>);
   const d = await loadClosing(sb, year, fy.id);
   if (d.missing) return shell(<PendingNotice />);
   const decs = await loadDecisions(sb);
@@ -44,7 +46,7 @@ export default async function Closing({ searchParams }: { searchParams: Promise<
     {d.cycleStatus && d.cycleStatus !== "executing" && d.cycleStatus !== "closed" && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">دورة الموازنة لم تبلغ مرحلة التنفيذ بعد (الحالة: {d.cycleStatus}). أكمل مراحلها من صفحة الدورة قبل الإقفال.</p>}
 
     {closed ? (<>
-      <Panel title="السنة مقفلة" sub="لا يقبل أي بند أو التزام أو دفعة أو تعديل أي كتابة على هذه السنة (مطبَّق بمُحفِّزات في قاعدة البيانات).">
+      <Panel title="✓ السنة مغلقة" sub="لا يقبل أي بند أو التزام أو دفعة أو تعديل أي كتابة على هذه السنة (مطبَّق بمُحفِّزات في قاعدة البيانات).">
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           <div><dt className="text-xs text-muted-foreground">تاريخ الإقفال</dt><dd className="font-bold">{cl?.closed_on ?? "—"}</dd></div>
           <div><dt className="text-xs text-muted-foreground">قطع الحساب</dt><dd className="font-bold">{d.finalDecision ? `${d.finalDecision.decision_no}/${d.finalDecision.year} — ${d.finalDecision.title}` : "—"}{cl?.final_account_prepared_on ? ` (أُعدّ ${cl.final_account_prepared_on})` : ""}</dd></div>
@@ -53,69 +55,69 @@ export default async function Closing({ searchParams }: { searchParams: Promise<
         </dl>
         {d.totals.length > 0 && <div className="mt-3 flex flex-wrap gap-2 text-xs">{d.totals.map((t) => <span key={t.currency} className="rounded-lg border px-3 py-1.5">{t.currency}: اعتماد {money(t.credit, t.currency)} · ملتزم {money(t.committed, t.currency)} · مدفوع {money(t.paid, t.currency)} · متاح {money(t.available, t.currency)}</span>)}</div>}
       </Panel>
-      <Panel fold title="إعادة فتح تصحيحية" sub="مسار استثنائي موثّق: يلزم سبب مفصّل وقرار معتمد من المجلس؛ يُحفظ قطع الحساب السابق في سجل إعادة الفتح ويجب إعادة تسجيله، ويُدوَّن الأمر في سجل التدقيق.">
+      <Panel fold title="هل وقع خطأ؟ إعادة فتح السنة للتصحيح" sub="مسار استثنائي موثّق: يلزم سبب مفصّل وقرار معتمد من المجلس؛ يُحفظ قطع الحساب السابق في سجل إعادة الفتح ويجب إعادة تسجيله، ويُدوَّن الأمر في سجل التدقيق.">
         <form action={reopenYear} className="grid gap-3">{back}
-          <label className="space-y-1 text-sm font-medium">سبب إعادة الفتح (15 حرفًا على الأقل)<textarea name="reason" required minLength={15} maxLength={1000} rows={3} className={`${field} py-2`} /></label>
-          <label className="space-y-1 text-sm font-medium">قرار المجلس المجيز للتصحيح<select name="decision" required className={field}>{decOpts()}</select></label>
-          <label className="space-y-1 text-sm font-medium">الجهة / المرجع<input name="authority" maxLength={200} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">سبب إعادة الفتح (15 حرفًا على الأقل)<textarea name="reason" required minLength={15} maxLength={1000} rows={3} className={`${field} py-2`} /></label>
+          <label className="space-y-1 text-base font-semibold">قرار المجلس المجيز للتصحيح<select name="decision" required className={field}>{decOpts()}</select></label>
+          <label className="space-y-1 text-base font-semibold">الجهة / المرجع<input name="authority" maxLength={200} className={field} /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="confirm" required className="size-5" />أقرّ بأن إعادة الفتح تصحيحية وتُسجَّل في التدقيق.</label>
-          <button className={btn} disabled={decs.length === 0}>إعادة فتح السنة</button>
+          <button className={btn} disabled={decs.length === 0}>أعيدوا فتح السنة</button>
         </form>
       </Panel>
     </>) : !cl ? (
-      <Panel title="بدء الإقفال" sub="يبدأ مسار الإقفال ويجمّد الالتزامات الجديدة (حسب الإعداد) مع بقاء الدفع على الالتزامات القائمة.">
+      <Panel title="ابدؤوا إغلاق السنة" sub="يبدأ مسار الإقفال ويجمّد الالتزامات الجديدة (حسب الإعداد) مع بقاء الدفع على الالتزامات القائمة.">
         <form action={startClosing} className="grid gap-3 sm:grid-cols-2">{back}
-          <label className="space-y-1 text-sm font-medium">نهاية السنة المالية <ReviewBadge /><input name="year_end" type="date" defaultValue={defaultYearEnd(year)} className={field} /><span className="text-[11px] text-muted-foreground">الافتراضي 31/12 على افتراض سنة مالية تقويمية؛ عدّله إن اختلف.</span></label>
-          <label className="space-y-1 text-sm font-medium">ملاحظة<input name="note" maxLength={500} className={field} /></label>
-          <button className={`${btn} sm:col-span-2`}>بدء إقفال {year}</button>
+          <label className="space-y-1 text-base font-semibold">نهاية السنة المالية <ReviewBadge /><input name="year_end" type="date" defaultValue={defaultYearEnd(year)} className={field} /><span className="text-[11px] text-muted-foreground">الافتراضي 31/12 على افتراض سنة مالية تقويمية؛ عدّله إن اختلف.</span></label>
+          <label className="space-y-1 text-base font-semibold">ملاحظة<input name="note" maxLength={500} className={field} /></label>
+          <button className={`${btn} sm:col-span-2`}>ابدأ إغلاق {year}</button>
         </form>
       </Panel>
     ) : (<>
-      <Panel title="1. المدة المتممة" sub="طولها قيمة تُدخل بلا افتراض. لا يُقفل العام قبل انتهائها.">
+      <Panel title="الخطوة 1: المدة الإضافية بعد نهاية السنة" sub="طولها قيمة تُدخل بلا افتراض. لا يُقفل العام قبل انتهائها.">
         <p className="mb-3 text-sm">نهاية السنة: <b>{cl.year_end}</b> · طول المدة: <b>{cl.supplementary_days ?? "غير محدَّد"}</b>{cl.supplementary_days !== null && " يوم"} · تنتهي: <b>{cl.supplementary_ends_on ?? "غير محدَّد"}</b>{cl.supplementary_ends_on && <> ({over ? "انتهت" : "جارية"})</>}{!cl.supplementary_verified && <ReviewBadge />}</p>
         <form action={setSupplementary} className="grid gap-3 sm:grid-cols-2">{back}
-          <label className="space-y-1 text-sm font-medium">عدد الأيام<input name="days" type="number" min={0} max={366} defaultValue={cl.supplementary_days ?? ""} className={field} /></label>
-          <label className="space-y-1 text-sm font-medium">أو تاريخ الانتهاء مباشرة<input name="ends_on" type="date" defaultValue={cl.supplementary_ends_on ?? ""} className={field} /></label>
-          <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name="verified" defaultChecked={cl.supplementary_verified} className="size-5" />تحقّق منها مختص قانوني</label>
-          <label className="space-y-1 text-sm font-medium">مرجع/ملاحظة<input name="note" maxLength={500} defaultValue={cl.supplementary_note ?? ""} className={field} /></label>
-          <button className={`${btn} sm:col-span-2`}>حفظ المدة المتممة</button>
+          <label className="space-y-1 text-base font-semibold">عدد أيام المدة الإضافية<input name="days" type="number" min={0} max={366} defaultValue={cl.supplementary_days ?? ""} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">أو تاريخ انتهائها مباشرة<input name="ends_on" type="date" defaultValue={cl.supplementary_ends_on ?? ""} className={field} /></label>
+          <label className="flex items-center gap-2 text-base font-semibold"><input type="checkbox" name="verified" defaultChecked={cl.supplementary_verified} className="size-5" />تحقّق منها مختص قانوني</label>
+          <label className="space-y-1 text-base font-semibold">مرجع/ملاحظة<input name="note" maxLength={500} defaultValue={cl.supplementary_note ?? ""} className={field} /></label>
+          <button className={`${btn} sm:col-span-2`}>احفظ المدة الإضافية</button>
         </form>
       </Panel>
 
-      <Panel title="2. العمليات المفتوحة — الالتزامات غير المصفّاة" sub="لكل التزام متبقٍّ: سدّد المتبقي، أو سجّل ترحيله إلى السنة الجديدة أو إسقاطه. الترحيل الفعلي للاعتماد يتم بتعديل «مُرحَّل» في السنة الجديدة.">
-        {open.length === 0 ? <p className="text-sm text-[#2f7d4f]">لا التزامات مفتوحة.</p> : <ul className="divide-y text-sm">{open.map((o) => { const c = d.commitments.find((x) => x.id === o.id)!; const l = cur(o.lineId); return (
+      <Panel title="الخطوة 2: مبالغ محجوزة لم تُصرف بعد" sub="لكل التزام متبقٍّ: سدّد المتبقي، أو سجّل ترحيله إلى السنة الجديدة أو إسقاطه. الترحيل الفعلي للاعتماد يتم بتعديل «مُرحَّل» في السنة الجديدة.">
+        {open.length === 0 ? <p className="rounded-xl bg-green-50 p-3 text-base text-[#2f7d4f]">✓ لا توجد مبالغ محجوزة عالقة؛ انتقلوا إلى الخطوة التالية.</p> : <ul className="divide-y text-sm">{open.map((o) => { const c = d.commitments.find((x) => x.id === o.id)!; const l = cur(o.lineId); return (
           <li key={o.id} className="space-y-2 py-3"><div className="flex flex-wrap gap-x-3"><b>{money(o.remaining, l?.currency ?? "")}</b><span>متبقٍّ من {money(o.amount, l?.currency ?? "")}</span><span className="text-muted-foreground">{codeOf(o.lineId)} · {c.description}</span>{o.resolved && <span className="rounded-full border border-[#2f7d4f]/50 px-2 text-xs">{resolved.get(o.id) === "carry_over" ? "مُرحَّل" : "ساقط"}</span>}</div>
             <form action={resolveCommitment} className="flex flex-wrap items-end gap-2">{back}<input type="hidden" name="commitment" value={o.id} />
-              <label className="text-xs font-medium">المعالجة<select name="resolution" className={`${field} block`}><option value="carry_over">ترحيل</option><option value="lapse">إسقاط</option></select></label>
-              <label className="text-xs font-medium">القرار (اختياري)<select name="decision" className={`${field} block`}><option value="">—</option>{decOpts()}</select></label>
-              <label className="text-xs font-medium">ملاحظة<input name="note" maxLength={300} className={`${field} block`} /></label><button className={btn}>{o.resolved ? "تحديث" : "تسجيل"}</button></form></li>); })}</ul>}
+              <label className="text-sm font-semibold">ماذا نفعل به؟<select name="resolution" className={`${field} block`}><option value="carry_over">نقله إلى السنة الجديدة</option><option value="lapse">إلغاؤه</option></select></label>
+              <label className="text-sm font-semibold">القرار (اختياري)<select name="decision" className={`${field} block`}><option value="">—</option>{decOpts()}</select></label>
+              <label className="text-sm font-semibold">ملاحظة<input name="note" maxLength={300} className={`${field} block`} /></label><button className={btn}>{o.resolved ? "حدّث" : "سجّل"}</button></form></li>); })}</ul>}
       </Panel>
 
-      <Panel title="3. المطابقة وقائمة التحقق" sub="المدفوعات مقابل الالتزامات مقابل الاعتمادات، والتعديلات المعلّقة، وقطع الحساب. الشروط الحمراء تمنع الإقفال.">
+      <Panel title="الخطوة 3: مراجعة الأرقام" sub="المدفوعات مقابل الالتزامات مقابل الاعتمادات، والتعديلات المعلّقة، وقطع الحساب. الشروط الحمراء تمنع الإقفال.">
         {d.checkError ? <PendingNotice /> : <><CheckList checks={d.checks} />
           {d.totals.length > 0 && <div className="mt-3 flex flex-wrap gap-2 text-xs">{d.totals.map((t) => <span key={t.currency} className="rounded-lg border px-3 py-1.5">{t.currency}: اعتماد {money(t.credit, t.currency)} · محجوز {money(t.committed, t.currency)} · مدفوع {money(t.paid, t.currency)} · متاح {money(t.available, t.currency)}</span>)}</div>}</>}
       </Panel>
 
-      <Panel title="4. قطع الحساب" sub="قرار المجلس باعتماد قطع الحساب (فئة «حسابات»). التصديق الحكمي للحسابات مسألة تحتاج تحققًا قانونيًا؛ سجّل تاريخ التصديق إن وُجد.">
+      <Panel title="الخطوة 4: الحساب النهائي للسنة (قطع الحساب)" sub="قرار المجلس باعتماد قطع الحساب (فئة «حسابات»). التصديق الحكمي للحسابات مسألة تحتاج تحققًا قانونيًا؛ سجّل تاريخ التصديق إن وُجد.">
         {d.finalDecision && <p className="mb-3 rounded-xl border p-3 text-sm">المسجَّل: <b>{d.finalDecision.decision_no}/{d.finalDecision.year}</b> — {d.finalDecision.title} · أُعدّ {cl.final_account_prepared_on}{cl.final_account_validated_on ? ` · صُدّق ${cl.final_account_validated_on}` : " · تصديقه غير مسجَّل"}{cl.final_account_ref ? ` · مرجع ${cl.final_account_ref}` : ""}</p>}
         <form action={recordFinalAccount} className="grid gap-3 sm:grid-cols-2">{back}
-          <label className="space-y-1 text-sm font-medium sm:col-span-2">قرار المجلس<select name="decision" required className={field}>{decOpts("accounts")}</select></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ إعداد قطع الحساب<input name="prepared_on" type="date" required max={today()} defaultValue={cl.final_account_prepared_on ?? today()} className={field} /></label>
-          <label className="space-y-1 text-sm font-medium">المرجع<input name="ref" maxLength={200} defaultValue={cl.final_account_ref ?? ""} className={field} /></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ التصديق (إن وُجد)<input name="validated_on" type="date" max={today()} className={field} /></label>
-          <label className="space-y-1 text-sm font-medium">جهة التصديق<input name="authority" maxLength={200} className={field} /></label>
-          <button className={`${btn} sm:col-span-2`} disabled={decOpts("accounts").length === 0}>{d.finalDecision ? "تحديث قطع الحساب" : "تسجيل قطع الحساب"}</button>
+          <label className="space-y-1 text-base font-semibold sm:col-span-2">قرار المجلس<select name="decision" required className={field}>{decOpts("accounts")}</select></label>
+          <label className="space-y-1 text-base font-semibold">تاريخ إعداد قطع الحساب<input name="prepared_on" type="date" required max={today()} defaultValue={cl.final_account_prepared_on ?? today()} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">المرجع<input name="ref" maxLength={200} defaultValue={cl.final_account_ref ?? ""} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">تاريخ التصديق (إن وُجد)<input name="validated_on" type="date" max={today()} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">جهة التصديق<input name="authority" maxLength={200} className={field} /></label>
+          <button className={`${btn} sm:col-span-2`} disabled={decOpts("accounts").length === 0}>{d.finalDecision ? "حدّث الحساب النهائي" : "سجّل الحساب النهائي"}</button>
           {decOpts("accounts").length === 0 && <p className="text-xs text-destructive sm:col-span-2">لا قرار معتمد بفئة «حسابات» في سجل المجلس؛ سجّله أولًا.</p>}
         </form>
       </Panel>
 
-      <Panel title="5. إقفال السنة" sub="إجراء لا رجوع عنه إلا بمسار تصحيحي موثّق. تُعاد مراجعة كل الشروط في قاعدة البيانات لحظة الإقفال.">
-        {!ready && <p className="mb-3 text-sm text-destructive">لا يمكن الإقفال الآن: {blockers(d.checks).length} شرط غير مستوفى.</p>}
+      <Panel title="الخطوة 5: الإغلاق النهائي" sub="إجراء لا رجوع عنه إلا بمسار تصحيحي موثّق. تُعاد مراجعة كل الشروط في قاعدة البيانات لحظة الإقفال.">
+        {!ready && <p className="mb-3 text-sm text-destructive">لا يمكن الإغلاق الآن: {blockers(d.checks).length} شرط غير مستوفى.</p>}
         {warnings(d.checks).length > 0 && ready && <p className="mb-3 text-sm text-amber-700">يوجد {warnings(d.checks).length} تنبيه لا يمنع الإقفال؛ راجعها قبل المتابعة.</p>}
         <form action={closeYear} className="grid gap-3">{back}
-          <label className="space-y-1 text-sm font-medium">ملاحظة الإقفال<input name="note" maxLength={500} className={field} /></label>
+          <label className="space-y-1 text-base font-semibold">ملاحظة الإقفال<input name="note" maxLength={500} className={field} /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="confirm" required className="size-5" />أؤكد مراجعة قائمة التحقق وإقفال السنة {year}.</label>
-          <button className={btn} disabled={!ready}>إقفال السنة المالية</button>
+          <button className={btn} disabled={!ready}>أغلقوا السنة المالية</button>
         </form>
       </Panel>
     </>)}

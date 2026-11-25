@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
+import { BTN_PRIMARY, BTN_SECONDARY, CONTROL, Chip, Explain, Field } from "@/components/simple/kit";
 import { MAJORITY_LABEL, PROBLEM_AR, RESULT, VOTE, checkResult, checkVotes, defaultResult, tally, type VoteRow } from "@/lib/votes";
 
 type Rule = { category: string; majority_kind: string | null; verification: string };
 const CAT: Record<string, string> = { general: "عام", budget: "موازنة", accounts: "حسابات", planning: "تنظيم مدني/تخطيط", loan: "قرض", transfer: "نقل اعتمادات", tax: "رسوم وضرائب", contract: "عقد/لزمة", property: "أملاك/إيجار", other: "أخرى" };
-const field = "min-h-11 w-full rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
 
 /** Per-agenda-item vote entry by member. Client-side checks mirror the database constraints (which stay authoritative). */
 export default function VotesForm({ action, sessionId, agendaId, total, present, initial, rules, initialCategory, initialResult, initialTieBreak, initialNote }: {
@@ -21,30 +21,42 @@ export default function VotesForm({ action, sessionId, agendaId, total, present,
   const rule = rules.find((r) => r.category === cat);
   const set = (i: number, p: Partial<VoteRow>) => setRows((x) => x.map((r, k) => (k === i ? { ...r, ...p } : r)));
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="space-y-5">
       <input type="hidden" name="session" value={sessionId} /><input type="hidden" name="agenda" value={agendaId} />
-      <ul className="space-y-2">
-        {rows.map((r, i) => (
-          <li key={i} className="grid gap-2 sm:grid-cols-[2fr_1.2fr_2fr_auto]">
-            <input name="member" value={r.member} onChange={(e) => set(i, { member: e.target.value })} maxLength={200} placeholder="اسم العضو" aria-label="اسم العضو" className={field} />
-            <select name="vote" value={r.vote} onChange={(e) => set(i, { vote: e.target.value })} aria-label="التصويت" className={field}>{Object.entries(VOTE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <input name="reason" value={r.reason ?? ""} onChange={(e) => set(i, { reason: e.target.value })} maxLength={500} placeholder={r.vote === "recused" ? "سبب التنحي (مطلوب)" : "ملاحظة (للتنحي فقط)"} aria-label="سبب التنحي" disabled={r.vote !== "recused"} className={`${field} disabled:opacity-40`} />
-            <button type="button" onClick={() => setRows((x) => (x.length > 1 ? x.filter((_, k) => k !== i) : x))} className="min-h-11 rounded-xl border px-3 text-sm active:bg-muted" aria-label="حذف الصف">حذف</button>
-          </li>))}
-      </ul>
-      <button type="button" onClick={() => setRows((x) => [...x, { member: "", vote: "for" }])} className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">+ عضو</button>
-      <p className="flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-muted px-3 py-1">مع {t.for}</span><span className="rounded-full bg-muted px-3 py-1">ضد {t.against}</span><span className="rounded-full bg-muted px-3 py-1">امتناع {t.abstain}</span><span className="rounded-full bg-muted px-3 py-1">متنحٍّ {t.recused}</span><span className="rounded-full bg-muted px-3 py-1">غائب {t.absent}</span><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">الحاضرون في البند {t.present}{present !== null ? ` / ${present} مسجَّل للجلسة` : ""}{total !== null ? ` · الأعضاء ${total}` : ""}</span></p>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <label className="space-y-1 text-sm font-medium">نوع القرار (للأغلبية المطلوبة)
-          <select name="category" value={cat} onChange={(e) => setCat(e.target.value)} className={field}><option value="">غير محدد</option>{Object.entries(CAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-        <label className="space-y-1 text-sm font-medium">النتيجة المعلنة
-          <select name="result" value={result} onChange={(e) => setResult(e.target.value)} className={field}><option value="">تلقائي ({RESULT[defaultResult(t, tie)]})</option>{Object.entries(RESULT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-        <label className="flex items-end gap-2 pb-3 text-sm font-medium"><input type="checkbox" name="tie_break" checked={tie} onChange={(e) => setTie(e.target.checked)} className="size-5" />حُسم التعادل بترجيح الرئيس (م.42 — يلزم تحقق)</label>
-      </div>
-      <p className="text-xs text-muted-foreground">الأغلبية المطلوبة: <b>{MAJORITY_LABEL(rule?.majority_kind, rule?.verification)}</b>. لا يحتسب النظام اتخاذ القرار تلقائيًا؛ النتيجة المعلنة يحسمها المجلس ويسجّلها المختص.</p>
-      <input name="note" defaultValue={initialNote ?? ""} maxLength={1000} placeholder="ملاحظة على النتيجة (اختياري)" aria-label="ملاحظة" className={field} />
-      {problems.length > 0 && <ul role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm text-destructive">{problems.map((p) => <li key={p}>{PROBLEM_AR[p]}</li>)}</ul>}
-      <button disabled={problems.length > 0} className="min-h-12 rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-50 active:opacity-90">حفظ التصويت</button>
+      <section className="space-y-3"><h3 className="text-base font-bold">١) رأي كل عضو</h3>
+        <p className="text-sm text-muted-foreground">اكتبوا اسم العضو واختاروا رأيه. أضيفوا صفًّا لكل عضو.</p>
+        <ul className="space-y-3">
+          {rows.map((r, i) => (
+            <li key={i} className="grid gap-2 rounded-2xl border p-3 sm:grid-cols-[2fr_1.4fr_auto]">
+              <input name="member" value={r.member} onChange={(e) => set(i, { member: e.target.value })} maxLength={200} placeholder="اسم العضو" aria-label="اسم العضو" className={CONTROL} />
+              <select name="vote" value={r.vote} onChange={(e) => set(i, { vote: e.target.value })} aria-label="رأي العضو" className={CONTROL}>{Object.entries(VOTE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+              <button type="button" onClick={() => setRows((x) => (x.length > 1 ? x.filter((_, k) => k !== i) : x))} className={`${BTN_SECONDARY} min-h-12`} aria-label="احذفوا هذا العضو">احذفوا</button>
+              {r.vote === "recused"
+                ? <input name="reason" value={r.reason ?? ""} onChange={(e) => set(i, { reason: e.target.value })} maxLength={500} placeholder="لماذا تنحّى؟ (مطلوب)" aria-label="سبب التنحي" className={`${CONTROL} sm:col-span-3`} />
+                : <input type="hidden" name="reason" value="" />}
+            </li>))}
+        </ul>
+        <button type="button" onClick={() => setRows((x) => [...x, { member: "", vote: "for" }])} className={BTN_SECONDARY}>+ أضيفوا عضوًا</button>
+        <p className="flex flex-wrap gap-2"><Chip tone="info">مع {t.for}</Chip><Chip tone="info">ضد {t.against}</Chip><Chip tone="info">امتناع {t.abstain}</Chip><Chip tone="info">متنحٍّ {t.recused}</Chip><Chip tone="info">غائب {t.absent}</Chip></p>
+      </section>
+
+      <section className="space-y-3"><h3 className="text-base font-bold">٢) نتيجة البند</h3>
+        <Field label="ماذا قرّر المجلس؟" hint="إن تركتموها «تلقائي» يقترح النظام النتيجة من عدد الأصوات، والمجلس هو من يحسمها.">
+          <select name="result" value={result} onChange={(e) => setResult(e.target.value)} className={CONTROL}><option value="">تلقائي ({RESULT[defaultResult(t, tie)]})</option>{Object.entries(RESULT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+        <details className="rounded-xl bg-muted/40 p-3"><summary className="cursor-pointer text-base font-semibold">حقول إضافية: نوع القرار، ترجيح الرئيس، ملاحظة</summary>
+          <div className="mt-3 space-y-4">
+            <Field label="نوع القرار" hint="يحدّد عدد الأصوات المطلوب لاتخاذه.">
+              <select name="category" value={cat} onChange={(e) => setCat(e.target.value)} className={CONTROL}><option value="">غير محدد</option>{Object.entries(CAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+            <p className="text-sm">الأغلبية المطلوبة لهذا النوع: <b>{MAJORITY_LABEL(rule?.majority_kind, rule?.verification)}</b></p>
+            <label className="flex items-start gap-3 text-base font-semibold"><input type="checkbox" name="tie_break" checked={tie} onChange={(e) => setTie(e.target.checked)} className="mt-1 size-6" />تعادلت الأصوات فحسمها الرئيس بصوته</label>
+            <Explain term="ترجيح الرئيس">عند تعادل الأصوات قد يكون لصوت الرئيس أثر مرجِّح (المادة 42). هذا الحكم يحتاج تأكيدًا من مختص قانوني قبل الاعتماد عليه.</Explain>
+            <Field label="ملاحظة على النتيجة" hint="اختيارية."><input name="note" defaultValue={initialNote ?? ""} maxLength={1000} className={CONTROL} /></Field>
+          </div>
+        </details>
+      </section>
+
+      {problems.length > 0 && <ul role="alert" className="space-y-1 rounded-2xl border-2 border-destructive/50 p-4 text-base text-destructive">{problems.map((p) => <li key={p}>{PROBLEM_AR[p]}</li>)}</ul>}
+      <button disabled={problems.length > 0} className={`${BTN_PRIMARY} disabled:opacity-50`}>احفظوا التصويت</button>
     </form>
   );
 }

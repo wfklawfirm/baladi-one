@@ -44,13 +44,14 @@ export default async function ProcurementFile({ params, searchParams }: { params
   return (
     <><StaffHeader back="/staff/projects/contracts" backLabel="سجل العقود" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4 md:p-8">
-      <header className="space-y-1"><h1 className="text-2xl font-bold">ملف الشراء</h1>
+      <header className="space-y-1"><h1 className="text-2xl font-extrabold">ملف الشراء</h1>
+        <p className="text-base leading-7 text-muted-foreground">هنا تتابعون مراحل شراء هذا العقد خطوة بخطوة: اللجان، والنشر الرسمي، والتعديلات. كل مرحلة تُسجَّل بدليلها.</p>
         <p className="text-sm"><b>{c.contractor}</b> — {c.subject}</p>
-        <p className="text-xs text-muted-foreground">{CONTRACT_STATUS[c.status]} · {money(c.value, c.currency)} · الأسلوب: {c.procurement_method ? METHOD[c.procurement_method] : "غير محدد"} · <Link href="/staff/projects/procurement" className="text-primary underline">الشراء العام</Link></p></header>
+        <p className="text-sm text-muted-foreground">{CONTRACT_STATUS[c.status]} · {money(c.value, c.currency)} · الأسلوب: {c.procurement_method ? METHOD[c.procurement_method] : "غير محدد"} · <Link href="/staff/projects/procurement" className="text-primary underline">الشراء العام</Link></p></header>
       <ErrNotice err={sp.err} />
       {missingAny && <PendingNotice what="ملف الشراء الكامل" />}
       <LateBadge late={c.decision_linked_late !== undefined ? { decision_linked_late: !!c.decision_linked_late, decision_linked_late_on: c.decision_linked_late_on ?? null, decision_link_reason: c.decision_link_reason ?? null, decision_link_after_signing: c.decision_link_after_signing ?? null } : null} />
-      {!c.decision_id && <div className="space-y-1 rounded-xl border p-3"><p className="text-xs font-semibold text-destructive">⚠ العقد غير مربوط بقرار من المجلس البلدي.</p><LateLinkForm contractId={id} decisions={decisions} /></div>}
+      {!c.decision_id && <div className="space-y-1 rounded-xl border p-3"><p className="text-sm font-semibold text-destructive">⚠ العقد غير مربوط بقرار من المجلس البلدي.</p><LateLinkForm contractId={id} decisions={decisions} /></div>}
       <FileStages contractId={id} stages={stages} />
       <CommitteeSection contractId={id} committees={com.data} members={members} decisions={decisions} />
       <PublicationSection contractId={id} rows={pub.data} />

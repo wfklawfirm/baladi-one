@@ -5,6 +5,7 @@ import StaffHeader from "@/components/StaffHeader";
 import LegalPanel from "@/components/legal/LegalPanel";
 import ContractForm from "@/components/projects/ContractForm";
 import ContractControls from "@/components/projects/ContractControls";
+import { Chip, Empty, Intro, Notice } from "@/components/simple/kit";
 import { CONTRACT_STATUS, daysBetween, expiringContracts, overdueContracts, contractErr } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
@@ -27,21 +28,21 @@ export default async function Contracts({ searchParams }: { searchParams: Promis
   const soon = new Set(expiringContracts(all, t, DAYS).map((c) => c.id)), over = new Set(overdueContracts(all, t).map((c) => c.id));
   const rows = sp.s && CONTRACT_STATUS[sp.s] ? all.filter((c) => c.status === sp.s) : all;
   const title = (id: string | null) => (pr.data ?? []).find((p) => p.id === id)?.title;
-  const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-10 rounded-full border px-3.5 py-2 text-sm ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
+  const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-12 rounded-full border-2 px-4 py-2.5 text-base ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
   return (
     <><StaffHeader back="/staff/projects" backLabel="المشاريع" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8">
-      <h1 className="text-2xl font-bold">سجل العقود</h1>
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{contractErr(sp.err)}</p>}
-      {(soon.size > 0 || over.size > 0) && <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm font-semibold">{soon.size > 0 && `${soon.size} عقد ينتهي خلال ${DAYS} يومًا. `}{over.size > 0 && `${over.size} عقد تجاوز تاريخ نهايته دون إغلاق.`}</p>}
+      <Intro title="العقود">كل عقود البلدية في مكان واحد، مع تنبيه للعقود التي تقترب من نهايتها أو تجاوزتها. اختاروا حالة لتصفية القائمة، أو سجّلوا عقدًا جديدًا من الأسفل.</Intro>
+      {sp.err && <Notice tone="bad">{contractErr(sp.err)}</Notice>}
+      {(soon.size > 0 || over.size > 0) && <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-base font-semibold">{soon.size > 0 && `${soon.size} عقد ينتهي خلال ${DAYS} يومًا. `}{over.size > 0 && `${over.size} عقد تجاوز تاريخ نهايته دون إغلاق.`}</p>}
       <div className="flex flex-wrap gap-2" aria-label="الحالة">{chip("/staff/projects/contracts", !sp.s, "الكل")}{Object.entries(CONTRACT_STATUS).map(([k, v]) => chip(`/staff/projects/contracts?s=${k}`, sp.s === k, v))}</div>
-      {rows.length === 0 ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">لا عقود مسجّلة.</p> : (
+      {rows.length === 0 ? <Empty>لا توجد عقود في هذه القائمة. يمكنكم تسجيل عقد جديد من الأسفل.</Empty> : (
         <ul className="space-y-3">{rows.map((c) => (
-          <li key={c.id} className={`elev space-y-2 rounded-2xl border bg-background p-4 text-sm ${soon.has(c.id) || over.has(c.id) ? "border-destructive/60" : ""}`}>
+          <li key={c.id} className={`elev space-y-2 rounded-2xl border bg-background p-4 text-base ${soon.has(c.id) || over.has(c.id) ? "border-destructive/60" : ""}`}>
             <div className="flex flex-wrap items-center gap-2"><b className="text-primary">{c.contractor}</b>
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary">{CONTRACT_STATUS[c.status]}</span>
-              {soon.has(c.id) && <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">ينتهي بعد {daysBetween(t, c.end_on!)} يومًا</span>}
-              {over.has(c.id) && <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">تجاوز تاريخ النهاية</span>}
+              <Chip tone="info">{CONTRACT_STATUS[c.status]}</Chip>
+              {soon.has(c.id) && <Chip tone="wait">ينتهي بعد {daysBetween(t, c.end_on!)} يومًا</Chip>}
+              {over.has(c.id) && <Chip tone="bad">تجاوز تاريخ النهاية</Chip>}
               {c.is_demo && <span className="rounded bg-muted px-2 text-xs">تجريبي</span>}</div>
             <p>{c.subject}</p>
             <p className="text-xs text-muted-foreground">{Number(c.value).toLocaleString("en-US")} {c.currency === "LBP" ? "ل.ل." : "$"} · {c.start_on ?? "—"} ← {c.end_on ?? "—"}</p>
@@ -49,7 +50,7 @@ export default async function Contracts({ searchParams }: { searchParams: Promis
             {c.notes && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{c.notes}</p>}
             <ContractControls c={c} decisions={decOpts} />
           </li>))}</ul>)}
-      <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer font-bold text-primary">تسجيل عقد</summary><ContractForm projects={pr.data ?? []} /></details>
+      <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer text-lg font-bold text-primary">+ تسجيل عقد جديد</summary><ContractForm projects={pr.data ?? []} /></details>
       <LegalPanel workflow="procurement" />
     </main></>
   );

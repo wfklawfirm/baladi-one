@@ -13,11 +13,11 @@ export default function PlanSection({ rows, lines, contracts, year }: { rows: Pl
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا بنود في الخطة بعد.</p> : (
         <ul className="space-y-2 text-sm">{rows.map((r) => (
           <li key={r.id} className="space-y-1 rounded-xl border p-3">
-            <div className="flex flex-wrap items-center gap-2"><b>{r.title}</b><span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary">{PLAN_STATUS[r.status]}</span><span className="text-xs text-muted-foreground">{r.fiscal_year}</span></div>
-            {r.need_description && <p className="text-xs">{r.need_description}</p>}
-            <p className="text-xs text-muted-foreground">{money(r.estimated_value, r.currency)} · الأسلوب المخطط: {r.planned_method ? METHOD[r.planned_method] : "غير محدد"} · المسؤول: {r.responsible ?? "—"}</p>
-            <p className="text-xs text-muted-foreground">التمويل: {lineName(r.budget_line_id) ?? "غير مربوط ببند موازنة"}{r.funding_note ? ` — ${r.funding_note}` : ""}</p>
-            <p className="text-xs text-muted-foreground">النشر {r.planned_publish_on ?? "—"} · الترسية {r.planned_award_on ?? "—"} · البدء {r.planned_start_on ?? "—"}</p>
+            <div className="flex flex-wrap items-center gap-2"><b>{r.title}</b><span className="rounded-full bg-accent px-2.5 py-0.5 text-sm font-bold text-primary">{PLAN_STATUS[r.status]}</span><span className="text-sm text-muted-foreground">{r.fiscal_year}</span></div>
+            {r.need_description && <p className="text-sm">{r.need_description}</p>}
+            <p className="text-sm text-muted-foreground">{money(r.estimated_value, r.currency)} · الأسلوب المخطط: {r.planned_method ? METHOD[r.planned_method] : "غير محدد"} · المسؤول: {r.responsible ?? "—"}</p>
+            <p className="text-sm text-muted-foreground">التمويل: {lineName(r.budget_line_id) ?? "غير مربوط ببند موازنة"}{r.funding_note ? ` — ${r.funding_note}` : ""}</p>
+            <p className="text-sm text-muted-foreground">النشر {r.planned_publish_on ?? "—"} · الترسية {r.planned_award_on ?? "—"} · البدء {r.planned_start_on ?? "—"}</p>
             <div className="flex flex-wrap items-end gap-2">
               <form action={setPlanStatus} className="flex items-end gap-2"><input type="hidden" name="id" value={r.id} />
                 <select name="value" defaultValue={r.status} aria-label="حالة البند" className={fld}>{Object.entries(PLAN_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select><button className={btn}>تحديث</button></form>
@@ -39,7 +39,7 @@ export default function PlanSection({ rows, lines, contracts, year }: { rows: Pl
           <label className="space-y-1 text-sm">نشر مخطط<input type="date" name="publish" className={`${fld} w-full`} /></label>
           <label className="space-y-1 text-sm">ترسية مخططة<input type="date" name="award" className={`${fld} w-full`} /></label>
           <label className="space-y-1 text-sm">بدء مخطط<input type="date" name="start" className={`${fld} w-full`} /></label>
-          <button className="min-h-11 rounded-xl bg-primary px-6 font-bold text-primary-foreground sm:col-span-3">إضافة إلى الخطة</button>
+          <button className="min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground sm:col-span-3">إضافة إلى الخطة</button>
         </form></details>
     </section>
   );

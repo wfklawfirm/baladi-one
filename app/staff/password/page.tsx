@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
+import { Intro, Field, Notice, Explain, CONTROL, BTN_PRIMARY } from "@/components/simple/kit";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "تغيير كلمة المرور — BALADI ONE", referrer: "no-referrer" as const };
@@ -16,20 +17,20 @@ async function change(formData: FormData) {
   redirect("/staff");
 }
 
-const ERR: Record<string, string> = { short: "كلمة المرور يجب ألا تقل عن 10 أحرف.", mismatch: "كلمتا المرور غير متطابقتين.", failed: "تعذّر تغيير كلمة المرور. جرّب كلمة أقوى أو مختلفة عن المؤقتة." };
+const ERR: Record<string, string> = { short: "كلمة المرور قصيرة. اكتب 10 أحرف على الأقل.", mismatch: "الكلمتان غير متطابقتين. اكتبهما مرة أخرى بالشكل نفسه.", failed: "لم نستطع حفظ الكلمة. جرّب كلمة أقوى، ومختلفة عن الكلمة المؤقتة." };
 
 export default async function PasswordPage({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   await requireStaff({ allowPasswordChange: true });
   const e = ERR[(await searchParams).e ?? ""];
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-sm space-y-4 p-6">
-      <h1 className="text-2xl font-bold">اختر كلمة مرور جديدة</h1>
-      <p className="text-sm text-muted-foreground">كلمة المرور الحالية مؤقتة. يجب تغييرها قبل المتابعة.</p>
-      {e && <p role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">{e}</p>}
-      <form action={change} className="space-y-3">
-        <input type="password" name="password" required minLength={10} autoComplete="new-password" placeholder="كلمة المرور الجديدة (10 أحرف فأكثر)" dir="ltr" className="min-h-12 w-full rounded-xl border bg-background px-3" />
-        <input type="password" name="confirm" required minLength={10} autoComplete="new-password" placeholder="تأكيد كلمة المرور" dir="ltr" className="min-h-12 w-full rounded-xl border bg-background px-3" />
-        <button className="min-h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground">حفظ ومتابعة</button>
+      <Intro title="اختر كلمة سرّ جديدة">الكلمة التي دخلت بها مؤقتة. اختر كلمة خاصة بك لا يعرفها غيرك، ثم تابع.</Intro>
+      {e && <Notice tone="bad">{e}</Notice>}
+      <form action={change} className="space-y-4">
+        <Field label="كلمة السرّ الجديدة" hint="10 أحرف أو أكثر. الأفضل أن تجمع كلمات وأرقامًا." example="بيتي-بالجبل-2026" required><input type="password" name="password" required minLength={10} autoComplete="new-password" dir="ltr" className={CONTROL} /></Field>
+        <Field label="اكتبها مرة ثانية" hint="للتأكد أنك كتبتها بشكل صحيح." required><input type="password" name="confirm" required minLength={10} autoComplete="new-password" dir="ltr" className={CONTROL} /></Field>
+        <Explain term="كلمة سرّ مؤقتة">كلمة أعطاك إياها المسؤول لتدخل أول مرة فقط. لهذا يطلب منك التطبيق استبدالها بكلمتك الخاصة.</Explain>
+        <button className={`${BTN_PRIMARY} w-full`}>حفظ ومتابعة</button>
       </form>
     </main>
   );

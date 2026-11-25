@@ -7,13 +7,14 @@ import ContractForm from "@/components/projects/ContractForm";
 import ContractControls from "@/components/projects/ContractControls";
 import { uuidOk } from "@/lib/council";
 import { CONTRACT_STATUS, PRIORITY, PROJECT_STATUS, financialConsumption, fmtPct, isDelayed, physicalProgress, plannedProgress, scheduleVariance, contractErr } from "@/lib/projects";
+import { Chip, Empty, Explain, Field, Intro, Notice, StepCard, CONTROL, BTN_PRIMARY, BTN_SECONDARY } from "@/components/simple/kit";
 import { addMilestone, setMilestoneProgress, setProjectStatus, setSpend } from "../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ملف المشروع — BALADI ONE", referrer: "no-referrer" as const };
 const fd = (d: string | null) => (d ? new Intl.DateTimeFormat("ar-LB", { dateStyle: "long", timeZone: "Asia/Beirut" }).format(new Date(d)) : "—");
 const ft = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date(d));
-const field = "min-h-11 rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
+const field = CONTROL;
 const EV: Record<string, string> = { created: "إنشاء المشروع", status: "الحالة", milestone: "مرحلة جديدة", progress: "تقدّم مرحلة", spend: "المصروف", contract: "عقد", note: "ملاحظة" };
 
 export default async function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ err?: string }> }) {
@@ -36,77 +37,78 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const actual = physicalProgress(mm), planned = plannedProgress(mm, p, t), fin = financialConsumption(p.spent_amount, p.budget_amount), variance = scheduleVariance(actual, planned);
   const cu = p.currency === "LBP" ? "ل.ل." : "$";
   const label = (kind: string, v: string | null) => (v ? (kind === "status" ? PROJECT_STATUS[v] ?? v : kind === "contract" ? CONTRACT_STATUS[v] ?? v : kind === "progress" ? `${v}%` : v) : "");
+  const rel = variance === null ? null : variance >= 0 ? `متقدّم بمقدار ${Math.round(variance)} نقطة عن الخطة` : `متأخر بمقدار ${Math.abs(Math.round(variance))} نقطة عن الخطة`;
   return (
     <><StaffHeader back="/staff/projects" backLabel="المشاريع" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <div className="space-y-2"><h1 className="text-2xl font-bold">{p.title}</h1>
-        <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">{PROJECT_STATUS[p.status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">أولوية {PRIORITY[p.priority]}</span>
-          {isDelayed(p, t) && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">تجاوز الموعد المحدد</span>}{p.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "pct" ? "النسبة يجب أن تكون بين 0 و100." : contractErr(sp.err)}</p>}
+    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+      <Intro title={p.title}>هذه صفحة المشروع كاملة: حالته، وتقدّم الأعمال، والمبالغ المصروفة، وعقوده. حدّثوا ما تغيّر ثم اضغطوا «حفظ» تحت كل بطاقة.</Intro>
+      <p className="flex flex-wrap gap-2"><Chip tone="info">{PROJECT_STATUS[p.status]}</Chip><Chip tone="info">الأولوية: {PRIORITY[p.priority]}</Chip>
+        {isDelayed(p, t) && <Chip tone="bad">تجاوز الموعد المحدد</Chip>}{p.is_demo && <Chip tone="info">تجريبي</Chip>}</p>
+      {sp.err && <Notice tone="bad">{sp.err === "pct" ? "النسبة يجب أن تكون رقمًا بين 0 و100." : contractErr(sp.err)}</Notice>}
 
-      <section className="elev grid gap-3 rounded-2xl border bg-background p-4 text-sm sm:grid-cols-3">
-        <p><span className="text-muted-foreground">الموقع</span><br /><b>{p.location_text || "—"}</b></p>
-        <p><span className="text-muted-foreground">المسؤول</span><br /><b>{p.responsible || "—"}</b></p>
-        <p><span className="text-muted-foreground">الفترة</span><br /><b>{fd(p.start_on)} ← {fd(p.due_on)}</b></p>
-        <p><span className="text-muted-foreground">الموازنة</span><br /><b>{p.budget_amount === null ? "—" : `${Number(p.budget_amount).toLocaleString("en-US")} ${cu}`}</b></p>
-        <p><span className="text-muted-foreground">المصروف</span><br /><b>{Number(p.spent_amount).toLocaleString("en-US")} {cu}</b></p>
-        <p><span className="text-muted-foreground">فرق الجدول (فعلي − مخطط)</span><br /><b>{variance === null ? "—" : `${variance > 0 ? "+" : ""}${Math.round(variance)} نقطة`}</b></p>
-        {p.description && <p className="whitespace-pre-wrap leading-7 sm:col-span-3"><span className="text-muted-foreground">الوصف</span><br />{p.description}</p>}
-        <div className="sm:col-span-3"><ProgressBars actual={actual} planned={planned} financial={fin} />
-          {planned !== null && !mm.some((m) => m.planned_pct !== null) && <p className="mt-2 text-xs text-muted-foreground">المخطط محسوب خطيًا بين تاريخ البدء والموعد المتوقع لعدم إدخال نسب مخططة للمراحل.</p>}</div>
-        {dec.data && <Link href={`/staff/council/decisions/${dec.data.id}`} className="font-semibold text-primary sm:col-span-3">← القرار المرتبط: {dec.data.decision_no}/{dec.data.year} — {dec.data.title}</Link>}
+      <section className="grid gap-3 rounded-3xl border bg-background p-4 text-base sm:grid-cols-2">
+        <p><span className="text-muted-foreground">أين؟</span><br /><b>{p.location_text || "غير مسجّل"}</b></p>
+        <p><span className="text-muted-foreground">من المسؤول؟</span><br /><b>{p.responsible || "غير مسجّل"}</b></p>
+        <p><span className="text-muted-foreground">من متى إلى متى؟</span><br /><b>{fd(p.start_on)} ← {fd(p.due_on)}</b></p>
+        <p><span className="text-muted-foreground">المخصّص للمشروع</span><br /><b>{p.budget_amount === null ? "غير محدد" : `${Number(p.budget_amount).toLocaleString("en-US")} ${cu}`}</b></p>
+        <p><span className="text-muted-foreground">ما صُرف حتى الآن</span><br /><b>{Number(p.spent_amount).toLocaleString("en-US")} {cu}</b></p>
+        <p><span className="text-muted-foreground">هل نحن على الجدول؟</span><br /><b>{rel ?? "غير محسوب بعد"}</b></p>
+        {p.description && <p className="whitespace-pre-wrap leading-7 sm:col-span-2"><span className="text-muted-foreground">عن المشروع</span><br />{p.description}</p>}
+        <div className="sm:col-span-2"><ProgressBars actual={actual} planned={planned} financial={fin} />
+          {planned !== null && !mm.some((m) => m.planned_pct !== null) && <p className="mt-2 text-sm text-muted-foreground">الخطة محسوبة بالتساوي بين تاريخ البدء والموعد المتوقع، لأنكم لم تدخلوا نسبًا مخططة للمراحل.</p>}</div>
+        {dec.data && <Link href={`/staff/council/decisions/${dec.data.id}`} className="font-semibold text-primary sm:col-span-2">← القرار المرتبط بالمشروع: {dec.data.decision_no}/{dec.data.year} — {dec.data.title}</Link>}
       </section>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">حالة المشروع</h2>
-        <form action={setProjectStatus} className="flex flex-wrap gap-2"><input type="hidden" name="id" value={id} />
-          <select name="value" defaultValue={p.status} aria-label="الحالة" className={field}>{Object.entries(PROJECT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-          <input name="note" maxLength={500} placeholder="ملاحظة أو سبب (اختياري)" aria-label="ملاحظة" className={`${field} min-w-0 flex-1`} />
-          <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">حفظ</button></form>
-        <p className="text-xs text-muted-foreground">لا تتغير الحالة تلقائيًا؛ التأخر يُعرض كتنبيه مشتق من الموعد ولا يغيّر الحالة.</p>
-      </section>
+      <StepCard n={1} title="كيف حال المشروع؟" hint="اختاروا الحالة الحالية. لا تتغير الحالة وحدها؛ التأخر يظهر تنبيهًا فقط.">
+        <form action={setProjectStatus} className="space-y-3"><input type="hidden" name="id" value={id} />
+          <Field label="الحالة"><select name="value" defaultValue={p.status} className={field}>{Object.entries(PROJECT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="ملاحظة أو سبب" hint="اختياري"><input name="note" maxLength={500} className={field} /></Field>
+          <button className={BTN_PRIMARY}>حفظ الحالة</button></form>
+      </StepCard>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">المراحل والتقدّم ({fmtPct(actual)})</h2>
-        <ul className="divide-y text-sm">{mm.map((m) => (
-          <li key={m.id} className="space-y-2 py-3">
-            <div className="flex flex-wrap items-center gap-2"><b>{m.title}</b><span className="text-xs text-muted-foreground">الوزن {Number(m.weight)}{m.planned_pct !== null ? ` · المخطط ${Number(m.planned_pct)}%` : ""}{m.due_on ? ` · حتى ${fd(m.due_on)}` : ""}</span></div>
-            <form action={setMilestoneProgress} className="flex flex-wrap items-center gap-2"><input type="hidden" name="id" value={id} /><input type="hidden" name="milestone" value={m.id} />
-              <label className="text-xs">الإنجاز %<input name="pct" required inputMode="decimal" defaultValue={Number(m.progress_pct)} className={`${field} ms-2 w-24`} /></label>
-              <input name="note" maxLength={500} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${field} min-w-0 flex-1`} />
-              <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">تحديث</button></form>
+      <StepCard n={2} title={`تقدّم الأعمال (${fmtPct(actual)} منجز)`} hint="كل مرحلة جزء من المشروع. اكتبوا نسبة ما أُنجز منها ثم اضغطوا «تحديث».">
+        <ul className="space-y-3">{mm.map((m) => (
+          <li key={m.id} className="space-y-2 rounded-2xl border p-3">
+            <div className="flex flex-wrap items-center gap-2"><b className="text-base">{m.title}</b><span className="text-sm text-muted-foreground">{m.due_on ? `حتى ${fd(m.due_on)}` : ""}{m.planned_pct !== null ? ` · المخطط ${Number(m.planned_pct)}%` : ""}</span></div>
+            <form action={setMilestoneProgress} className="space-y-2"><input type="hidden" name="id" value={id} /><input type="hidden" name="milestone" value={m.id} />
+              <Field label="كم أُنجز من هذه المرحلة؟ (٪)" example="60"><input name="pct" required inputMode="decimal" defaultValue={Number(m.progress_pct)} className={`${field} sm:w-40`} /></Field>
+              <Field label="ملاحظة" hint="اختياري"><input name="note" maxLength={500} className={field} /></Field>
+              <button className={BTN_SECONDARY}>تحديث</button></form>
           </li>))}</ul>
-        {mm.length === 0 && <p className="text-sm text-muted-foreground">لا مراحل بعد؛ الإنجاز الفعلي غير محسوب حتى تُضاف مراحل.</p>}
-        <form action={addMilestone} className="grid gap-2 sm:grid-cols-4"><input type="hidden" name="id" value={id} />
-          <input name="title" required maxLength={300} placeholder="مرحلة جديدة" aria-label="المرحلة" className={`${field} sm:col-span-2`} />
-          <input name="weight" inputMode="decimal" placeholder="الوزن (افتراضي 1)" aria-label="الوزن" className={field} />
-          <input name="planned" inputMode="decimal" placeholder="المخطط % (اختياري)" aria-label="المخطط" className={field} />
-          <input type="date" name="due" aria-label="موعد المرحلة" className={`${field} sm:col-span-2`} />
-          <button className="min-h-11 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:opacity-90 sm:col-span-2">إضافة مرحلة</button></form>
-      </section>
+        {mm.length === 0 && <Empty>لا توجد مراحل بعد. أضيفوا أول مرحلة من الأسفل ليُحسب التقدّم.</Empty>}
+        <form action={addMilestone} className="space-y-3 rounded-2xl bg-muted/40 p-3"><input type="hidden" name="id" value={id} />
+          <b className="block">إضافة مرحلة جديدة</b>
+          <Field label="اسم المرحلة" required example="تمديد الشبكة"><input name="title" required maxLength={300} className={field} /></Field>
+          <Field label="موعد انتهائها" hint="اختياري"><input type="date" name="due" className={field} /></Field>
+          <details className="rounded-xl border bg-background px-3 py-2"><summary className="cursor-pointer text-sm font-semibold">حقول إضافية</summary>
+            <div className="space-y-3 pt-3">
+              <Field label="وزن المرحلة" hint="كم تساوي من المشروع؟ إن تركتموه فارغًا تُعدّ المراحل متساوية." example="2"><input name="weight" inputMode="decimal" className={field} /></Field>
+              <Field label="النسبة المخططة (٪)" hint="كم كان يجب أن يُنجز منها الآن؟"><input name="planned" inputMode="decimal" className={field} /></Field>
+            </div></details>
+          <button className={BTN_PRIMARY}>إضافة المرحلة</button></form>
+      </StepCard>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">الصرف</h2>
-        <form action={setSpend} className="flex flex-wrap gap-2"><input type="hidden" name="id" value={id} />
-          <label className="text-xs">إجمالي المصروف حتى الآن ({cu})<input name="spent" required inputMode="decimal" defaultValue={Number(p.spent_amount)} className={`${field} ms-2 w-40`} /></label>
-          <input name="note" maxLength={500} placeholder="مرجع الدفعة أو ملاحظة" aria-label="ملاحظة" className={`${field} min-w-0 flex-1`} />
-          <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">حفظ</button></form>
-      </section>
+      <StepCard n={3} title="المبالغ المصروفة" hint={`اكتبوا مجموع ما صُرف على المشروع حتى اليوم (${cu}).`}>
+        <form action={setSpend} className="space-y-3"><input type="hidden" name="id" value={id} />
+          <Field label="إجمالي المصروف حتى الآن" required><input name="spent" required inputMode="decimal" defaultValue={Number(p.spent_amount)} className={`${field} sm:w-56`} /></Field>
+          <Field label="مرجع الدفعة أو ملاحظة" hint="اختياري"><input name="note" maxLength={500} className={field} /></Field>
+          <button className={BTN_PRIMARY}>حفظ المبلغ</button></form>
+      </StepCard>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">العقود</h2>
-        <ul className="divide-y text-sm">{(cs.data ?? []).map((c) => (
-          <li key={c.id} className="space-y-1 py-3"><div className="flex flex-wrap items-center gap-2"><b>{c.contractor}</b><span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary">{CONTRACT_STATUS[c.status]}</span></div>
-            <p>{c.subject}</p><p className="text-xs text-muted-foreground">{Number(c.value).toLocaleString("en-US")} {c.currency === "LBP" ? "ل.ل." : "$"} · {c.start_on ?? "—"} ← {c.end_on ?? "—"}</p>
+      <StepCard n={4} title="العقود" hint="العقود المرتبطة بهذا المشروع، وما تحتاجه من إجراء.">
+        <ul className="space-y-3">{(cs.data ?? []).map((c) => (
+          <li key={c.id} className="space-y-1 rounded-2xl border p-3"><div className="flex flex-wrap items-center gap-2"><b className="text-base">{c.contractor}</b><Chip tone="info">{CONTRACT_STATUS[c.status]}</Chip></div>
+            <p>{c.subject}</p><p className="text-sm text-muted-foreground">{Number(c.value).toLocaleString("en-US")} {c.currency === "LBP" ? "ل.ل." : "$"} · من {c.start_on ?? "—"} إلى {c.end_on ?? "—"}</p>
             <ContractControls c={c} back={id} decisions={decOpts} /></li>))}</ul>
-        {(cs.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">لا عقود مرتبطة.</p>}
-        <details><summary className="cursor-pointer text-sm font-bold text-primary">تسجيل عقد لهذا المشروع</summary><ContractForm project={id} /></details>
-      </section>
+        {(cs.data ?? []).length === 0 && <Empty>لا عقود مرتبطة بهذا المشروع بعد.</Empty>}
+        <details className="rounded-2xl border px-3 py-2"><summary className="cursor-pointer text-base font-bold text-primary">+ تسجيل عقد لهذا المشروع</summary><div className="pt-3"><ContractForm project={id} /></div></details>
+        <Explain term="العقد">اتفاق مكتوب مع مقاول أو مورّد لتنفيذ عمل أو توريد مواد لقاء مبلغ ومدة محددين.</Explain>
+      </StepCard>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">الخط الزمني</h2>
-        <ol className="space-y-2 text-sm">{(ev.data ?? []).map((e) => <li key={e.id} className="flex flex-wrap gap-x-3"><span className="text-xs text-muted-foreground">{ft(e.created_at)}</span><b>{EV[e.kind]}</b><span>{e.from_value ? `${label(e.kind, e.from_value)} ← ` : ""}{label(e.kind, e.to_value)}</span>{e.note && <span className="text-muted-foreground">({e.note})</span>}</li>)}</ol>
-      </section>
+      <StepCard n={5} title="سجل ما جرى" hint="كل تغيير على المشروع مع وقته، من الأحدث إلى الأقدم.">
+        <ol className="space-y-2 text-base">{(ev.data ?? []).map((e) => <li key={e.id} className="flex flex-wrap gap-x-3"><span className="text-xs text-muted-foreground">{ft(e.created_at)}</span><b>{EV[e.kind]}</b><span>{e.from_value ? `${label(e.kind, e.from_value)} ← ` : ""}{label(e.kind, e.to_value)}</span>{e.note && <span className="text-muted-foreground">({e.note})</span>}</li>)}</ol>
+        {(ev.data ?? []).length === 0 && <Empty>لا أحداث مسجّلة بعد.</Empty>}
+      </StepCard>
     </main></>
   );
 }

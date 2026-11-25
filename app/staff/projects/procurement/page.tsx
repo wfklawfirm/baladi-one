@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import LegalPanel from "@/components/legal/LegalPanel";
+import { Intro, Explain } from "@/components/simple/kit";
 import { detectSplitPurchases, type Threshold } from "@/lib/procurement";
 import RecommenderCard from "@/components/projects/procurement/RecommenderCard";
 import SplitWarnings from "@/components/projects/procurement/SplitWarnings";
@@ -32,15 +33,16 @@ export default async function Procurement({ searchParams }: { searchParams: Prom
   return (
     <><StaffHeader back="/staff/projects" backLabel="المشاريع" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-4 p-4 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-2xl font-bold">الشراء العام</h1>
-        <div className="flex gap-2 text-sm font-semibold"><Link href="/staff/projects/procurement/thresholds" className="rounded-xl border px-4 py-2 active:bg-muted">السقوف والإعدادات</Link><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 active:bg-muted">سجل العقود</Link></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><Intro title="الشراء العام">من هنا تخطّطون لمشتريات السنة، وتعرفون الأسلوب المناسب لقيمة الشراء، ويُنبّهكم النظام إلى تجزئة شراء كبير. لكل عقد «ملف شراء» يتتبّع مراحله.</Intro>
+        <div className="flex flex-wrap gap-2 text-base font-semibold"><Link href="/staff/projects/procurement/thresholds" className="rounded-xl border px-4 py-2 active:bg-muted">حدود قيمة الشراء</Link><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 active:bg-muted">سجل العقود</Link></div></div>
+      <Explain term="تجزئة الشراء">تقسيم شراء واحد كبير إلى عدة مشتريات صغيرة لتفادي أسلوب أشدّ رقابة. النظام يُنبّه إليها ولا يمنعها.</Explain>
       <ErrNotice err={sp.err} />
       {(plan.missing || th.missing) && <PendingNotice what="خطة الشراء ومحرك التوصية" />}
-      {!th.missing && th.data.length === 0 && <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">لم تُحمَّل أي سقوف بعد: لن يُصدر المحرك توصية ولا يُمنع أي إجراء.</p>}
+      {!th.missing && th.data.length === 0 && <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">لم تُحمَّل أي سقوف بعد: لن يُصدر المحرك توصية ولا يُمنع أي إجراء.</p>}
       <RecommenderCard thresholds={th.data} today={t} value={sp.value} currency={sp.currency} />
       <SplitWarnings groups={groups} labels={labels} windowDays={cfg.split_window_days} />
       <PlanSection rows={plan.data} lines={bl.data} contracts={cs.data} year={year} />
-      <p className="text-xs text-muted-foreground">ملف الشراء الكامل لكل عقد (المراحل، اللجان، النشر الرسمي، التعديلات) يُفتح من سجل العقود عبر «ملف الشراء».</p>
+      <p className="text-sm text-muted-foreground">ملف الشراء الكامل لكل عقد (المراحل، اللجان، النشر الرسمي، التعديلات) يُفتح من سجل العقود عبر «ملف الشراء».</p>
       <LegalPanel workflow="procurement" />
     </main></>
   );

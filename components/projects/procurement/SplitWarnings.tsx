@@ -8,10 +8,10 @@ export default function SplitWarnings({ groups, labels, windowDays }: { groups: 
         <ul className="space-y-2 text-sm">{groups.map((g, k) => (
           <li key={k} className="space-y-1 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950">
             <p className="font-bold">⚠ {g.message}</p>
-            <p className="text-xs">{g.count} مشتريات ({g.reason === "same_supplier" ? "المورّد نفسه" : "موضوع متشابه"}) · المجموع {money(g.total, g.currency)}{g.band_changes ? " · المجموع يقع في فئة أسلوب مختلفة وفق السقوف المحمَّلة" : ""}</p>
-            <ul className="list-disc pr-5 text-xs">{g.ids.map((id) => <li key={id}>{labels[id] ?? id}</li>)}</ul>
+            <p className="text-sm">{g.count} مشتريات ({g.reason === "same_supplier" ? "المورّد نفسه" : "موضوع متشابه"}) · المجموع {money(g.total, g.currency)}{g.band_changes ? " · المجموع يقع في فئة أسلوب مختلفة وفق السقوف المحمَّلة" : ""}</p>
+            <ul className="list-disc pr-5 text-sm">{g.ids.map((id) => <li key={id}>{labels[id] ?? id}</li>)}</ul>
           </li>))}</ul>)}
-      <p className="text-[11px] text-muted-foreground">كشف استرشادي (تشابه الموضوع/المورّد ضمن نافذة زمنية قابلة للضبط)؛ لا يُثبت تجزئة ولا يمنع شيئًا، والحكم للمختص بعد مراجعة الملفات.</p>
+      <p className="text-sm text-muted-foreground">كشف استرشادي (تشابه الموضوع/المورّد ضمن نافذة زمنية قابلة للضبط)؛ لا يُثبت تجزئة ولا يمنع شيئًا، والحكم للمختص بعد مراجعة الملفات.</p>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import { Intro } from "@/components/simple/kit";
 import { loadRevenue } from "@/lib/revenueData";
 import { duplicateReceiptNos, METHOD, orderState } from "@/lib/revenue";
 import { money } from "@/lib/finance";
@@ -23,22 +24,23 @@ export default async function Collect({ searchParams }: { searchParams: Promise<
   return (
     <><StaffHeader back="/staff/revenue" backLabel="الإيرادات" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <h1 className="text-2xl font-bold">التحصيل والإيصالات</h1>
+      <Intro title="تسجيل الدفع وإصدار الإيصال">عندما يدفع المواطن، سجّلوا الدفع هنا فيصدر الإيصال تلقائيًا. الضغط مرتين لا يسجّل الدفع مرتين.</Intro>
       <RevenueNav current="collect" />
       <Flash ok={sp.ok} err={sp.err} />
       <LegalNote />
       {d.error ? <Pending missing={d.missing} /> : <>
         {dups.length > 0 && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تحذير سلامة: أرقام إيصالات مكرَّرة ضمن السلسلة والسنة نفسها ({dups.length}).</p>}
         {d.series.filter((s) => s.is_active).length === 0 && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">لا توجد سلسلة إيصالات فعّالة: {admin ? "أضف سلسلة أدناه قبل التحصيل." : "اطلب من رئيس البلدية أو المدير إضافتها."}</p>}
-        <Panel fold title="تسجيل تحصيل على أمر قبض" sub="جزئي أو كامل، لا يتجاوز المتبقي. الإرسال المتكرر بالمفتاح نفسه يُعيد الإيصال نفسه ولا يحصّل مرتين. مدة الرجوع بالتاريخ محدودة بـ31 يومًا." >
+        <Panel fold title="تسجيل دفعة" sub="جزئي أو كامل، لا يتجاوز المتبقي. الإرسال المتكرر بالمفتاح نفسه يُعيد الإيصال نفسه ولا يحصّل مرتين. مدة الرجوع بالتاريخ محدودة بـ31 يومًا." >
           <form action={collect} className="grid gap-3 sm:grid-cols-2">{back}<input type="hidden" name="key" value={key} />
-            <label className="space-y-1 text-sm font-medium sm:col-span-2">أمر القبض<select name="order" required className={field}>{d.orders.filter((o) => ["issued", "notified", "collected"].includes(o.status) && orderState(o, d.receipts, today).remaining > 0).map((o) => { const a = d.assessments.find((x) => x.id === o.assessment_id); const st = orderState(o, d.receipts, today); return <option key={o.id} value={o.id}>{o.order_no} — {a?.fee_type} — متبقٍ {money(st.remaining, o.currency)}</option>; })}</select></label>
-            <label className="space-y-1 text-sm font-medium">المبلغ<input name="amount" inputMode="decimal" required className={field} /></label>
-            <label className="space-y-1 text-sm font-medium">طريقة الدفع<select name="method" className={field}>{Object.entries(METHOD).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-            <label className="space-y-1 text-sm font-medium">سلسلة الإيصالات<select name="series" required className={field}>{d.series.filter((s) => s.is_active).map((s) => <option key={s.id} value={s.id}>{s.name_ar} ({s.code})</option>)}</select></label>
-            <label className="space-y-1 text-sm font-medium">تاريخ التحصيل<input name="date" type="date" defaultValue={today} max={today} className={field} /></label>
-            <button className={`${btn} sm:col-span-2`}>تسجيل وإصدار إيصال</button>
-          </form></Panel>
+            <label className="block space-y-1 text-base font-semibold sm:col-span-2">أمر القبض<span className="block text-sm font-normal leading-6 text-muted-foreground">اختاروا الأمر الذي دُفع جزء منه أو كله.</span><select name="order" required className={field}>{d.orders.filter((o) => ["issued", "notified", "collected"].includes(o.status) && orderState(o, d.receipts, today).remaining > 0).map((o) => { const a = d.assessments.find((x) => x.id === o.assessment_id); const st = orderState(o, d.receipts, today); return <option key={o.id} value={o.id}>{o.order_no} — {a?.fee_type} — متبقٍ {money(st.remaining, o.currency)}</option>; })}</select></label>
+<label className="block space-y-1 text-base font-semibold">المبلغ<span className="block text-sm font-normal leading-6 text-muted-foreground">المبلغ بالأرقام، دون فواصل.</span><input name="amount" inputMode="decimal" required className={field} /></label>
+<label className="block space-y-1 text-base font-semibold">طريقة الدفع<span className="block text-sm font-normal leading-6 text-muted-foreground">كيف دفع المواطن.</span><select name="method" className={field}>{Object.entries(METHOD).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+<label className="block space-y-1 text-base font-semibold">سلسلة الإيصالات<span className="block text-sm font-normal leading-6 text-muted-foreground">دفتر الإيصالات الذي يُصدر منه الإيصال.</span><select name="series" required className={field}>{d.series.filter((s) => s.is_active).map((s) => <option key={s.id} value={s.id}>{s.name_ar} ({s.code})</option>)}</select></label>
+<details className="rounded-2xl border p-3 sm:col-span-2"><summary className="cursor-pointer text-base font-semibold">تاريخ الدفع (افتراضيًا اليوم)</summary><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="block space-y-1 text-base font-semibold">تاريخ التحصيل<span className="block text-sm font-normal leading-6 text-muted-foreground">تاريخ اليوم أو اليوم الذي تمّ فيه الدفع.</span><input name="date" type="date" defaultValue={today} max={today} className={field} /></label></div></details>
+<button className={`${btn} sm:col-span-2`}>تسجيل وإصدار إيصال</button>
+          
+</form></Panel>
         {admin && <Panel fold title="سلاسل الإيصالات" sub="الترقيم فريد ضمن (البلدية، السلسلة، السنة المالية) فقط، دون قيد فريد شامل. النطاق القانوني للترقيم والسنة المالية (تُفترض سنة ميلادية): يلزم تحقق.">
           <form action={addSeries} className="grid gap-3 sm:grid-cols-4">{back}
             <input name="code" required maxLength={20} dir="ltr" placeholder="رمز (A)" className={field} /><input name="name" required maxLength={200} placeholder="اسم السلسلة" className={field} /><input name="prefix" maxLength={10} dir="ltr" placeholder="بادئة (اختياري)" className={field} /><button className={btn}>إضافة</button></form>

@@ -3,7 +3,7 @@ import { fmtPct } from "@/lib/projects";
 
 const Bar = ({ label, v, color, over }: { label: string; v: number | null; color: string; over?: boolean }) => (
   <div className="space-y-0.5">
-    <div className="flex justify-between text-xs"><span>{label}</span><b className={over ? "text-destructive" : ""}>{fmtPct(v)}{over ? " (تجاوز الموازنة)" : ""}</b></div>
+    <div className="flex justify-between text-sm"><span>{label}</span><b className={over ? "text-destructive" : ""}>{fmtPct(v)}{over ? " (تجاوز الموازنة)" : ""}</b></div>
     <div className="h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={v === null ? undefined : Math.round(Math.min(100, v))}>
       <div className="h-full rounded-full" style={{ width: `${v === null ? 0 : Math.min(100, Math.max(0, v))}%`, background: color }} />
     </div>

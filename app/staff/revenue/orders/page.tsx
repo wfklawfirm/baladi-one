@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import { Intro } from "@/components/simple/kit";
 import { loadRevenue } from "@/lib/revenueData";
 import { OBJ_STATUS, ORDER_STATUS, orderState } from "@/lib/revenue";
 import { money } from "@/lib/finance";
@@ -20,7 +21,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   return (
     <><StaffHeader back="/staff/revenue" backLabel="الإيرادات" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <h1 className="text-2xl font-bold">أوامر القبض والتبليغ والاعتراض</h1>
+      <Intro title="أوامر القبض">أمر القبض هو الطلب الرسمي للدفع. بعد إصداره سجّلوا تبليغ المكلّف به، وإن اعترض سجّلوا اعتراضه وقرار البتّ فيه.</Intro>
       <RevenueNav current="orders" />
       <Flash ok={sp.ok} err={sp.err} />
       <LegalNote />
@@ -39,18 +40,18 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
                 {admin && o.status !== "cancelled" && (
                   <div className="mt-3 grid gap-3 lg:grid-cols-2">
                     <form action={notifyOrder} className="grid gap-2 sm:grid-cols-2">{back}<input type="hidden" name="id" value={o.id} />
-                      <input name="date" type="date" required max={today} className={field} aria-label="تاريخ التبليغ" /><input name="method" required maxLength={100} placeholder="طريقة التبليغ" className={field} />
-                      <input name="proof" required maxLength={300} placeholder="إثبات التبليغ (رقم/مرجع)" className={`${field} sm:col-span-2`} /><button className={`${btnSm} sm:col-span-2`}>تسجيل التبليغ</button></form>
+                      <label className="block space-y-1 text-sm font-semibold"><span>تاريخ التبليغ</span><input name="date" type="date" required max={today} className={field} aria-label="تاريخ التبليغ" /></label><label className="block space-y-1 text-sm font-semibold"><span>طريقة التبليغ</span><input name="method" required maxLength={100} className={field} /></label>
+                      <label className="block space-y-1 text-sm font-semibold sm:col-span-2"><span>إثبات التبليغ (رقم/مرجع)</span><input name="proof" required maxLength={300} className={`${field}`} /></label><button className={`${btnSm} sm:col-span-2`}>سجّل التبليغ</button></form>
                     {open ? (
                       <form action={resolveObjection} className="grid gap-2 sm:grid-cols-2">{back}<input type="hidden" name="id" value={open.id} />
-                        <select name="outcome" className={field}><option value="accepted">قبول (مع تصحيح المبلغ)</option><option value="rejected">رفض</option><option value="withdrawn">سحب</option></select>
-                        <input name="corrected" inputMode="decimal" placeholder="المبلغ المصحَّح عند القبول" className={field} />
-                        <input name="note" required minLength={5} maxLength={1000} placeholder="أسباب البتّ" className={`${field} sm:col-span-2`} /><button className={`${btnSm} sm:col-span-2`}>البتّ بالاعتراض</button></form>
+                        <label className="block space-y-1 text-sm font-semibold"><span>نتيجة البتّ</span><select name="outcome" className={field}><option value="accepted">قبول (مع تصحيح المبلغ)</option><option value="rejected">رفض</option><option value="withdrawn">سحب</option></select></label>
+                        <label className="block space-y-1 text-sm font-semibold"><span>المبلغ المصحَّح عند القبول</span><input name="corrected" inputMode="decimal" className={field} /></label>
+                        <label className="block space-y-1 text-sm font-semibold sm:col-span-2"><span>أسباب البتّ</span><input name="note" required minLength={5} maxLength={1000} className={`${field}`} /></label><button className={`${btnSm} sm:col-span-2`}>البتّ بالاعتراض</button></form>
                     ) : (
                       <form action={fileObjection} className="grid gap-2 sm:grid-cols-2">{back}<input type="hidden" name="id" value={o.id} />
-                        <input name="date" type="date" required max={today} className={field} aria-label="تاريخ الاعتراض" /><input name="grounds" required minLength={5} maxLength={2000} placeholder="أسباب الاعتراض" className={field} /><button className={`${btnSm} sm:col-span-2`}>تسجيل اعتراض</button></form>
+                        <label className="block space-y-1 text-sm font-semibold"><span>تاريخ الاعتراض</span><input name="date" type="date" required max={today} className={field} aria-label="تاريخ الاعتراض" /></label><label className="block space-y-1 text-sm font-semibold"><span>أسباب الاعتراض</span><input name="grounds" required minLength={5} maxLength={2000} className={field} /></label><button className={`${btnSm} sm:col-span-2`}>تسجيل اعتراض</button></form>
                     )}
-                    {st.collected === 0 && <form action={cancelOrder} className="flex gap-2 lg:col-span-2">{back}<input type="hidden" name="id" value={o.id} /><input name="reason" required minLength={5} maxLength={500} placeholder="سبب إلغاء الأمر" className={field} /><button className={btnSm}>إلغاء الأمر</button></form>}
+                    {st.collected === 0 && <form action={cancelOrder} className="flex gap-2 lg:col-span-2">{back}<input type="hidden" name="id" value={o.id} /><label className="block space-y-1 text-sm font-semibold"><span>سبب إلغاء الأمر</span><input name="reason" required minLength={5} maxLength={500} className={field} /></label><button className={btnSm}>إلغاء الأمر</button></form>}
                   </div>)}
               </li>); })}</ul>)}
       </>}

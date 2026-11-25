@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import { VERSION_STATUS_AR, actionsFor, REVIEW_ERRORS } from "@/lib/review";
 import Mic from "@/components/Mic";
+import { BTN_PRIMARY, Chip, Notice, StepCard } from "@/components/simple/kit";
 
 export const dynamic = "force-dynamic";
 export const metadata = { referrer: "no-referrer" as const };
@@ -34,27 +35,27 @@ export default async function VersionPage({ params, searchParams }: { params: Pr
   const list = (x: any) => (Array.isArray(x) ? x : []).map((i) => (typeof i === "string" ? i : i?.title ?? i?.text ?? JSON.stringify(i)));
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-2xl space-y-5 p-4 md:p-8">
-      <Link href="/staff/services" className="text-sm text-primary">← اعتماد الخدمات</Link>
+      <Link href="/staff/services" className="inline-flex min-h-11 items-center text-base font-semibold text-primary">← اعتماد الخدمات</Link>
       <header className="space-y-1"><h1 className="text-2xl font-bold">{v.title_ar}</h1>
-        <p className="text-sm text-muted-foreground">v{v.version_no} · <b className="text-primary">{VERSION_STATUS_AR[v.status]}</b>{v.approved_at ? ` · اعتُمدت ${fmt(v.approved_at)}` : ""}</p></header>
-      {err && <p role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">{err}</p>}
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">نسخة {v.version_no} · <Chip tone={v.status === "approved" ? "ok" : v.status === "in_review" ? "wait" : "info"}>{VERSION_STATUS_AR[v.status]}</Chip>{v.approved_at ? ` · اعتُمدت ${fmt(v.approved_at)}` : ""}</p></header>
+      {err && <Notice tone="bad">{err}</Notice>}
       <section className="space-y-3 rounded-2xl border bg-background p-4 leading-8">
         {v.summary_ar && <p>{v.summary_ar}</p>}
-        {v.authority_ar && <p><b>الجهة:</b> {v.authority_ar}</p>}
+        {v.authority_ar && <p><b>الجهة المسؤولة:</b> {v.authority_ar}</p>}
         {v.municipal_role_ar && <p><b>دور البلدية:</b> {v.municipal_role_ar}</p>}
-        {v.processing_time_ar && <p><b>المدة:</b> {v.processing_time_ar}</p>}
-        {list(v.documents).length > 0 && <div><b>المستندات</b><ul className="list-disc ps-6">{list(v.documents).map((d, i) => <li key={i}>{d}</li>)}</ul></div>}
-        {list(v.steps).length > 0 && <div><b>الخطوات</b><ol className="list-decimal ps-6">{list(v.steps).map((d, i) => <li key={i}>{d}</li>)}</ol></div>}
+        {v.processing_time_ar && <p><b>مدة الإنجاز:</b> {v.processing_time_ar}</p>}
+        {list(v.documents).length > 0 && <div><b>الأوراق المطلوبة من المواطن</b><ul className="list-disc ps-6">{list(v.documents).map((d, i) => <li key={i}>{d}</li>)}</ul></div>}
+        {list(v.steps).length > 0 && <div><b>خطوات الخدمة</b><ol className="list-decimal ps-6">{list(v.steps).map((d, i) => <li key={i}>{d}</li>)}</ol></div>}
       </section>
       {actions.length > 0 && (
-        <form action={transition.bind(null, id)} className="space-y-3 rounded-2xl border bg-background p-4">
-          <h2 className="font-bold">الإجراء</h2>
+        <StepCard title="ما قراركم في هذه الخدمة؟" hint="اقرؤوا الصفحة أعلاه أولًا. عند الاعتماد تظهر الخدمة للمواطنين بهذا النص. وإذا أعدتموها للمسودة يعدّلها الموظف ويرسلها لكم من جديد.">
+        <form action={transition.bind(null, id)} className="space-y-3">
           <div className="relative"><textarea id="svc-note" name="note" maxLength={500} rows={2} placeholder="ملاحظة (اختياري)" className="w-full rounded-xl border bg-background p-3 pe-16" />
             <Mic target="svc-note" className="absolute bottom-3 end-2" /></div>
-          <div className="flex flex-wrap gap-2">{actions.map((a) => <button key={a.to} name="to" value={a.to} className="min-h-12 flex-1 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">{a.label}</button>)}</div>
-        </form>
+          <div className="flex flex-wrap gap-2">{actions.map((a) => <button key={a.to} name="to" value={a.to} className={`${BTN_PRIMARY} flex-1`}>{a.label}</button>)}</div>
+        </form></StepCard>
       )}
-      <section className="space-y-2"><h2 className="font-bold">سجل التدقيق</h2>
+      <section className="space-y-2"><h2 className="text-lg font-bold">ما جرى لهذه الخدمة</h2>
         <ol className="space-y-2 border-s ps-4">{(audit ?? []).map((a: any, i) => (
           <li key={i}><p className="font-semibold">{VERSION_STATUS_AR[a.detail?.to] ?? a.action}</p><p className="text-xs text-muted-foreground">{fmt(a.created_at)}</p>{a.detail?.note && <p className="text-sm">{a.detail.note}</p>}</li>))}</ol></section>
     </main>

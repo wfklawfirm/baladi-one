@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import { Intro } from "@/components/simple/kit";
 import { loadRevenue } from "@/lib/revenueData";
 import { NA, reconcileDay, type EntryRow } from "@/lib/revenue";
 import { money } from "@/lib/finance";
@@ -28,7 +29,7 @@ export default async function Cash({ searchParams }: { searchParams: Promise<{ o
   return (
     <><StaffHeader back="/staff/revenue" backLabel="الإيرادات" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <h1 className="text-2xl font-bold">مطابقة الصندوق اليومية</h1>
+      <Intro title="مطابقة الصندوق اليومية">في آخر اليوم، عُدّوا النقد في الصندوق وقارنوه بالإيصالات. إن اختلف الرقم اكتبوا السبب ثم أقفلوا اليوم.</Intro>
       <RevenueNav current="cash" />
       <Flash ok={sp.ok} err={sp.err} />
       {d.error ? <Pending missing={d.missing} /> : <>
@@ -44,12 +45,12 @@ export default async function Cash({ searchParams }: { searchParams: Promise<{ o
               {x.closes > 0 && <div className="mt-1 border-t pt-1">أُقفل: المعدود {money(x.counted, x.currency)} · الفرق {money(x.difference, x.currency)}{x.driftAfterClose !== null && x.driftAfterClose !== 0 && <span className="block font-bold text-destructive">تغيّر النقد المسجَّل بعد الإقفال بمقدار {money(x.driftAfterClose, x.currency)} (عكس إيصال؟)</span>}</div>}
             </div>))}</div>}
         </Panel>
-        <Panel fold title="إقفال صندوقي لهذا اليوم" sub="يُقارن النقد المعدود بإيصالاتك النقدية الصادرة في اليوم؛ عند وجود فرق تُطلب ملاحظة. الإقفال لا يُعدَّل.">
+        <Panel fold title="إقفال صندوق اليوم" sub="يُقارن النقد المعدود بإيصالاتك النقدية الصادرة في اليوم؛ عند وجود فرق تُطلب ملاحظة. الإقفال لا يُعدَّل.">
           <form action={closeCash} className="grid gap-3 sm:grid-cols-2">{back}<input type="hidden" name="date" value={date} />
-            <label className="space-y-1 text-sm font-medium">العملة<select name="currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي</option></select></label>
-            <label className="space-y-1 text-sm font-medium">النقد المعدود فعليًا<input name="counted" inputMode="decimal" required className={field} /></label>
-            <label className="space-y-1 text-sm font-medium sm:col-span-2">ملاحظة (إلزامية عند وجود فرق)<input name="note" maxLength={500} className={field} /></label>
-            <button className={`${btn} sm:col-span-2`}>إقفال الصندوق</button></form></Panel>
+            <label className="block space-y-1 text-base font-semibold">العملة<select name="currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي</option></select></label>
+<label className="block space-y-1 text-base font-semibold">النقد المعدود فعليًا<span className="block text-sm font-normal leading-6 text-muted-foreground">المبلغ الذي عددتموه فعليًا في الصندوق.</span><input name="counted" inputMode="decimal" required className={field} /></label>
+<label className="block space-y-1 text-base font-semibold sm:col-span-2">ملاحظة (إلزامية عند وجود فرق)<span className="block text-sm font-normal leading-6 text-muted-foreground">ملاحظة تساعد من يقرأ السجل لاحقًا.</span><input name="note" maxLength={500} className={field} /></label><button className={`${btn} sm:col-span-2`}>إقفال الصندوق</button>
+</form></Panel>
         <Panel title="عمليات الإقفال السابقة">
           {d.closes.length === 0 ? <p className="text-sm text-muted-foreground">لا إقفالات.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-sm"><thead className="text-xs text-muted-foreground"><tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-start"><th>اليوم</th><th>العملة</th><th>المسجَّل</th><th>المعدود</th><th>الفرق</th><th>إيصالات</th><th></th></tr></thead>
             <tbody className="divide-y">{d.closes.slice(0, 60).map((c, i) => <tr key={i} className="[&>td]:px-2 [&>td]:py-2.5"><td>{c.business_date}</td><td>{c.currency}</td><td>{money(Number(c.recorded_amount), c.currency)}</td><td>{money(Number(c.counted_amount), c.currency)}</td><td className={Number(c.difference) !== 0 ? "font-bold text-destructive" : ""}>{money(Number(c.difference), c.currency)}</td><td>{c.receipt_count}</td><td className="text-xs">{c.cashier === user.id ? "أنا" : ""}</td></tr>)}</tbody></table></div>}

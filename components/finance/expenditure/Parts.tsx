@@ -3,8 +3,8 @@ import { expError, NOT_ACTIVE, OK, STAGES } from "@/lib/expenditure";
 
 export const field = "min-h-12 w-full rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
 export const btn = "min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90 disabled:opacity-50";
-export const btnSm = "min-h-10 rounded-lg border px-3 text-sm font-semibold active:bg-muted";
-export const lbl = "space-y-1 text-sm font-medium";
+export const btnSm = "min-h-11 rounded-lg border-2 px-4 text-base font-semibold active:bg-muted";
+export const lbl = "space-y-1 text-base font-semibold";
 
 export function ExpNav({ current }: { current: "main" | "settings" }) {
   const tabs = [["main", "/staff/finance/expenditure", "دورة الإنفاق"], ["settings", "/staff/finance/expenditure/settings", "الوظائف والاستثناءات"]] as const;
@@ -17,9 +17,9 @@ export function ExpNav({ current }: { current: "main" | "settings" }) {
 }
 
 export function ExpFlash({ ok, err }: { ok?: string; err?: string }) {
-  if (ok && OK[ok]) return <p role="status" className="rounded-xl border border-primary/40 bg-accent p-3 text-sm font-medium">{OK[ok]}</p>;
-  if (err === "not_active") return <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{NOT_ACTIVE}</p>;
-  if (err) return <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{expError(err)}</p>;
+  if (ok && OK[ok]) return <p role="status" className="rounded-2xl border-2 border-green-600/40 bg-green-50 p-4 text-base font-medium leading-7">{OK[ok]}</p>;
+  if (err === "not_active") return <p role="alert" className="rounded-2xl border-2 border-destructive/40 p-4 text-base leading-7">{NOT_ACTIVE}</p>;
+  if (err) return <p role="alert" className="rounded-2xl border-2 border-destructive/40 p-4 text-base leading-7">{expError(err)}</p>;
   return null;
 }
 
@@ -43,8 +43,8 @@ export function Flag({ children, tone = "warn" }: { children: React.ReactNode; t
 /** Stage strip: highlights the stage a chain is waiting for. */
 export function StageStrip({ done }: { done: number }) {
   return (
-    <ol className="flex flex-wrap gap-1.5 text-xs" aria-label="مراحل الدورة">
-      {STAGES.map((st, i) => <li key={st.key} className={`rounded-full border px-2.5 py-1 ${i < done ? "border-primary bg-accent font-semibold text-primary" : i === done ? "border-primary/60 border-dashed" : "text-muted-foreground"}`}>{i + 1}. {st.label}</li>)}
+    <ol className="flex flex-wrap gap-2 text-sm" aria-label="مراحل الدورة">
+      {STAGES.map((st, i) => <li key={st.key} className={`rounded-full border px-3 py-1.5 ${i < done ? "border-primary bg-accent font-semibold text-primary" : i === done ? "border-primary/60 border-dashed" : "text-muted-foreground"}`}>{i + 1}. {st.label}</li>)}
     </ol>
   );
 }
@@ -54,18 +54,18 @@ export function MoneyFields({ label = "المبلغ بعملة المستند" }
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <label className={lbl}>{label}<input name="amount" inputMode="decimal" required className={field} /></label>
-        <label className={lbl}>عملة المستند<select name="doc_currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي</option></select></label>
+        <label className={lbl}>{label}<span className="block text-sm font-normal text-muted-foreground">بالأرقام كما في المستند</span><input name="amount" inputMode="decimal" required className={field} /></label>
+        <label className={lbl}>عملة المستند<span className="block text-sm font-normal text-muted-foreground">العملة المكتوبة في الفاتورة</span><select name="doc_currency" className={field}><option value="LBP">ليرة لبنانية</option><option value="USD">دولار أميركي</option></select></label>
       </div>
-      <fieldset className="space-y-2 rounded-xl border border-dashed p-3">
-        <legend className="px-1 text-xs font-semibold">سعر الصرف الموثَّق</legend>
-        <p className="text-xs text-muted-foreground">يُترك فارغًا إذا كانت عملة المستند هي عملة بند الموازنة. عند اختلافهما يلزم السعر وتاريخه ومصدره؛ يُحسب «القيمة المحاسبية» بعملة البند = المبلغ × السعر (عدد وحدات عملة البند لكل وحدة من عملة المستند). لا تُجمع عملتان دون تحويل موثَّق.</p>
+      <details className="rounded-xl border border-dashed p-3">
+        <summary className="min-h-10 cursor-pointer text-base font-semibold">سعر الصرف (فقط إذا اختلفت عملة المستند عن عملة البند)</summary>
+        <p className="mt-2 text-sm text-muted-foreground">يُترك فارغًا إذا كانت عملة المستند هي عملة بند الموازنة. عند اختلافهما يلزم السعر وتاريخه ومصدره؛ يُحسب «القيمة المحاسبية» بعملة البند = المبلغ × السعر (عدد وحدات عملة البند لكل وحدة من عملة المستند). لا تُجمع عملتان دون تحويل موثَّق.</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className={lbl}>السعر<input name="rate" inputMode="decimal" className={field} /></label>
           <label className={lbl}>تاريخ السعر<input name="rate_date" type="date" className={field} /></label>
           <label className={lbl}>مصدر السعر<input name="rate_source" maxLength={200} className={field} /></label>
         </div>
-      </fieldset>
+      </details>
     </>
   );
 }

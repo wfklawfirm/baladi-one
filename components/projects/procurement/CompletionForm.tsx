@@ -15,10 +15,10 @@ export async function acceptanceState(contractId: string): Promise<boolean | nul
 export default function CompletionForm({ contractId, back, has }: { contractId: string; back?: string; has: boolean | null }) {
   if (has === null) return null;
   return (
-    <details><summary className="cursor-pointer text-xs font-bold text-primary">إنهاء العقد بالتنفيذ (فحص محضر الاستلام)</summary>
+    <details><summary className="cursor-pointer text-sm font-bold text-primary">إنهاء العقد بالتنفيذ (فحص محضر الاستلام)</summary>
       <form action={completeContract} className="mt-2 space-y-2"><input type="hidden" name="contract" value={contractId} />{back && <input type="hidden" name="back" value={back} />}
-        {has === false && <><p role="alert" className="text-xs font-semibold text-destructive">⚠ لا محضر لجنة استلام بنتيجة إيجابية لهذا العقد. تنبيه لا يمنع الإنهاء ما دامت القاعدة غير مراجَعة قانونيًا.</p>
-          <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="ack" value="1" /> أُدرك غياب محضر الاستلام وأؤكد الإنهاء</label></>}
-        {has === true && <p className="text-xs text-green-700">✔ محضر استلام إيجابي مسجَّل.</p>}
+        {has === false && <><p role="alert" className="text-sm font-semibold text-destructive">⚠ لا محضر لجنة استلام بنتيجة إيجابية لهذا العقد. تنبيه لا يمنع الإنهاء ما دامت القاعدة غير مراجَعة قانونيًا.</p>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="ack" value="1" /> أُدرك غياب محضر الاستلام وأؤكد الإنهاء</label></>}
+        {has === true && <p className="text-sm text-green-700">✔ محضر استلام إيجابي مسجَّل.</p>}
         <div className="flex flex-wrap items-end gap-2"><input name="note" maxLength={400} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${fld} min-w-0`} /><button className={btn}>تأكيد الإنهاء</button></div></form></details>);
 }

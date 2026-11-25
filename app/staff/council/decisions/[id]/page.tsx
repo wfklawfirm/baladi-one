@@ -4,13 +4,13 @@ import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import LegalPanel from "@/components/legal/LegalPanel";
 import { CATEGORY, EXEC_STATUS, LEGAL_STATUS, VALIDATION_LEVEL, decisionAlerts, isLate, uuidOk } from "@/lib/council";
+import { BTN_PRIMARY, BTN_SECONDARY, CONTROL, Chip, Empty, Explain, Field, Intro, Notice, StepCard } from "@/components/simple/kit";
 import { addTask, setDecisionStatus, setReview, toggleTask } from "../../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ملف القرار — BALADI ONE", referrer: "no-referrer" as const };
 const fd = (d: string | null) => (d ? new Intl.DateTimeFormat("ar-LB", { dateStyle: "long", timeZone: "Asia/Beirut" }).format(new Date(d)) : "—");
 const ft = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date(d));
-const field = "min-h-11 rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
 const EV: Record<string, string> = { created: "إنشاء السجل", legal_status: "الحالة القانونية", execution_status: "حالة التنفيذ", task: "مهمة جديدة", note: "ملاحظة" };
 
 export default async function DecisionPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ err?: string }> }) {
@@ -31,84 +31,107 @@ export default async function DecisionPage({ params, searchParams }: { params: P
   const late = isLate(d, t);
   const alerts = decisionAlerts(d, t);
   const label = (kind: string, v: string | null) => (v ? (kind === "legal_status" ? LEGAL_STATUS[v] : kind === "execution_status" ? EXEC_STATUS[v] : v) : "");
+  const NO_TACIT = "قرارات التخطيط والموازنة ونقل الاعتمادات والقروض";
+  const objected = d.legal_status === "objected" || d.legal_status === "rejected" || d.legal_status === "annulled";
+  const tl = [
+    { k: "decided", label: "اتُّخذ القرار", on: d.decided_on, done: !!d.decided_on },
+    { k: "sent", label: "أُرسل للتصديق", on: d.sent_on, done: !!d.sent_on },
+    { k: "valid", label: objected ? "اعتُرض عليه" : "صُدّق", on: d.validated_on, done: !!d.validated_on || objected },
+    { k: "pub", label: "نُشر أو بُلّغ", on: d.published_on ?? d.notified_on, done: !!(d.published_on || d.notified_on) },
+  ];
+  const nextIdx = tl.findIndex((x) => !x.done);
+  const next = !d.sent_on
+    ? { text: "أرسلوا القرار إلى سلطة الرقابة وسجّلوا تاريخ الإرسال.", href: "#send", btn: "سجّلوا الإرسال" }
+    : !d.validated_on && !objected
+      ? { text: "بانتظار تصديق سلطة الرقابة. عند وصوله سجّلوا تاريخه.", href: "#send", btn: "سجّلوا التصديق" }
+      : d.execution_status !== "done" && d.execution_status !== "completed"
+        ? { text: "حدّثوا حالة التنفيذ أو أضيفوا مهمة للمتابعة.", href: "#tasks", btn: "تابعوا التنفيذ" }
+        : null;
+  const done = !next;
   return (
     <><StaffHeader back="/staff/council/decisions" backLabel="السجل" />
-    <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <div className="space-y-2"><h1 className="text-2xl font-bold">قرار {d.decision_no}/{d.year}: {d.title}</h1>
-        {d.template_snapshot && <p><Link href={`/staff/decisions/${d.id}`} className="inline-flex min-h-10 items-center rounded-xl border px-3 text-sm font-semibold text-primary hover:bg-muted">فتح في منشئ القرارات (المحرر والطباعة والتصدير)</Link></p>}
-        <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">قانونيًا: {LEGAL_STATUS[d.legal_status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">تنفيذًا: {EXEC_STATUS[d.execution_status]}</span>{late && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">متأخر عن موعد التنفيذ</span>}{d.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "date" ? "حدّد تاريخ النفاذ الوارد في المستند الرسمي." : sp.err === "validation" ? "لا يمكن تسجيل النفاذ قبل تسجيل تاريخ تصديق سلطة الرقابة، أو انقضاء مهلة الشهر من تاريخ استلامها للقرار (للفئات التي تسري عليها)." : "تعذّر تنفيذ العملية."}</p>}
+    <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+      <Intro title={`قرار ${d.decision_no}/${d.year}: ${d.title}`}>هنا ترون أين وصل هذا القرار: هل أُرسل؟ هل صُدّق؟ هل نُفّذ؟ وما الخطوة الواحدة المطلوبة منكم الآن.</Intro>
+      {d.template_snapshot && <p><Link href={`/staff/decisions/${d.id}`} className={BTN_SECONDARY}>فتح في منشئ القرارات (المحرر والطباعة والتصدير)</Link></p>}
+      <p className="flex flex-wrap gap-2"><Chip tone={d.legal_status === "effective" ? "ok" : objected ? "bad" : "wait"}>قانونيًا: {LEGAL_STATUS[d.legal_status]}</Chip><Chip tone="info">تنفيذًا: {EXEC_STATUS[d.execution_status]}</Chip>{late && <Chip tone="bad">متأخر</Chip>}</p>
+      {sp.err && <Notice tone="bad">{sp.err === "date" ? "حدّد تاريخ النفاذ الوارد في المستند الرسمي." : sp.err === "validation" ? "لا يمكن تسجيل النفاذ قبل تسجيل تاريخ تصديق سلطة الرقابة، أو انقضاء مهلة الشهر من تاريخ استلامها للقرار (للفئات التي تسري عليها)." : "تعذّر تنفيذ العملية."}</Notice>}
 
-      <section className="elev grid gap-3 rounded-2xl border bg-background p-4 text-sm sm:grid-cols-3">
-        <p><span className="text-muted-foreground">تاريخ الاتخاذ</span><br /><b>{fd(d.decided_on)}</b></p>
-        <p><span className="text-muted-foreground">التصويت (مع/ضد/امتناع)</span><br /><b>{d.vote_for ?? "—"} / {d.vote_against ?? "—"} / {d.vote_abstain ?? "—"}</b></p>
-        <p><span className="text-muted-foreground">الجهة الرقابية</span><br /><b>{d.review_authority || "—"}</b></p>
-        <p><span className="text-muted-foreground">تاريخ النفاذ (من المستند الرسمي)</span><br /><b>{fd(d.effective_on)}</b></p>
-        <p><span className="text-muted-foreground">موعد التنفيذ</span><br /><b>{fd(d.execution_due)}</b></p>
-        <p><span className="text-muted-foreground">المسؤول عن التنفيذ</span><br /><b>{d.responsible || "—"}</b></p>
-        {d.legal_basis && <p className="sm:col-span-3"><span className="text-muted-foreground">الأساس القانوني</span><br />{d.legal_basis}</p>}
-        {d.body && <p className="whitespace-pre-wrap leading-7 sm:col-span-3"><span className="text-muted-foreground">نص القرار</span><br />{d.body}</p>}
-      </section>
+      <StepCard title="أين وصل القرار؟">
+        <ol className="space-y-3">{tl.map((x, i) => (
+          <li key={x.k} className="flex flex-wrap items-center gap-3"><Chip tone={x.done ? (x.k === "valid" && objected ? "bad" : "ok") : i === nextIdx ? "wait" : "info"}>{x.done ? "تم" : i === nextIdx ? "الآن" : "لاحقًا"}</Chip><b>{x.label}</b>{x.on && <span className="text-sm text-muted-foreground">{fd(x.on)}</span>}</li>))}</ol>
+        {next ? <div className="space-y-2 rounded-2xl bg-accent p-4"><p className="font-bold">ما الخطوة التالية؟</p><p>{next.text}</p><a href={next.href} className={BTN_PRIMARY}>{next.btn}</a></div>
+          : <Notice>اكتملت مراحل هذا القرار. لا شيء مطلوب منكم الآن.</Notice>}
+      </StepCard>
 
-      {alerts.length > 0 && <ul className="space-y-1 rounded-2xl border border-amber-400/60 bg-amber-50 p-4 text-sm leading-7 text-amber-950">{alerts.map((a) => <li key={a}>⚠ {a}</li>)}</ul>}
+      {alerts.length > 0 && <ul className="space-y-1 rounded-2xl border-2 border-amber-400/60 bg-amber-50 p-4 leading-7 text-amber-950">{alerts.map((a) => <li key={a}>⚠ {a}</li>)}</ul>}
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">الإرسال والتصديق (المرسوم الاشتراعي 118/1977)</h2>
-        <p className="text-xs leading-6 text-muted-foreground">ترسل قرارات المجلس إلى سلطة الرقابة خلال ثمانية أيام (م.58). بعض القرارات تحتاج تصديق القائمقام أو المحافظ أو الوزير (م.60–62)، وتُعدّ مصدَّقة حكمًا بانقضاء شهر من تسجيلها لدى السلطة (أو من إبلاغ موافقة ديوان المحاسبة)، بشرط أن يبلّغ الرئيس السلطة بذلك، إلا قرارات التخطيط والموازنة ونقل الاعتمادات والقروض (م.63). النظام يذكّر فقط ولا يغيّر أي حالة قانونية تلقائيًا. تحقّق من النص الرسمي النافذ وتعديلاته.</p>
-        <form action={setReview} className="grid gap-3 sm:grid-cols-3"><input type="hidden" name="id" value={id} />
-          <label className="space-y-1 text-sm font-medium">فئة القرار<select name="category" defaultValue={d.category} className={`${field} w-full`}>{Object.entries(CATEGORY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label className="space-y-1 text-sm font-medium">سلطة التصديق<select name="level" defaultValue={d.validation_level} className={`${field} w-full`}>{Object.entries(VALIDATION_LEVEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ الإرسال<input type="date" name="sent" defaultValue={d.sent_on ?? ""} className={`${field} w-full`} /></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ الاستلام لدى السلطة<input type="date" name="received" defaultValue={d.received_on ?? ""} className={`${field} w-full`} /></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ التصديق الخطي<input type="date" name="validated" defaultValue={d.validated_on ?? ""} className={`${field} w-full`} /></label>
-          <label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" name="audit" defaultChecked={d.audit_bureau_required} className="size-5" />خاضع لديوان المحاسبة</label>
-          <label className="space-y-1 text-sm font-medium">تاريخ إبلاغ موافقة الديوان<input type="date" name="audit_notice" defaultValue={d.audit_bureau_notice_on ?? ""} className={`${field} w-full`} /></label>
-          <label className="space-y-1 text-sm font-medium">تاريخ إبلاغ الرئيس للسلطة بالتصديق الحكمي<input type="date" name="tacit" defaultValue={d.tacit_notified_on ?? ""} className={`${field} w-full`} /></label>
-          <label className="space-y-1 text-sm font-medium">ملاحظة<input name="note" defaultValue={d.validation_note ?? ""} maxLength={1000} className={`${field} w-full`} /></label>
-          <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted sm:col-span-3">حفظ بيانات الإرسال والتصديق</button></form>
-        <p className="text-xs text-muted-foreground">الفئة: <b>{CATEGORY[d.category]}</b> · السلطة: <b>{VALIDATION_LEVEL[d.validation_level]}</b>{d.validated_on ? <> · مصدَّق بتاريخ <b>{fd(d.validated_on)}</b></> : null}</p>
-      </section>
-
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">تحديث الحالة</h2>
-        <div className="fill-odd grid gap-4 md:grid-cols-2">
-          <form action={setDecisionStatus} className="space-y-2"><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="legal" />
-            <p className="text-sm font-semibold">الحالة القانونية والإجرائية</p>
-            <select name="value" defaultValue={d.legal_status} aria-label="الحالة القانونية" className={`${field} w-full`}>{Object.entries(LEGAL_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <label className="block text-xs text-muted-foreground">تاريخ النفاذ (إلزامي عند اختيار «نافذ»، من المستند الرسمي)<input type="date" name="date" defaultValue={d.effective_on ?? ""} className={`${field} mt-1 w-full`} /></label>
-            <input name="note" maxLength={500} placeholder="ملاحظة (اختياري)" aria-label="ملاحظة" className={`${field} w-full`} />
-            <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">حفظ</button></form>
-          <form action={setDecisionStatus} className="space-y-2"><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="execution" />
-            <p className="text-sm font-semibold">حالة التنفيذ الفعلي</p>
-            <select name="value" defaultValue={d.execution_status} aria-label="حالة التنفيذ" className={`${field} w-full`}>{Object.entries(EXEC_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <input name="note" maxLength={500} placeholder="سبب أو دليل التنفيذ (اختياري)" aria-label="ملاحظة" className={`${field} w-full`} />
-            <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">حفظ</button></form>
+      <StepCard title="بيانات القرار">
+        <div className="grid gap-3 text-base sm:grid-cols-2">
+          <p><span className="text-muted-foreground">تاريخ الاتخاذ</span><br /><b>{fd(d.decided_on)}</b></p>
+          <p><span className="text-muted-foreground">الأصوات (مع / ضد / امتناع)</span><br /><b>{d.vote_for ?? "—"} / {d.vote_against ?? "—"} / {d.vote_abstain ?? "—"}</b></p>
+          <p><span className="text-muted-foreground">الجهة الرقابية</span><br /><b>{d.review_authority || "—"}</b></p>
+          <p><span className="text-muted-foreground">تاريخ النفاذ (من المستند الرسمي)</span><br /><b>{fd(d.effective_on)}</b></p>
+          <p><span className="text-muted-foreground">موعد التنفيذ</span><br /><b>{fd(d.execution_due)}</b></p>
+          <p><span className="text-muted-foreground">المسؤول عن التنفيذ</span><br /><b>{d.responsible || "—"}</b></p>
         </div>
-      </section>
+        {d.legal_basis && <p><span className="text-muted-foreground">الأساس القانوني</span><br />{d.legal_basis}</p>}
+        {d.body && <p className="whitespace-pre-wrap leading-7"><span className="text-muted-foreground">نص القرار</span><br />{d.body}</p>}
+      </StepCard>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">مهام التنفيذ والمهل</h2>
-        <ul className="divide-y text-sm">{(tk.data ?? []).map((k) => (
-          <li key={k.id} className="flex flex-wrap items-center gap-2 py-2">
+      <div id="send"><StepCard n={1} title="الإرسال والتصديق" hint="سجّلوا هنا متى أُرسل القرار ومتى صدّقته السلطة. النظام يذكّركم ولا يغيّر أي حالة قانونية وحده.">
+        <Explain term="مهلة الإرسال">يُرسل القرار إلى سلطة الرقابة خلال ثمانية أيام من اتخاذه (م.58 من المرسوم الاشتراعي 118/1977).</Explain>
+        <Explain term="التصديق الحكمي">بعض القرارات تحتاج تصديق القائمقام أو المحافظ أو الوزير (م.60–62). وإن مضى شهر دون ردّ تُعدّ مصدَّقة حكمًا بشرط أن يبلّغ الرئيس السلطة بذلك (م.63). هذا لا ينطبق على {NO_TACIT}. تحققوا من النص الرسمي النافذ وتعديلاته.</Explain>
+        <form action={setReview} className="space-y-4"><input type="hidden" name="id" value={id} />
+          <Field label="تاريخ الإرسال إلى السلطة" hint="اليوم الذي سُلّم فيه القرار للسلطة."><input type="date" name="sent" defaultValue={d.sent_on ?? ""} className={CONTROL} /></Field>
+          <Field label="تاريخ التصديق الخطي" hint="من كتاب السلطة الذي صدّق القرار."><input type="date" name="validated" defaultValue={d.validated_on ?? ""} className={CONTROL} /></Field>
+          <details className="rounded-2xl border-2 p-3"><summary className="cursor-pointer text-base font-bold text-primary">حقول إضافية</summary>
+            <div className="mt-4 space-y-4">
+              <Field label="نوع القرار"><select name="category" defaultValue={d.category} className={CONTROL}>{Object.entries(CATEGORY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+              <Field label="من يصدّق القرار"><select name="level" defaultValue={d.validation_level} className={CONTROL}>{Object.entries(VALIDATION_LEVEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+              <Field label="تاريخ استلام السلطة للقرار" hint="تبدأ منه مهلة الشهر."><input type="date" name="received" defaultValue={d.received_on ?? ""} className={CONTROL} /></Field>
+              <label className="flex min-h-11 items-center gap-2 font-medium"><input type="checkbox" name="audit" defaultChecked={d.audit_bureau_required} className="size-5" />القرار خاضع لديوان المحاسبة</label>
+              <Field label="تاريخ إبلاغ موافقة ديوان المحاسبة"><input type="date" name="audit_notice" defaultValue={d.audit_bureau_notice_on ?? ""} className={CONTROL} /></Field>
+              <Field label="تاريخ إبلاغكم السلطة بالتصديق الحكمي" hint="يُملأ فقط إن انقضى الشهر دون ردّ."><input type="date" name="tacit" defaultValue={d.tacit_notified_on ?? ""} className={CONTROL} /></Field>
+              <Field label="ملاحظة"><input name="note" defaultValue={d.validation_note ?? ""} maxLength={1000} className={CONTROL} /></Field>
+            </div></details>
+          <button className={BTN_PRIMARY}>حفظ الإرسال والتصديق</button></form>
+        <p className="text-sm text-muted-foreground">النوع: <b>{CATEGORY[d.category]}</b> · من يصدّق: <b>{VALIDATION_LEVEL[d.validation_level]}</b>{d.validated_on ? <> · صُدّق في <b>{fd(d.validated_on)}</b></> : null}</p>
+      </StepCard></div>
+
+      <StepCard n={2} title="تحديث الحالة" hint="غيّروا الحالة عندما يتغير الواقع فقط.">
+        <form action={setDecisionStatus} className="space-y-3"><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="legal" />
+          <Field label="الحالة القانونية"><select name="value" defaultValue={d.legal_status} className={CONTROL}>{Object.entries(LEGAL_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="تاريخ النفاذ" hint="مطلوب عند اختيار «نافذ». انقلوه من المستند الرسمي."><input type="date" name="date" defaultValue={d.effective_on ?? ""} className={CONTROL} /></Field>
+          <Field label="ملاحظة" hint="اختياري"><input name="note" maxLength={500} className={CONTROL} /></Field>
+          <button className={BTN_SECONDARY}>حفظ الحالة القانونية</button></form>
+        <form action={setDecisionStatus} className="space-y-3 border-t pt-4"><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="execution" />
+          <Field label="حالة التنفيذ على الأرض"><select name="value" defaultValue={d.execution_status} className={CONTROL}>{Object.entries(EXEC_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="سبب أو دليل التنفيذ" hint="اختياري"><input name="note" maxLength={500} className={CONTROL} /></Field>
+          <button className={BTN_SECONDARY}>حفظ حالة التنفيذ</button></form>
+      </StepCard>
+
+      <div id="tasks"><StepCard n={3} title="مهام التنفيذ" hint="قسّموا التنفيذ إلى مهام صغيرة، لكل مهمة مسؤول وموعد.">
+        {(tk.data ?? []).length === 0 && <Empty>لا مهام بعد. أضيفوا أول مهمة من النموذج أدناه.</Empty>}
+        <ul className="divide-y">{(tk.data ?? []).map((k) => (
+          <li key={k.id} className="flex flex-wrap items-center gap-3 py-3">
             <form action={toggleTask}><input type="hidden" name="task" value={k.id} /><input type="hidden" name="id" value={id} /><input type="hidden" name="done" value={k.done ? "0" : "1"} />
-              <button aria-label={k.done ? "إلغاء الإنجاز" : "تحديد كمنجزة"} className={`grid size-7 place-items-center rounded-md border-2 ${k.done ? "border-primary bg-primary text-primary-foreground" : ""}`}>{k.done ? "✓" : ""}</button></form>
+              <button aria-label={k.done ? "إلغاء الإنجاز" : "تحديد كمنجزة"} className={`grid size-10 place-items-center rounded-lg border-2 ${k.done ? "border-primary bg-primary text-primary-foreground" : ""}`}>{k.done ? "✓" : ""}</button></form>
             <span className={k.done ? "text-muted-foreground line-through" : "font-medium"}>{k.title}</span>
-            <span className="text-xs text-muted-foreground">{who(k.assignee)}{k.due_on ? ` · حتى ${fd(k.due_on)}` : ""}</span>
-            {!k.done && k.due_on && k.due_on < t && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">متأخرة</span>}
+            <span className="text-sm text-muted-foreground">{who(k.assignee)}{k.due_on ? ` · حتى ${fd(k.due_on)}` : ""}</span>
+            {!k.done && k.due_on && k.due_on < t && <Chip tone="bad">متأخرة</Chip>}
           </li>))}</ul>
-        {(tk.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">لا مهام بعد.</p>}
-        <form action={addTask} className="grid gap-2 sm:grid-cols-4"><input type="hidden" name="id" value={id} />
-          <input name="title" required maxLength={300} placeholder="مهمة جديدة" aria-label="المهمة" className={`${field} sm:col-span-2`} />
-          <select name="to" aria-label="المسؤول" className={field}><option value="">دون إسناد</option>{people.map((p) => <option key={p.user_id} value={p.user_id}>{p.display_name || p.role}</option>)}</select>
-          <input type="date" name="due" aria-label="المهلة" className={field} />
-          <button className="min-h-11 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:opacity-90 sm:col-span-4">إضافة مهمة</button></form>
-      </section>
+        <form action={addTask} className="space-y-3 border-t pt-4"><input type="hidden" name="id" value={id} />
+          <Field label="المهمة الجديدة" required example="إرسال كتاب إلى المتعهد"><input name="title" required maxLength={300} className={CONTROL} /></Field>
+          <Field label="المسؤول" hint="اختياري"><select name="to" className={CONTROL}><option value="">دون إسناد</option>{people.map((p) => <option key={p.user_id} value={p.user_id}>{p.display_name || p.role}</option>)}</select></Field>
+          <Field label="الموعد" hint="اختياري"><input type="date" name="due" className={CONTROL} /></Field>
+          <button className={BTN_PRIMARY}>إضافة المهمة</button></form>
+      </StepCard></div>
 
-      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
-        <h2 className="font-bold">الخط الزمني</h2>
-        <ol className="space-y-2 text-sm">{(ev.data ?? []).map((e) => <li key={e.id} className="flex flex-wrap gap-x-3"><span className="text-xs text-muted-foreground">{ft(e.created_at)}</span><b>{EV[e.kind]}</b><span>{e.from_value ? `${label(e.kind, e.from_value)} ← ` : ""}{label(e.kind, e.to_value)}</span>{e.note && <span className="text-muted-foreground">({e.note})</span>}</li>)}</ol>
-      </section>
-      {d.session_id && <Link href={`/staff/council/${d.session_id}`} className="inline-block text-sm font-semibold text-primary">← جلسة المجلس المرتبطة</Link>}
+      <StepCard title="سجل ما جرى">
+        {(ev.data ?? []).length === 0 && <p className="text-muted-foreground">لا أحداث مسجّلة بعد.</p>}
+        <ol className="space-y-2">{(ev.data ?? []).map((e) => <li key={e.id} className="flex flex-wrap gap-x-3"><span className="text-sm text-muted-foreground">{ft(e.created_at)}</span><b>{EV[e.kind] ?? "تحديث"}</b><span>{e.from_value ? `${label(e.kind, e.from_value)} ← ` : ""}{label(e.kind, e.to_value)}</span>{e.note && <span className="text-muted-foreground">({e.note})</span>}</li>)}</ol>
+      </StepCard>
+      {d.session_id && <Link href={`/staff/council/${d.session_id}`} className={BTN_SECONDARY}>← جلسة المجلس المرتبطة</Link>}
       <LegalPanel workflow="decisions" />
     </main></>
   );
