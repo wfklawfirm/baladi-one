@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import { EXEC_STATUS, LEGAL_STATUS, SESSION_STATUS, quorumState, summonsOk, uuidOk } from "@/lib/council";
 import DecisionForm from "@/components/council/DecisionForm";
 import { addAgenda, setAttendance, setSession } from "../actions";
@@ -77,6 +78,7 @@ export default async function SessionPage({ params, searchParams }: { params: Pr
           <DecisionForm session={id} />
         </details>
       </section>
+      <LegalPanel workflow="council" />
     </main></>
   );
 }

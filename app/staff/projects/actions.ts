@@ -79,6 +79,15 @@ export async function setContractStatus(fd: FormData) {
   if (error) redirect(`${dest}?err=${codeOf(error.message)}`);
   revalidatePath(dest); revalidatePath("/staff/projects/contracts");
 }
+export async function setObjection(fd: FormData) {
+  const id = s(fd, "id"), back = s(fd, "back"); if (!uuidOk(id)) return;
+  const dest = uuidOk(back) ? `/staff/projects/${back}` : "/staff/projects/contracts";
+  const pending = s(fd, "pending") === "1";
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("contract_set_objection", { p_id: id, p_pending: pending, p_resolved: pending ? null : optDate(s(fd, "resolved")) });
+  if (error) redirect(`${dest}?err=1`);
+  revalidatePath(dest); revalidatePath("/staff/projects/contracts");
+}
 export async function setContractDates(fd: FormData) {
   const id = s(fd, "id"), back = s(fd, "back"); if (!uuidOk(id)) return;
   const dest = uuidOk(back) ? `/staff/projects/${back}` : "/staff/projects/contracts";

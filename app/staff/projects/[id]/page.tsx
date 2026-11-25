@@ -28,7 +28,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const [ms, ev, cs, dec] = await Promise.all([
     sb.from("project_milestone").select("id,title,weight,progress_pct,planned_pct,due_on").eq("project_id", id).order("created_at"),
     sb.from("project_update").select("id,kind,from_value,to_value,note,created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(200),
-    sb.from("contract").select("id,contractor,subject,value,currency,start_on,end_on,status,procurement_method,published_on,award_notice_on,ppa_notice_on,signed_on,decision_id,justification").eq("project_id", id).order("created_at"),
+    sb.from("contract").select("id,contractor,subject,value,currency,start_on,end_on,status,procurement_method,published_on,award_notice_on,ppa_notice_on,signed_on,decision_id,justification,objection_pending,objection_resolved_on").eq("project_id", id).order("created_at"),
     p.decision_id ? sb.from("municipal_decision").select("id,decision_no,year,title").eq("id", p.decision_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const t = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut" }).format(new Date());

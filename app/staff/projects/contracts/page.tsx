@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import ContractForm from "@/components/projects/ContractForm";
 import ContractControls from "@/components/projects/ContractControls";
 import { CONTRACT_STATUS, daysBetween, expiringContracts, overdueContracts, contractErr } from "@/lib/projects";
@@ -18,7 +19,7 @@ export default async function Contracts({ searchParams }: { searchParams: Promis
   const { data: dd } = await sb.from("municipal_decision").select("id,decision_no,year,title").in("legal_status", ["adopted", "under_review", "effective"]).order("created_at", { ascending: false }).limit(100);
   const decOpts = ((dd ?? []) as { id: string; decision_no: string; year: number; title: string }[]).map((d) => ({ id: d.id, label: `${d.decision_no}/${d.year} — ${d.title}` }));
   const [cs, pr] = await Promise.all([
-    sb.from("contract").select("id,project_id,contractor,subject,value,currency,start_on,end_on,procurement_method,status,notes,is_demo,published_on,award_notice_on,ppa_notice_on,signed_on,decision_id,justification").order("end_on", { ascending: true, nullsFirst: false }).limit(500),
+    sb.from("contract").select("id,project_id,contractor,subject,value,currency,start_on,end_on,procurement_method,status,notes,is_demo,published_on,award_notice_on,ppa_notice_on,signed_on,decision_id,justification,objection_pending,objection_resolved_on").order("end_on", { ascending: true, nullsFirst: false }).limit(500),
     sb.from("project").select("id,title").order("created_at", { ascending: false }).limit(300),
   ]);
   const t = today();
@@ -49,6 +50,7 @@ export default async function Contracts({ searchParams }: { searchParams: Promis
             <ContractControls c={c} decisions={decOpts} />
           </li>))}</ul>)}
       <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer font-bold text-primary">تسجيل عقد</summary><ContractForm projects={pr.data ?? []} /></details>
+      <LegalPanel workflow="procurement" />
     </main></>
   );
 }

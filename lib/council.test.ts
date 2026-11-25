@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { decisionAlerts, quorumState, summonsOk, earliestSigning } from "./council";
+import { decisionAlerts, quorumState, summonsOk, earliestSigning, addWorkingDays, NO_TACIT } from "./council";
 const base = { decided_on: "2026-01-01", sent_on: null, received_on: null, validated_on: null, validation_level: "none", category: "general", legal_status: "adopted", vote_for: null, vote_against: null };
 describe("municipal-act reminders", () => {
   it("flags missing sending after 8 days only", () => {
@@ -23,9 +23,19 @@ describe("municipal-act reminders", () => {
     expect(summonsOk("2026-03-01", "2026-03-04")).toBe(true);
     expect(summonsOk("2026-03-02", "2026-03-04")).toBe(false);
   });
-  it("earliest signing from standstill / negotiated notice", () => {
-    expect(earliestSigning({ procurement_method: "open_tender", award_notice_on: "2026-03-01", ppa_notice_on: null })).toBe("2026-03-15");
-    expect(earliestSigning({ procurement_method: "negotiated", award_notice_on: null, ppa_notice_on: "2026-03-01" })).toBe("2026-03-11");
-    expect(earliestSigning({ procurement_method: "invoice", award_notice_on: null, ppa_notice_on: null })).toBeNull();
+  it("standstill counts 10 working days, skips weekends and loaded holidays", () => {
+    expect(addWorkingDays("2026-03-01", 10)).toBe("2026-03-13");
+    expect(addWorkingDays("2026-03-01", 10, ["2026-03-04"])).toBe("2026-03-16");
+    expect(earliestSigning({ procurement_method: "open_tender", award_notice_on: "2026-03-01" })).toBe("2026-03-14");
+    expect(earliestSigning({ procurement_method: "negotiated", award_notice_on: "2026-03-01" })).toBeNull();
+    expect(earliestSigning({ procurement_method: "open_tender", award_notice_on: null })).toBeNull();
+  });
+  it("tacit approval: excluded categories, audit bureau base date, notification required", () => {
+    expect(NO_TACIT).toEqual(["budget", "planning", "transfer", "loan"]);
+    const v = { ...base, sent_on: "2026-01-02", received_on: "2026-01-05", validation_level: "qaimaqam" };
+    expect(decisionAlerts({ ...v, category: "transfer" }, "2026-06-01").join()).toMatch(/صريحًا/);
+    expect(decisionAlerts({ ...v, category: "accounts" }, "2026-02-06").join()).toMatch(/لا يُعتدّ/);
+    expect(decisionAlerts({ ...v, tacit_notified_on: "2026-02-06" }, "2026-02-06").join()).toMatch(/يجوز اعتبار/);
+    expect(decisionAlerts({ ...v, audit_bureau_required: true }, "2026-06-01").join()).toMatch(/ديوان المحاسبة/);
   });
 });

@@ -76,7 +76,7 @@ export async function setAttendance(fd: FormData) {
 export async function setReview(fd: FormData) {
   const id = s(fd, "id"); if (!uuidOk(id)) return;
   const sb = await supabaseServer();
-  const { error } = await sb.rpc("decision_set_review", { p_id: id, p_category: s(fd, "category"), p_level: s(fd, "level"), p_sent: optDate(s(fd, "sent")), p_received: optDate(s(fd, "received")), p_validated: optDate(s(fd, "validated")), p_note: opt(s(fd, "note")) });
+  const { error } = await sb.rpc("decision_set_review", { p_id: id, p_category: s(fd, "category"), p_level: s(fd, "level"), p_sent: optDate(s(fd, "sent")), p_received: optDate(s(fd, "received")), p_validated: optDate(s(fd, "validated")), p_note: opt(s(fd, "note")), p_audit_required: fd.get("audit") === "on", p_audit_notice: optDate(s(fd, "audit_notice")), p_tacit_notified: optDate(s(fd, "tacit")) });
   if (error) redirect(`/staff/council/decisions/${id}?err=1`);
   revalidatePath(`/staff/council/decisions/${id}`);
 }

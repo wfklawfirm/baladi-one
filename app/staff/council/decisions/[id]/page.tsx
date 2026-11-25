@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
+import LegalPanel from "@/components/legal/LegalPanel";
 import { CATEGORY, EXEC_STATUS, LEGAL_STATUS, VALIDATION_LEVEL, decisionAlerts, isLate, uuidOk } from "@/lib/council";
 import { addTask, setDecisionStatus, setReview, toggleTask } from "../../actions";
 
@@ -52,13 +53,16 @@ export default async function DecisionPage({ params, searchParams }: { params: P
 
       <section className="elev space-y-3 rounded-2xl border bg-background p-4">
         <h2 className="font-bold">الإرسال والتصديق (المرسوم الاشتراعي 118/1977)</h2>
-        <p className="text-xs leading-6 text-muted-foreground">ترسل قرارات المجلس إلى سلطة الرقابة خلال ثمانية أيام (م.58). بعض القرارات تحتاج تصديق القائمقام أو المحافظ أو الوزير (م.60–62)، وتُعدّ مصدَّقة حكمًا بانقضاء شهر من تسجيلها إلا قرارات الموازنة والحسابات والتنظيم المدني والقروض (م.63). النظام يذكّر فقط ولا يغيّر أي حالة قانونية تلقائيًا. تحقّق من النص الرسمي النافذ وتعديلاته.</p>
+        <p className="text-xs leading-6 text-muted-foreground">ترسل قرارات المجلس إلى سلطة الرقابة خلال ثمانية أيام (م.58). بعض القرارات تحتاج تصديق القائمقام أو المحافظ أو الوزير (م.60–62)، وتُعدّ مصدَّقة حكمًا بانقضاء شهر من تسجيلها لدى السلطة (أو من إبلاغ موافقة ديوان المحاسبة)، بشرط أن يبلّغ الرئيس السلطة بذلك، إلا قرارات التخطيط والموازنة ونقل الاعتمادات والقروض (م.63). النظام يذكّر فقط ولا يغيّر أي حالة قانونية تلقائيًا. تحقّق من النص الرسمي النافذ وتعديلاته.</p>
         <form action={setReview} className="grid gap-3 sm:grid-cols-3"><input type="hidden" name="id" value={id} />
           <label className="space-y-1 text-sm font-medium">فئة القرار<select name="category" defaultValue={d.category} className={`${field} w-full`}>{Object.entries(CATEGORY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
           <label className="space-y-1 text-sm font-medium">سلطة التصديق<select name="level" defaultValue={d.validation_level} className={`${field} w-full`}>{Object.entries(VALIDATION_LEVEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
           <label className="space-y-1 text-sm font-medium">تاريخ الإرسال<input type="date" name="sent" defaultValue={d.sent_on ?? ""} className={`${field} w-full`} /></label>
           <label className="space-y-1 text-sm font-medium">تاريخ الاستلام لدى السلطة<input type="date" name="received" defaultValue={d.received_on ?? ""} className={`${field} w-full`} /></label>
           <label className="space-y-1 text-sm font-medium">تاريخ التصديق الخطي<input type="date" name="validated" defaultValue={d.validated_on ?? ""} className={`${field} w-full`} /></label>
+          <label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" name="audit" defaultChecked={d.audit_bureau_required} className="size-5" />خاضع لديوان المحاسبة</label>
+          <label className="space-y-1 text-sm font-medium">تاريخ إبلاغ موافقة الديوان<input type="date" name="audit_notice" defaultValue={d.audit_bureau_notice_on ?? ""} className={`${field} w-full`} /></label>
+          <label className="space-y-1 text-sm font-medium">تاريخ إبلاغ الرئيس للسلطة بالتصديق الحكمي<input type="date" name="tacit" defaultValue={d.tacit_notified_on ?? ""} className={`${field} w-full`} /></label>
           <label className="space-y-1 text-sm font-medium">ملاحظة<input name="note" defaultValue={d.validation_note ?? ""} maxLength={1000} className={`${field} w-full`} /></label>
           <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted sm:col-span-3">حفظ بيانات الإرسال والتصديق</button></form>
         <p className="text-xs text-muted-foreground">الفئة: <b>{CATEGORY[d.category]}</b> · السلطة: <b>{VALIDATION_LEVEL[d.validation_level]}</b>{d.validated_on ? <> · مصدَّق بتاريخ <b>{fd(d.validated_on)}</b></> : null}</p>
@@ -104,6 +108,7 @@ export default async function DecisionPage({ params, searchParams }: { params: P
         <ol className="space-y-2 text-sm">{(ev.data ?? []).map((e) => <li key={e.id} className="flex flex-wrap gap-x-3"><span className="text-xs text-muted-foreground">{ft(e.created_at)}</span><b>{EV[e.kind]}</b><span>{e.from_value ? `${label(e.kind, e.from_value)} ← ` : ""}{label(e.kind, e.to_value)}</span>{e.note && <span className="text-muted-foreground">({e.note})</span>}</li>)}</ol>
       </section>
       {d.session_id && <Link href={`/staff/council/${d.session_id}`} className="inline-block text-sm font-semibold text-primary">← جلسة المجلس المرتبطة</Link>}
+      <LegalPanel workflow="decisions" />
     </main></>
   );
 }
