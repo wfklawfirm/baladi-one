@@ -17,7 +17,7 @@ export type Block =
   | { t: "hdr"; lines: string[] } | { t: "title"; text: string } | { t: "subject"; text: string } | { t: "p"; text: string } | { t: "recital"; text: string; flag?: string }
   | { t: "transition"; text: string } | { t: "clause"; n: number | null; text: string } | { t: "closing"; text: string; flag?: string } | { t: "fin"; text: string }
   | { t: "sigs"; items: { role: string; name: string }[]; note: string } | { t: "attach"; items: string[] } | { t: "pending"; text: string };
-export type Rendered = { blocks: Block[]; missing: string[]; draft: boolean; watermark: string | null };
+export type Rendered = { blocks: Block[]; missing: string[]; draft: boolean; watermark: string | null; logo?: string | null };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export const fmtDate = (v: string) => (ISO.test(v) ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}` : v);
@@ -66,9 +66,9 @@ export function composeRecitals(rs: Recital[]): { text: string; flag?: string; r
   });
 }
 
-export type RenderInput = { snap: TemplateContent; data: DraftData; title: string; mode: "draft" | "official" };
+export type RenderInput = { snap: TemplateContent; data: DraftData; title: string; mode: "draft" | "official"; logo?: string | null };
 
-export function renderDecision({ snap, data, title, mode }: RenderInput): Rendered {
+export function renderDecision({ snap, data, title, mode, logo }: RenderInput): Rendered {
   const draft = mode === "draft";
   const miss = new Set<string>();
   const d = data as Record<string, unknown>;
@@ -134,7 +134,7 @@ export function renderDecision({ snap, data, title, mode }: RenderInput): Render
     const v = d[fd.key];
     if (v === undefined || v === null || (typeof v === "string" && !v.trim()) || (Array.isArray(v) && v.length === 0)) miss.add(fd.key);
   }
-  return { blocks, missing: [...miss], draft, watermark: draft ? RENDER.watermark : null };
+  return { blocks, missing: [...miss], draft, watermark: draft ? RENDER.watermark : null, logo: logo ?? null };
 }
 
 /** Plain-text version (stored in municipal_decision.body so the register keeps the full text). */

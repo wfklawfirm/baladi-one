@@ -1,4 +1,7 @@
-import { AlignmentType, Document, Footer, Header, Packer, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, Header, ImageRun, Packer, Paragraph, TextRun } from "docx";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { loadLetterhead, withLetterhead } from "@/lib/decisions/letterhead";
 import { supabaseServer } from "@/lib/supabase-server";
 import { uuidOk } from "@/lib/council";
 import { renderDecision, type Block } from "@/lib/decisions/render";
@@ -10,10 +13,26 @@ const run = (text: string, o: { bold?: boolean; size?: number; color?: string } 
 const para = (text: string, o: { bold?: boolean; size?: number; center?: boolean; color?: string; after?: number } = {}) =>
   new Paragraph({ bidirectional: true, alignment: o.center ? AlignmentType.CENTER : AlignmentType.BOTH, spacing: { after: o.after ?? 120, line: 360 }, children: [run(text, o)] });
 
-function toParas(blocks: Block[]): Paragraph[] {
+async function logoBytes(src: string | null): Promise<{ data: Buffer; type: "png" | "jpg" } | null> {
+  if (!src) return null;
+  try {
+    let data: Buffer;
+    if (src.startsWith("/")) data = await readFile(path.join(process.cwd(), "public", path.normalize(src).replace(/^(\.\.[/\\])+/, "")));
+    else if (/^https:\/\//.test(src)) { const r = await fetch(src, { signal: AbortSignal.timeout(4000) }); if (!r.ok) return null; data = Buffer.from(await r.arrayBuffer()); }
+    else return null;
+    if (data.length > 1_500_000) return null;
+    const png = data[0] === 0x89 && data[1] === 0x50, jpg = data[0] === 0xff && data[1] === 0xd8;
+    return png || jpg ? { data, type: png ? "png" : "jpg" } : null;
+  } catch { return null; }
+}
+function dims(l: { data: Buffer; type: string }) {
+  if (l.type === "png" && l.data.length > 24) { const w = l.data.readUInt32BE(16), h = l.data.readUInt32BE(20); if (w > 0 && h > 0) { const H = 80; return { width: Math.round((H * w) / h), height: H }; } }
+  return { width: 80, height: 80 };
+}
+function toParas(blocks: Block[], logo: { data: Buffer; type: "png" | "jpg" } | null): Paragraph[] {
   const out: Paragraph[] = [];
   for (const b of blocks) {
-    if (b.t === "hdr") b.lines.forEach((l) => out.push(para(l, { bold: true, center: true, after: 0 })));
+    if (b.t === "hdr") { if (logo) out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new ImageRun({ type: logo.type, data: logo.data, transformation: dims(logo) } as ConstructorParameters<typeof ImageRun>[0])] })); b.lines.forEach((l) => out.push(para(l, { bold: true, center: true, after: 0 }))); }
     else if (b.t === "title") out.push(para(b.text, { bold: true, size: 36, center: true, after: 200 }));
     else if (b.t === "subject") out.push(para(b.text, { bold: true }));
     else if (b.t === "transition") out.push(para(b.text, { bold: true, center: true }));
@@ -35,19 +54,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!user) return new Response("unauthorized", { status: 401 });
   const { data: m } = await sb.from("staff_member").select("role").eq("user_id", user.id);
   if (!(m ?? []).some((x) => x.role === "mayor" || x.role === "admin")) return new Response("forbidden", { status: 403 });
-  const { data: d } = await sb.from("municipal_decision").select("title,decision_no,year,legal_status,template_snapshot,draft_data,template_version_id").eq("id", id).maybeSingle();
+  const { data: d } = await sb.from("municipal_decision").select("title,municipality_id,decision_no,year,legal_status,template_snapshot,draft_data,template_version_id").eq("id", id).maybeSingle();
   if (!d?.template_snapshot) return new Response("not found", { status: 404 });
   const { data: tpl } = d.template_version_id ? await sb.from("decision_template_version").select("status").eq("id", d.template_version_id).maybeSingle() : { data: null };
   const wantOfficial = new URL(req.url).searchParams.get("mode") === "official";
   const official = wantOfficial && d.legal_status !== "draft" && tpl?.status === "approved";
-  const r = renderDecision({ snap: d.template_snapshot as TemplateContent, data: (d.draft_data ?? {}) as DraftData, title: d.title, mode: official ? "official" : "draft" });
+  const lh = await loadLetterhead(sb, d.municipality_id);
+  const logo = await logoBytes(lh.logo);
+  const r = renderDecision({ snap: d.template_snapshot as TemplateContent, data: withLetterhead((d.draft_data ?? {}) as DraftData, lh), title: d.title, mode: official ? "official" : "draft" });
   const doc = new Document({
     creator: "BALADI ONE", title: d.title,
     sections: [{
       properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1021, right: 1021 } }, bidi: true } as never,
       headers: { default: new Header({ children: r.watermark ? [para(r.watermark, { bold: true, center: true, color: "B91C1C", size: 26 })] : [new Paragraph({ children: [] })] }) },
       footers: { default: new Footer({ children: [para(r.watermark ? `${r.watermark} — قرار ${d.decision_no}/${d.year}` : `قرار ${d.decision_no}/${d.year}`, { center: true, size: 18, color: "666666" })] }) },
-      children: toParas(r.blocks),
+      children: toParas(r.blocks, logo),
     }],
   });
   const buf = await Packer.toBuffer(doc);

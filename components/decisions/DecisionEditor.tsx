@@ -2,6 +2,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import DecisionDoc from "./DecisionDoc";
+import ShareButton from "./ShareButton";
 import { adoptBuilder, saveBuilder } from "@/app/staff/decisions/actions";
 import { defaultRecitals, effectSuggestion, mergeRecitals, notificationSuggestion, verifiedRecitalList, type RefView, type RuleLite } from "@/lib/decisions/engine";
 import { missingRequired } from "@/lib/decisions/data";
@@ -14,7 +15,7 @@ const AI: [string, string][] = [["improve", "تحسين الصياغة"], ["reci
 const BADGE = { verified: "bg-green-100 text-green-900", pending: "bg-amber-100 text-amber-900", unmatched: "bg-red-100 text-red-900" } as const;
 const BADGE_T = { verified: "متحقق منه", pending: "بانتظار تحقق المحامي", unmatched: "غير موجود في سجل القواعد" } as const;
 
-export default function DecisionEditor({ id, initialTitle, snap, initial, refs, rules, canEdit, aiOn, meta }: { id: string; initialTitle: string; snap: TemplateContent; initial: DraftData; refs: RefView[]; rules: RuleLite[]; canEdit: boolean; aiOn: boolean; meta: Meta }) {
+export default function DecisionEditor({ id, initialTitle, snap, initial, refs, rules, canEdit, aiOn, meta, logo }: { logo: string | null; id: string; initialTitle: string; snap: TemplateContent; initial: DraftData; refs: RefView[]; rules: RuleLite[]; canEdit: boolean; aiOn: boolean; meta: Meta }) {
   const [title, setTitle] = useState(initialTitle);
   const [data, setData] = useState<DraftData>(initial);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
@@ -40,7 +41,7 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
 
   const eff = useMemo(() => effectSuggestion({ category: meta.category, level: meta.level, issuer: meta.issuer }, rules), [meta, rules]);
   const note = useMemo(() => notificationSuggestion({ issuer: meta.issuer, level: meta.level }, rules), [meta, rules]);
-  const view = useMemo(() => renderDecision({ snap, data, title, mode: "draft" }), [snap, data, title]);
+  const view = useMemo(() => renderDecision({ snap, data, title, mode: "draft", logo }), [snap, data, title, logo]);
   const missing = missingRequired(snap, data);
   const unverified = (data.recitals ?? []).filter((r) => r.included && r.ref && !r.ref.verified).length;
 
@@ -124,6 +125,7 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
             {canEdit && <button type="button" onClick={save} disabled={pending} className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-50">{pending ? "..." : "حفظ المسودة"}</button>}
             <Link href={`/staff/decisions/${id}/print`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">طباعة A4 / PDF</Link>
             <a href={`/api/decisions/${id}/docx`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">Word</a>
+            <ShareButton id={id} title={title} />
             {!canEdit && <Link href={`/staff/decisions/${id}/print?mode=official`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">النسخة الرسمية</Link>}
             {dirty && <span className="text-xs text-amber-800">تعديلات غير محفوظة</span>}
           </div>

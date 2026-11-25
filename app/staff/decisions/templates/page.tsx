@@ -18,7 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   if (!memberships.some((m) => m.role === "admin" || m.role === "mayor")) redirect("/staff");
   const isAdmin = memberships.some((m) => m.role === "admin");
   const sp = await searchParams;
-  const [{ rows }, sources, muni] = await Promise.all([loadTemplates(sb), loadSources(sb), sb.from("municipality").select("governorate_ar,district_ar,legal_profile_verified_on,legal_profile_note").limit(1).maybeSingle()]);
+  const [{ rows }, sources, muni] = await Promise.all([loadTemplates(sb), loadSources(sb), sb.from("municipality").select("name_ar,letterhead_name_ar,governorate_ar,district_ar,legal_profile_verified_on,legal_profile_note").limit(1).maybeSingle()]);
   const seed = seedPayload();
   const needle = (sp.q ?? "").trim().toLowerCase();
   const list = rows.filter((r) => (!sp.s || r.status === sp.s) && (!needle || r.title_ar.toLowerCase().includes(needle) || r.template_id.toLowerCase().includes(needle)));
@@ -41,7 +41,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
           {toImport > 0 && <form action={importSeed}><button className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground">استيراد {toImport} قالبًا</button></form>}</section>
 
         <section className="grid gap-4 md:grid-cols-2">
-          {<form action={setLegalProfile} className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">البيان القانوني للبلدية (الترويس)</h2>
+          {<form action={setLegalProfile} className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">الترويس: اسم البلدية والمحافظة والقضاء</h2>
+            <label className="block text-sm">اسم البلدية في الترويس<input name="letterhead" defaultValue={muni.data?.letterhead_name_ar ?? ""} placeholder={muni.data?.name_ar ?? ""} className={`${inp} mt-1`} /><span className="text-xs text-muted-foreground">يظهر كـ «بلدية …» في أعلى كل قرار. إن تُرك فارغًا يُستعمل اسم البلدية المسجّل: {muni.data?.name_ar}</span></label>
             <label className="block text-sm">المحافظة<input name="governorate" defaultValue={muni.data?.governorate_ar ?? ""} className={`${inp} mt-1`} /></label>
             <label className="block text-sm">القضاء<input name="district" defaultValue={muni.data?.district_ar ?? ""} className={`${inp} mt-1`} /></label>
             <label className="block text-sm">ملاحظة<input name="note" defaultValue={muni.data?.legal_profile_note ?? ""} className={`${inp} mt-1`} /></label>

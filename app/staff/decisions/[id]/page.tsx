@@ -8,6 +8,7 @@ import { uuidOk, CATEGORY, LEGAL_STATUS, VALIDATION_LEVEL } from "@/lib/council"
 import { loadRules, loadSources, withLibrary } from "@/lib/decisions/load";
 import { candidateRefs, defaultClauses, defaultRecitals, mergeRecitals } from "@/lib/decisions/engine";
 import { autofill } from "@/lib/decisions/data";
+import { loadLetterhead, withLetterhead } from "@/lib/decisions/letterhead";
 import { STATUS_LABEL, type DraftData, type TemplateContent } from "@/lib/decisions/model";
 import { setBuilderReview, setRegisterDates } from "../actions";
 
@@ -31,14 +32,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     sb.from("decision_revision").select("rev,title,created_at,actor").eq("decision_id", id).order("rev", { ascending: false }).limit(30),
     d.template_version_id ? sb.from("decision_template_version").select("status,version,template_id").eq("id", d.template_version_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
+  const lh = await loadLetterhead(sb, d.municipality_id);
   const refs = withLibrary(candidateRefs(snap, sources, rules));
   const user = (d.draft_data ?? {}) as DraftData;
   const auto = autofill(snap, { muni: { name_ar: muni.data?.name_ar ?? "", governorate_ar: muni.data?.governorate_ar ?? null, district_ar: muni.data?.district_ar ?? null },
     decision: { decision_no: d.decision_no, year: d.year, decided_on: d.decided_on, vote_for: d.vote_for, vote_against: d.vote_against, vote_abstain: d.vote_abstain },
     session: sess.data ?? null, mayorName: mayor.data?.display_name ?? null });
   const selected = user.selected_refs ?? refs.filter((r) => r.eligible).map((r) => ({ source_id: r.source_id, article: r.article }));
-  const data: DraftData = { ...user, ...auto, selected_refs: selected,
-    recitals: mergeRecitals(user.recitals, defaultRecitals(snap, refs, selected)), clauses: user.clauses ?? defaultClauses(snap) };
+  const data: DraftData = withLetterhead({ ...user, ...auto, selected_refs: selected,
+    recitals: mergeRecitals(user.recitals, defaultRecitals(snap, refs, selected)), clauses: user.clauses ?? defaultClauses(snap) }, lh);
   const canEdit = d.legal_status === "draft";
   const tplStatus = tpl.data?.status as keyof typeof STATUS_LABEL | undefined;
   const { data: ev } = await sb.from("decision_event").select("id,kind,to_value,note,created_at").eq("decision_id", id).order("created_at", { ascending: false }).limit(15);
@@ -55,7 +57,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
         {tplStatus !== "approved" && <p className="rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">القالب لم يُعتمد قانونيًا بعد: تبقى هذه الوثيقة مسودة بعلامة مائية، ولا يمكن اعتمادها رسميًا قبل اعتماد القالب بمراجعة محامٍ.</p>}
         {!muni.data?.governorate_ar && <p className="rounded-xl border p-3 text-sm text-muted-foreground">محافظة البلدية وقضاؤها غير مُدخلَين: يظهر الترويس ناقصًا حتى يُدخلهما المسؤول من <Link className="underline" href="/staff/decisions/templates">إدارة القوالب</Link>.</p>}
-        <DecisionEditor id={id} initialTitle={d.title} snap={snap} initial={data} refs={refs} rules={rules} canEdit={canEdit} aiOn={brainConfigured()}
+        <DecisionEditor id={id} initialTitle={d.title} snap={snap} initial={data} refs={refs} rules={rules} logo={lh.logo} canEdit={canEdit} aiOn={brainConfigured()}
           meta={{ category: d.category, level: d.validation_level ?? "none", issuer: snap.issuer_candidate, categoryLabel: CATEGORY[d.category] ?? d.category, levelLabel: VALIDATION_LEVEL[d.validation_level ?? "none"], decidedOn: d.decided_on }} />
         <section className="grid gap-4 lg:grid-cols-3">
           <form action={setBuilderReview} className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">النوع ومستوى التصديق</h2>

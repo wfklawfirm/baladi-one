@@ -8,7 +8,7 @@ export default function DecisionDoc({ r, print = false }: { r: Rendered; print?:
       <div className="relative">
         {r.blocks.map((b, i) => {
           switch (b.t) {
-            case "hdr": return <div key={i} className="mb-4 text-center font-bold">{b.lines.map((l, j) => <div key={j}>{l}</div>)}</div>;
+            case "hdr": return <div key={i} className="mb-4 text-center font-bold">{r.logo && /* eslint-disable-next-line @next/next/no-img-element */ <img src={r.logo} alt="" className="mx-auto mb-2 h-20 w-auto object-contain" />}{b.lines.map((l, j) => <div key={j}>{l}</div>)}</div>;
             case "title": return <h1 key={i} className="my-3 text-center text-[18pt] font-bold underline underline-offset-4">{b.text}</h1>;
             case "subject": return <p key={i} className="mb-3 font-bold">{b.text}</p>;
             case "p": return <p key={i} className="text-justify">{b.text}</p>;

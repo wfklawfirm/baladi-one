@@ -61,7 +61,7 @@ export async function setSourceDate(fd: FormData) {
 }
 export async function setLegalProfile(fd: FormData) {
   const sb = await supabaseServer();
-  const { error } = await sb.rpc("muni_set_legal_profile", { p_governorate: s(fd, "governorate"), p_district: s(fd, "district"), p_note: s(fd, "note") || null, p_verified: fd.get("verified") === "on" });
+  const { error } = await sb.rpc("muni_set_legal_profile", { p_governorate: s(fd, "governorate"), p_district: s(fd, "district"), p_note: s(fd, "note") || null, p_verified: fd.get("verified") === "on", p_letterhead: s(fd, "letterhead") });
   revalidatePath("/staff/decisions");
   redirect(`/staff/decisions/templates?${error ? `err=${encodeURIComponent(code(error))}` : "profile=1"}`);
 }
