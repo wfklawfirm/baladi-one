@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import ProgressBars from "@/components/projects/ProgressBars";
-import { PRIORITY, PROJECT_STATUS, financialConsumption, isDelayed, physicalProgress, plannedProgress } from "@/lib/projects";
+import { PRIORITY, PROJECT_STATUS as PS_RAW, expiringContracts, financialConsumption, isDelayed, overdueContracts, physicalProgress, plannedProgress } from "@/lib/projects";
+import PageSummary, { type Todo } from "@/components/council/PageSummary";
+
+/** Plain-language display labels (DB values unchanged). */
+const PROJECT_STATUS: Record<string, string> = { ...PS_RAW, proposed: "مقترح، لم يبدأ", approved: "معتمد، لم يبدأ", active: "قيد التنفيذ" };
 import { createProject } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -18,19 +22,41 @@ export default async function Projects({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   let q = sb.from("project").select("id,title,location_text,priority,status,responsible,start_on,due_on,budget_amount,currency,spent_amount,is_demo").order("created_at", { ascending: false }).limit(300);
   if (sp.s && PROJECT_STATUS[sp.s]) q = q.eq("status", sp.s);
-  const [pr, ms, dec] = await Promise.all([
+  const [pr, ms, dec, all, ct] = await Promise.all([
     q,
     sb.from("project_milestone").select("project_id,weight,progress_pct,planned_pct").limit(20000),
     sb.from("municipal_decision").select("id,decision_no,year,title").order("year", { ascending: false }).limit(300),
+    sb.from("project").select("id,title,status,due_on,budget_amount,spent_amount").limit(500),
+    sb.from("contract").select("id,contractor,subject,status,end_on").limit(1000),
   ]);
   const needle = (sp.q ?? "").trim().toLowerCase();
   const rows = (pr.data ?? []).filter((p) => !needle || p.title.toLowerCase().includes(needle) || (p.location_text ?? "").toLowerCase().includes(needle));
   const t = today();
+  const everyProject = all.data ?? [], contracts = ct.data ?? [];
+  const failed = !!all.error || !!ct.error;
+  const delayed = everyProject.filter((p) => isDelayed(p, t));
+  const running = everyProject.filter((p) => p.status === "active").length;
+  const overdue = overdueContracts(contracts, t), expiring = expiringContracts(contracts, t, 30);
+  const draftContracts = contracts.filter((c) => c.status === "draft");
+  const todos: Todo[] = [
+    ...delayed.map((p) => ({ key: `p${p.id}`, text: `مشروع «${p.title}» تجاوز موعده`, sub: `الموعد ${p.due_on}`, href: `/staff/projects/${p.id}`, cta: "افتح", tone: "bad" as const })),
+    ...overdue.map((c) => ({ key: `o${c.id}`, text: `عقد ${c.contractor} انتهت مدته ولم يُغلق`, sub: c.subject.slice(0, 80), href: "/staff/projects/contracts", cta: "راجع", tone: "bad" as const })),
+    ...expiring.map((c) => ({ key: `e${c.id}`, text: `عقد ${c.contractor} ينتهي ${c.end_on}`, sub: c.subject.slice(0, 80), href: "/staff/projects/contracts", cta: "راجع", tone: "warn" as const })),
+    ...draftContracts.map((c) => ({ key: `c${c.id}`, text: `عقد ${c.contractor} مسودة لم يُوقَّع`, sub: c.subject.slice(0, 80), href: "/staff/projects/contracts", cta: "افتح", tone: "info" as const })),
+  ];
+  const needs = overdue.length + expiring.length + draftContracts.length;
   const chip = (href: string, on: boolean, label: string) => <Link key={href} href={href} className={`min-h-10 rounded-full border px-3.5 py-2 text-sm ${on ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{label}</Link>;
   return (
     <><StaffHeader />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-4 p-4 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-2xl font-bold">المشاريع والعقود</h1><span className="flex flex-wrap gap-2"><Link href="/staff/projects/procurement" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">الشراء العام ←</Link><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">سجل العقود ←</Link></span></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-2xl font-bold">المشاريع والعقود</h1><a href="#new-project" className="min-h-11 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground active:opacity-90">+ مشروع جديد</a></div>
+      <PageSummary headline={failed ? "تعذّر تحميل بيانات المشاريع." : todos.length ? `${todos.length} ${todos.length === 1 ? "بند" : "بنود"} في المشاريع والعقود تحتاج انتباهكم.` : "المشاريع والعقود تسير دون بنود متأخرة."} todos={todos} stats={[
+        { label: "مشاريع قيد التنفيذ", value: failed ? "غير متاح" : running },
+        { label: "مشاريع متأخرة", value: failed ? "غير متاح" : delayed.length, tone: delayed.length ? "bad" : "ok" },
+        { label: "عقود تحتاج إجراء", value: failed ? "غير متاح" : needs, tone: needs ? "warn" : "ok", href: "/staff/projects/contracts" },
+      ]} />
+      <details open={!!(sp.s || sp.q)} className="rounded-2xl border bg-background p-4"><summary className="min-h-11 cursor-pointer py-2 font-bold text-primary">عرض التفاصيل: كل المشاريع والبحث</summary><div className="mt-3 space-y-4">
+      <div className="flex flex-wrap gap-2"><span className="flex flex-wrap gap-2"><Link href="/staff/projects/procurement" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">الشراء العام ←</Link><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">سجل العقود ←</Link></span></div>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تحقق من الحقول المطلوبة (العنوان، الموازنة، التواريخ).</p>}
       <form className="flex flex-wrap gap-2"><input name="q" defaultValue={sp.q} placeholder="بحث بالعنوان أو الموقع" aria-label="بحث" className="min-h-11 min-w-0 flex-1 rounded-xl border-2 bg-background px-3 outline-none focus:border-primary" />
         {sp.s && <input type="hidden" name="s" value={sp.s} />}<button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">بحث</button></form>
@@ -60,7 +86,8 @@ export default async function Projects({ searchParams }: { searchParams: Promise
           })}
         </ul>
       )}
-      <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer font-bold text-primary">مشروع جديد</summary>
+      </div></details>
+      <details id="new-project" className="elev rounded-2xl border bg-background p-4"><summary className="min-h-11 cursor-pointer py-2 font-bold text-primary">مشروع جديد</summary>
         <form action={createProject} className="mt-3 grid gap-3 sm:grid-cols-3">
           <label className="space-y-1 text-sm font-medium sm:col-span-3">عنوان المشروع<input name="title" required maxLength={300} className={field} /></label>
           <label className="space-y-1 text-sm font-medium sm:col-span-3">الوصف<textarea name="description" rows={3} maxLength={10000} className="w-full rounded-xl border-2 bg-background p-3 outline-none focus:border-primary" /></label>

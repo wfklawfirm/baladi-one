@@ -7,10 +7,16 @@ const OK: Record<string, string> = { line: "أُضيف بند الموازنة."
 
 export function FinanceNav({ current }: { current: "overview" | "budget" | "receivables" }) {
   const tabs = [["overview", "/staff/finance", "نظرة عامة"], ["budget", "/staff/finance/budget", "الموازنة"], ["receivables", "/staff/finance/receivables", "المستحقات"]] as const;
+  const more = [["/staff/finance/expenditure", "دورة الإنفاق (التزام وصرف ودفع)"], ["/staff/finance/lifecycle", "دورة الموازنة والاعتمادات"], ["/staff/finance/closing", "إقفال السنة وقطع الحساب"], ["/staff/collections", "تسجيل إيصال"]] as const;
   return (
-    <nav aria-label="أقسام المالية" className="flex flex-wrap gap-2">
+    <nav aria-label="أقسام المالية" className="flex flex-wrap items-center gap-2">
       {tabs.map(([k, href, t]) => <Link key={k} href={href} aria-current={current === k ? "page" : undefined} className={`min-h-11 rounded-full border px-4 py-2.5 text-sm font-semibold ${current === k ? "border-primary bg-accent text-primary" : "bg-background active:bg-muted"}`}>{t}</Link>)}
-      <Link href="/staff/collections" className="min-h-11 rounded-full border bg-background px-4 py-2.5 text-sm active:bg-muted">تسجيل إيصال</Link>
+      <details className="relative">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-full border bg-background px-4 py-2.5 text-sm active:bg-muted">المزيد ▾</summary>
+        <ul className="absolute end-0 z-20 mt-1 min-w-64 divide-y rounded-2xl border bg-background shadow-lg">
+          {more.map(([href, t]) => <li key={href}><Link href={href} className="block min-h-11 px-4 py-3 text-sm active:bg-muted">{t}</Link></li>)}
+        </ul>
+      </details>
     </nav>
   );
 }

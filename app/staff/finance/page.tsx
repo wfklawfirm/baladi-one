@@ -5,6 +5,10 @@ import StaffHeader from "@/components/StaffHeader";
 import { PERIODS, parsePeriod } from "@/lib/ops";
 import { budgetTotals, collectionRate, curName, lineStats, money, NA } from "@/lib/finance";
 import { arrearsOf, financeCards, flowOf, loadFinance } from "@/lib/financeData";
+import { loadExp } from "./expenditure/data";
+import { commitmentChain } from "@/lib/expenditure";
+import { loadLifecycle } from "@/lib/budgetCycleData";
+import { CYCLE_LABEL, nextStage, type CycleStage } from "@/lib/budgetCycle";
 import { C, Columns, HBars } from "@/components/ops/Charts";
 import { FinanceNav, Panel } from "@/components/finance/Parts";
 
@@ -21,17 +25,24 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const q = (p: string) => `/staff/finance?p=${p}${fyYear ? `&fy=${fyYear}` : ""}`;
 
   const header = (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><h1 className="text-2xl font-bold">المالية والموازنة والتحصيل</h1><p className="text-xs text-muted-foreground">المصدر: سجل الموازنة، الالتزامات، النفقات، المستحقات وإيصالات التحصيل · لا تُجمع عملتان مختلفتان أبدًا · الفترة: {range.label}</p></div>
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="الفترة">
-        {PERIODS.filter(([k]) => k !== "custom").map(([k, v]) => <Link key={k} href={q(k)} aria-current={range.key === k ? "true" : undefined} className={`min-h-10 rounded-full border px-4 py-2 text-sm ${range.key === k ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>{v}</Link>)}
-        <form action="/staff/finance" className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap">
+    <div className="space-y-2">
+      <h1 className="text-2xl font-bold">المالية</h1>
+      <form action="/staff/finance" className="flex flex-wrap items-center gap-2">
+        {fyYear && <input type="hidden" name="fy" value={fyYear} />}
+        <label className="text-sm font-medium">الفترة
+          <select name="p" defaultValue={range.key === "custom" ? "month" : range.key} className="ms-2 min-h-11 rounded-xl border-2 bg-background px-3">
+            {PERIODS.filter(([k]) => k !== "custom").map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></label>
+        <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">عرض</button>
+        <span className="text-xs text-muted-foreground">{range.label}</span>
+      </form>
+      <details className="text-sm"><summary className="min-h-10 cursor-pointer py-2 text-primary">فترة مخصصة</summary>
+        <form action="/staff/finance" className="flex flex-wrap items-center gap-1.5 pt-1">
           <input type="hidden" name="p" value="custom" />
-          <input type="date" name="from" required defaultValue={sp.from} aria-label="من" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
-          <input type="date" name="to" required defaultValue={sp.to} aria-label="إلى" className="min-h-10 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
-          <button className={`min-h-10 rounded-full border px-4 text-sm ${range.key === "custom" ? "bg-primary text-primary-foreground" : "bg-background active:bg-muted"}`}>تطبيق</button>
-        </form>
-      </div>
+          <input type="date" name="from" required defaultValue={sp.from} aria-label="من" className="min-h-11 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
+          <input type="date" name="to" required defaultValue={sp.to} aria-label="إلى" className="min-h-11 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm" />
+          <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted">تطبيق</button>
+        </form></details>
     </div>
   );
 
@@ -48,15 +59,44 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const stats = d.lines.filter((l) => l.kind === "expense").map((l) => ({ l, s: lineStats(l, d.commits, d.exps) }));
   const rateText = (x: number | null) => (x === null ? NA : `${x}%`);
 
+  // "المطلوب منك": real counts from the registers; each row only appears when something is actually waiting.
+  const ex = await loadExp(sb).catch(() => null);
+  let expWaiting = 0;
+  if (ex && ex.state === "ok") {
+    for (const c of ex.commits.filter((c) => c.entry_kind === "commitment" && c.cycle_entry)) {
+      const ch = commitmentChain(c, ex.commits, ex.liqs, ex.orders, ex.pays);
+      if (ch.net > 0 && (ch.toLiquidate > 0 || ch.toOrder > 0 || ch.toPay > 0)) expWaiting++;
+    }
+  }
+  const lc = d.fy ? await loadLifecycle(sb, d.fy.id).catch(() => null) : null;
+  const cycle = lc && !("missing" in lc && lc.missing) ? (lc as { cycle?: { status: string } | null }).cycle ?? null : null;
+  const nxt = cycle ? nextStage(cycle.status) : null;
+  const amendWaiting = d.amendments.filter((a) => !a.applied && !a.validated_on).length;
+  const arrCount = arr.reduce((n, a) => n + a.count, 0);
+  const todo: { text: string; href: string; cta: string }[] = [];
+  if (expWaiting) todo.push({ text: `${expWaiting} نفقة بانتظار خطوتها التالية (تصفية أو أمر صرف أو دفع)`, href: "/staff/finance/expenditure", cta: "متابعة النفقات" });
+  if (arrCount) todo.push({ text: `${arrCount} مستحق تجاوز موعده ولم يُسدَّد`, href: "/staff/finance/receivables", cta: "عرض المتأخرات" });
+  if (nxt && cycle) todo.push({ text: `الموازنة الآن في مرحلة «${CYCLE_LABEL[cycle.status as CycleStage] ?? cycle.status}» وخطوتها التالية «${CYCLE_LABEL[nxt]}»`, href: "/staff/finance/lifecycle", cta: "فتح دورة الموازنة" });
+  if (amendWaiting) todo.push({ text: `${amendWaiting} تعديل اعتماد بانتظار التصديق`, href: "/staff/finance/lifecycle", cta: "مراجعة التعديلات" });
+  const arrText = !d.recvs.length ? NA : arr.length ? arr.map((a) => money(a.total, a.currency)).join(" + ") : "لا متأخرات";
+  const headline = todo.length ? `لديكم ${todo.length} ${todo.length === 1 ? "أمر" : "أمور"} تحتاج متابعتكم في المالية.` : "لا شيء ينتظر قراركم في المالية الآن.";
+  const keyNums: [string, string, string | undefined][] = [["تنفيذ الموازنة", cards.BUDGET_EXEC.value ?? NA, cards.BUDGET_EXEC.value === null ? cards.BUDGET_EXEC.reason : "نسبة المدفوع من الاعتماد"], ["نسبة التحصيل", cards.COLLECTION_RATE.value ?? NA, cards.COLLECTION_RATE.value === null ? cards.COLLECTION_RATE.reason : `المحصّل من مستحقات ${range.label}`], ["المتأخرات", arrText, "مستحقات تجاوزت موعدها"]];
+
   return (
     <><StaffHeader back="/staff/operations" backLabel="مركز القيادة" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <FinanceNav current="overview" />
-      <p className="text-sm"><Link href="/staff/finance/lifecycle" className="font-semibold text-primary underline">دورة الموازنة والاعتمادات</Link> · <Link href="/staff/finance/closing" className="font-semibold text-primary underline">إقفال السنة وقطع الحساب</Link></p>
       {header}
+      <section aria-label="الملخص" className="space-y-4">
+        <p className="text-lg font-bold">{headline}</p>
+        <div className="grid gap-3 sm:grid-cols-3">{keyNums.map(([t, v, sub]) => <div key={t} className="elev rounded-2xl border bg-background p-4"><span className="text-sm font-semibold">{t}</span><b className={`mt-2 block ${v === NA ? "text-base text-muted-foreground" : "text-2xl text-primary"}`}>{v}</b>{sub && <span className="mt-1 block text-xs text-muted-foreground">{sub}</span>}</div>)}</div>
+        {todo.length > 0 && <div className="space-y-2"><h2 className="font-bold text-primary">المطلوب منك</h2><ul className="space-y-2">{todo.map((t, i) => <li key={t.href + i} className="elev flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-background p-3"><span className="min-w-0 flex-1 text-sm">{t.text}</span><Link href={t.href} className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-semibold ${i === 0 ? "bg-primary text-primary-foreground" : "border active:bg-muted"}`}>{t.cta}</Link></li>)}</ul></div>}
+      </section>
       {d.partial && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تعذّر تحميل جزء من البيانات؛ قد تكون الأرقام ناقصة.</p>}
       <p className="text-xs text-muted-foreground">السنة المالية: {d.fy ? d.fy.year : NA}{d.years.length > 1 && <> · {d.years.map((y) => <Link key={y.id} href={`/staff/finance?p=${range.key}&fy=${y.year}`} className={`mx-1 underline ${y.year === d.fy?.year ? "font-bold text-primary" : ""}`}>{y.year}</Link>)}</>} · تنفيذ الموازنة تراكمي للسنة ولا يتأثر باختيار الفترة.</p>
 
+      <details className="group rounded-2xl border p-3 md:p-4"><summary className="min-h-11 cursor-pointer list-none py-2 font-bold text-primary">عرض التفاصيل (الاعتمادات والرسوم البيانية والمستحقات)</summary>
+      <div className="space-y-5 pt-3">
       <section aria-label="المؤشرات" className="fill-odd grid gap-3 sm:grid-cols-2">
         {([["نسبة التحصيل", cards.COLLECTION_RATE, "المحصّل المرتبط بمستحقات ÷ المستحقات التي حلّ موعدها في الفترة"], ["تنفيذ الموازنة", cards.BUDGET_EXEC, "المدفوع ÷ الاعتماد الحالي (الالتزامات مؤشر منفصل)"]] as const).map(([t, c, f]) => (
           <div key={t} className="elev rounded-2xl border bg-background p-4">
@@ -138,7 +178,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
           ))}
         </Panel>
       </div>
-      <p className="text-sm"><Link href="/staff/finance/expenditure" className="font-semibold text-primary">دورة الإنفاق العام: التزام ← تصفية ← أمر صرف ← دفع ← مطابقة ←</Link></p>
+      </div></details>
     </main></>
   );
 }

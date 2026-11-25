@@ -59,24 +59,49 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
   const autos = snap.fields.filter((f) => isAutoKey(f.key) && f.key !== "verified_legal_recitals");
   const att = data.attachments ?? (snap.supporting_documents_ar ?? []).map((text) => ({ text, ready: false }));
 
-  return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <div className="space-y-4">
-        <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">موضوع القرار</h2>
-          <input value={title} onChange={(e) => { setTitle(e.target.value); setDirty(true); }} disabled={!canEdit} aria-label="الموضوع" className={inp} />
-          <p className="text-xs text-muted-foreground">{meta.categoryLabel} · {meta.levelLabel}</p></section>
-
-        <section className="space-y-3 rounded-2xl border p-4"><h2 className="font-bold">الحقول</h2>
-          {autos.length > 0 && <div className="flex flex-wrap gap-2 text-xs">{autos.map((f) => { const v = (data as Record<string, unknown>)[f.key]; return <span key={f.key} className={`rounded-full border px-2.5 py-1 ${v ? "" : "border-amber-400 bg-amber-50"}`}><b>{labelOf(f.key)}:</b> {v ? String(v) : "غير مسجّل في السجلات"}</span>; })}</div>}
-          <div className="grid gap-3 md:grid-cols-2">
-            {fields.map((f) => {
+  const emptyVal = (v: unknown) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
+  const renderField = (f: (typeof fields)[number]) => {
               const v = (data as Record<string, unknown>)[f.key];
               const lbl = <span className="text-sm font-medium">{labelOf(f.key)}{f.required_for_finalization && <b className="text-destructive"> *</b>}</span>;
               if (f.type === "structured_list") return <label key={f.key} className="md:col-span-2">{lbl}<textarea disabled={!canEdit} rows={3} value={Array.isArray(v) ? (v as string[]).join("\n") : ""} onChange={(e) => set({ [f.key]: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} placeholder="عنصر في كل سطر" className={`${inp} py-2`} /></label>;
               return <label key={f.key}>{lbl}<input disabled={!canEdit} type={f.type === "date" ? "date" : "text"} inputMode={f.type === "decimal" || f.type === "integer" ? "decimal" : undefined} value={typeof v === "string" || typeof v === "number" ? String(v) : ""} onChange={(e) => set({ [f.key]: e.target.value })} className={inp} /></label>;
-            })}
-          </div></section>
-
+  };
+  const todo = fields.filter((f) => f.required_for_finalization && emptyVal((data as Record<string, unknown>)[f.key]));
+  const autoGaps = autos.filter((f) => f.required_for_finalization && emptyVal((data as Record<string, unknown>)[f.key]));
+  const rest = fields.filter((f) => !todo.includes(f));
+  const [step, setStep] = useState<2 | 3>(2);
+  const STEPS: [number, string][] = [[1, "اختر النوع"], [2, "أكمل الناقص"], [3, "راجع وأصدر"]];
+  const stepBar = (
+    <ol aria-label="الخطوات" className="flex flex-wrap items-center gap-2 text-sm">
+      {STEPS.map(([n, t]) => { const cur = n === step, done = n < step || n === 1;
+        const cls = `inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold ${cur ? "bg-primary text-primary-foreground" : done ? "bg-accent text-primary" : "bg-background text-muted-foreground"}`;
+        const inner = <><span className="grid size-6 place-items-center rounded-full bg-background/20 text-xs">{done && !cur ? "✓" : n}</span>{t}</>;
+        return <li key={n}>{n === 1 ? <Link href="/staff/decisions" className={cls}>{inner}</Link> : <button type="button" onClick={() => setStep(n as 2 | 3)} aria-current={cur ? "step" : undefined} className={cls}>{inner}</button>}</li>; })}
+    </ol>
+  );
+  const previewSec = (
+        <section className="rounded-2xl border bg-neutral-100 p-3"><h2 className="mb-2 font-bold">معاينة</h2><div className="max-h-[75vh] overflow-y-auto overflow-x-hidden"><DecisionDoc r={view} /></div></section>
+  );
+  const actionsSec = (
+        <section className="space-y-2 rounded-2xl border p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {canEdit && <button type="button" onClick={save} disabled={pending} className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-50">{pending ? "..." : "حفظ المسودة"}</button>}
+            <Link href={`/staff/decisions/${id}/print`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">طباعة A4 / PDF</Link>
+            <a href={`/api/decisions/${id}/docx`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">Word</a>
+            <ShareButton id={id} title={title} />
+            {!canEdit && <Link href={`/staff/decisions/${id}/print?mode=official`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">النسخة الرسمية</Link>}
+            {dirty && <span className="text-xs text-amber-800">تعديلات غير محفوظة</span>}
+          </div>
+          {msg && <p role="status" className={`rounded-xl border p-2 text-sm ${msg.ok ? "" : "border-destructive/40"}`}>{msg.t}</p>}
+          <p className="text-xs text-muted-foreground">{missing.length ? `حقول إلزامية ناقصة: ${missing.map(labelOf).join("، ")}` : "الحقول الإلزامية مكتملة."}{unverified ? ` — ${unverified} حيثية بمرجع غير متحقق منه (تُستبعد من الرسمي).` : ""}</p>
+          {canEdit && <div className="flex flex-wrap items-end gap-2 border-t pt-2"><label className="text-sm">تاريخ اتخاذ القرار<input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inp} mt-1`} /></label>
+            <button type="button" onClick={adopt} disabled={pending || !date} className="min-h-11 rounded-xl border-2 border-primary px-4 font-semibold text-primary disabled:opacity-40">اعتماد واتخاذ القرار</button>
+            <p className="w-full text-xs text-muted-foreground">الاعتماد يتم بيد المختص فقط، ويُرفض آليًا إن كان القالب غير معتمد أو الحقول ناقصة أو المراجع غير متحقق منها. لا شيء يُعتمد تلقائيًا.</p></div>}
+        </section>
+  );
+  const advanced = (
+    <details className="rounded-2xl border p-4"><summary className="min-h-11 cursor-pointer text-base font-bold leading-[2.75rem]">خيارات متقدمة <span className="text-xs font-normal text-muted-foreground">(المراجع القانونية، الحيثيات، المواد، النفاذ، المرفقات، المساعد الذكي)</span></summary>
+      <div className="space-y-4 pt-3">
         <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">المراجع القانونية</h2>
           <p className="text-xs text-muted-foreground">لا يدخل المرجع في الصيغة الرسمية إلا إذا طابق قاعدة «متحقق منها» في سجل القواعد بالمادة نفسها. الأرقام مأخوذة من القالب كمرشّحات ولم يتحقق منها النظام.</p>
           <ul className="space-y-2">{refs.map((r) => { const on = (data.selected_refs ?? []).some((s) => s.source_id === r.source_id && s.article === r.article);
@@ -117,25 +142,6 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
         <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">المرفقات والتحقق قبل الاعتماد</h2>
           <ul className="space-y-1 text-sm">{att.map((a, i) => <li key={i} className="flex items-center gap-2"><input type="checkbox" disabled={!canEdit} checked={!!a.ready} onChange={(e) => set({ attachments: att.map((x, j) => (j === i ? { ...x, ready: e.target.checked } : x)) })} className="size-5" aria-label={a.text} />{a.text}</li>)}</ul>
           {(snap.validation_checks_ar ?? []).length > 0 && <><b className="text-sm">قائمة التحقق:</b><ul className="list-disc space-y-0.5 pe-5 text-sm">{snap.validation_checks_ar!.map((c, i) => <li key={i}>{c}</li>)}</ul></>}</section>
-      </div>
-
-      <div className="space-y-4 xl:sticky xl:top-2 xl:self-start">
-        <section className="space-y-2 rounded-2xl border p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {canEdit && <button type="button" onClick={save} disabled={pending} className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-50">{pending ? "..." : "حفظ المسودة"}</button>}
-            <Link href={`/staff/decisions/${id}/print`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">طباعة A4 / PDF</Link>
-            <a href={`/api/decisions/${id}/docx`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">Word</a>
-            <ShareButton id={id} title={title} />
-            {!canEdit && <Link href={`/staff/decisions/${id}/print?mode=official`} className="min-h-11 rounded-xl border px-4 py-2.5 text-sm">النسخة الرسمية</Link>}
-            {dirty && <span className="text-xs text-amber-800">تعديلات غير محفوظة</span>}
-          </div>
-          {msg && <p role="status" className={`rounded-xl border p-2 text-sm ${msg.ok ? "" : "border-destructive/40"}`}>{msg.t}</p>}
-          <p className="text-xs text-muted-foreground">{missing.length ? `حقول إلزامية ناقصة: ${missing.map(labelOf).join("، ")}` : "الحقول الإلزامية مكتملة."}{unverified ? ` — ${unverified} حيثية بمرجع غير متحقق منه (تُستبعد من الرسمي).` : ""}</p>
-          {canEdit && <div className="flex flex-wrap items-end gap-2 border-t pt-2"><label className="text-sm">تاريخ اتخاذ القرار<input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inp} mt-1`} /></label>
-            <button type="button" onClick={adopt} disabled={pending || !date} className="min-h-11 rounded-xl border-2 border-primary px-4 font-semibold text-primary disabled:opacity-40">اعتماد واتخاذ القرار</button>
-            <p className="w-full text-xs text-muted-foreground">الاعتماد يتم بيد المختص فقط، ويُرفض آليًا إن كان القالب غير معتمد أو الحقول ناقصة أو المراجع غير متحقق منها. لا شيء يُعتمد تلقائيًا.</p></div>}
-        </section>
-        <section className="rounded-2xl border bg-neutral-100 p-3"><h2 className="mb-2 font-bold">معاينة</h2><div className="max-h-[75vh] overflow-y-auto overflow-x-hidden"><DecisionDoc r={view} /></div></section>
         <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">المساعد الذكي (يقترح فقط)</h2>
           {!aiOn ? <p className="text-sm text-muted-foreground">المساعد غير مفعّل في هذه البيئة.</p> : <>
             <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={2} placeholder="اختياري: انسخ هنا الفقرة المراد تحسينها" className={`${inp} py-2`} />
@@ -146,7 +152,43 @@ export default function DecisionEditor({ id, initialTitle, snap, initial, refs, 
               {canEdit && ai.action === "recitals" && <button type="button" onClick={() => set(withRecitals([...(data.recitals ?? []), { id: `ai:${Date.now()}`, kind: "whereas", text: ai.answer!.slice(0, 600), included: false, origin: "ai" }]))} className="min-h-9 rounded-lg border px-3 text-xs">أضف كحيثية مقترحة (غير مدرجة، حرّرها قبل الإدراج)</button>}
               {(ai.sources?.length ?? 0) > 0 ? <details className="text-xs"><summary className="cursor-pointer font-semibold">المصادر ({ai.sources!.length})</summary><ul className="space-y-1 pt-1">{ai.sources!.map((s, i) => <li key={i}><b>{s.title}</b> <span className="text-muted-foreground">({s.domain})</span><br />{s.preview}</li>)}</ul></details> : <p className="text-xs text-amber-800">لا مصادر مسترجعة من قاعدة المعرفة: الإجابة غير موثّقة.</p>}</div>}</>}
         </section>
-      </div>
+      </div></details>
+  );
+
+  return (
+    <div className="space-y-4">
+      {stepBar}
+      {step === 2 ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className="space-y-4">
+        <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">موضوع القرار</h2>
+          <input value={title} onChange={(e) => { setTitle(e.target.value); setDirty(true); }} disabled={!canEdit} aria-label="الموضوع" className={inp} />
+          <p className="text-xs text-muted-foreground">{meta.categoryLabel} · {meta.levelLabel}</p></section>
+            <section className="space-y-3 rounded-2xl border p-4"><h2 className="font-bold">المطلوب منكم الآن</h2>
+              {autoGaps.length > 0 && <p role="status" className="rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">بيانات تُؤخذ من السجلات وهي غير مسجّلة بعد: {autoGaps.map((f) => labelOf(f.key)).join("، ")}. سجّلوها في الجلسة أو بيانات البلدية.</p>}
+              {todo.length === 0 ? <p className="rounded-xl bg-accent p-3 text-sm font-semibold text-primary">لا شيء ناقص: كل الحقول الإلزامية مكتملة. تابعوا إلى المراجعة.</p>
+                : <div className="grid gap-3 md:grid-cols-2">{todo.map(renderField)}</div>}</section>
+            {rest.length > 0 && <details className="rounded-2xl border p-4"><summary className="min-h-11 cursor-pointer font-bold leading-[2.75rem]">بقية الحقول ({rest.length})</summary><div className="grid gap-3 pt-3 md:grid-cols-2">{rest.map(renderField)}</div></details>}
+            {autos.length > 0 && <details className="rounded-2xl border p-4"><summary className="min-h-11 cursor-pointer font-bold leading-[2.75rem]">تم ملؤها تلقائيًا من سجلات البلدية ({autos.length})</summary>
+<div className="flex flex-wrap gap-2 pt-3 text-xs">{autos.map((f) => { const v = (data as Record<string, unknown>)[f.key]; return <span key={f.key} className={`rounded-full border px-2.5 py-1 ${v ? "" : "border-amber-400 bg-amber-50"}`}><b>{labelOf(f.key)}:</b> {v ? String(v) : "غير مسجّل في السجلات"}</span>; })}</div>
+            </details>}
+            {advanced}
+            <div className="flex flex-wrap items-center gap-2">
+              {canEdit && <button type="button" onClick={save} disabled={pending} className="min-h-11 rounded-xl border px-4 text-sm font-semibold disabled:opacity-50">حفظ المسودة</button>}
+              <button type="button" onClick={() => setStep(3)} className="min-h-12 rounded-xl bg-primary px-6 text-base font-bold text-primary-foreground">التالي: مراجعة وإصدار ←</button>
+              {dirty && <span className="text-xs text-amber-800">تعديلات غير محفوظة</span>}
+            </div>
+            {msg && <p role="status" className={`rounded-xl border p-2 text-sm ${msg.ok ? "" : "border-destructive/40"}`}>{msg.t}</p>}
+          </div>
+          <div className="xl:sticky xl:top-2 xl:self-start">{previewSec}</div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-3xl space-y-4">
+          {actionsSec}
+          {previewSec}
+          <button type="button" onClick={() => setStep(2)} className="min-h-11 rounded-xl border px-4 text-sm">→ رجوع لإكمال الحقول</button>
+        </div>
+      )}
     </div>
   );
 }
