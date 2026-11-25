@@ -103,3 +103,13 @@ export async function setRegisterDates(fd: FormData) {
   revalidatePath(`/staff/decisions/${id}`);
   redirect(`/staff/decisions/${id}`);
 }
+
+export async function bulkApprove(fd: FormData) {
+  const ids = fd.getAll("ids").map(String).filter(uuidOk);
+  const eff = s(fd, "effective"), note = s(fd, "note");
+  if (fd.get("confirm") !== "on" || !ids.length || !dateOk(eff) || !note) redirect("/staff/decisions/templates?err=bad_input");
+  const sb = await supabaseServer();
+  const { data, error } = await sb.rpc("dt_review_bulk", { p_ids: ids, p_note: note, p_effective: eff });
+  revalidatePath("/staff/decisions"); revalidatePath("/staff/decisions/templates");
+  redirect(`/staff/decisions/templates?${error ? `err=${encodeURIComponent(code(error))}` : `approved=${Number(data ?? 0)}`}`);
+}

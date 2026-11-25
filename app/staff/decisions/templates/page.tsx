@@ -5,14 +5,15 @@ import StaffHeader from "@/components/StaffHeader";
 import { loadSources, loadTemplates } from "@/lib/decisions/load";
 import { seedPayload } from "@/lib/decisions/seed";
 import { ISSUER_LABEL, STATUS_LABEL, type TplStatus } from "@/lib/decisions/model";
-import { importSeed, setLegalProfile, setSourceDate } from "../actions";
+import { bulkApprove, importSeed, setLegalProfile, setSourceDate } from "../actions";
+import SelectAll from "@/components/decisions/SelectAll";
 import { errText } from "@/lib/decisions/errors";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "إدارة قوالب القرارات — BALADI ONE", referrer: "no-referrer" as const };
 const inp = "min-h-11 w-full rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ s?: string; q?: string; err?: string; imported?: string; profile?: string }> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ s?: string; q?: string; err?: string; imported?: string; profile?: string; approved?: string }> }) {
   const { sb, memberships } = await requireStaff();
   if (!memberships.some((m) => m.role === "admin" || m.role === "mayor")) redirect("/staff");
   const isAdmin = memberships.some((m) => m.role === "admin");
@@ -32,6 +33,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
         <p className="text-sm text-muted-foreground">دورة الحياة: مسودة ← بانتظار المراجعة القانونية ← معتمد ← مستبدل/مؤرشف. يعتمد القالب شخص غير الذي قدّمه، بتاريخ سريان وملاحظة مراجعة. كل قرار يحتفظ بنسخة القالب التي أُنشئ بها.</p>
         {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{errText({ message: sp.err })}</p>}
         {sp.imported && <p role="status" className="rounded-xl border p-3 text-sm">استُورد {sp.imported} قالبًا بحالة «بانتظار المراجعة القانونية». لم يُعتمد أي منها.</p>}
+        {sp.approved && <p role="status" className="rounded-xl border p-3 text-sm">اعتُمد {sp.approved} قالبًا بقرار منكم، وسُجّل ذلك في سجل التدقيق.</p>}
         {sp.profile && <p role="status" className="rounded-xl border p-3 text-sm">حُفظ البيان القانوني للبلدية.</p>}
 
         <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold">استيراد المكتبة التأسيسية</h2>
@@ -54,7 +56,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
         <div className="flex flex-wrap gap-2 text-sm">{(["", "pending_legal_review", "approved", "draft", "superseded", "archived"] as const).map((s) => <Link key={s} href={s ? `/staff/decisions/templates?s=${s}` : "/staff/decisions/templates"} className={`min-h-10 rounded-full border px-3.5 py-2 ${(sp.s ?? "") === s ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{s ? STATUS_LABEL[s as TplStatus] : "الكل"} ({s ? counts[s] ?? 0 : rows.length})</Link>)}</div>
         <form className="flex gap-2"><input name="q" defaultValue={sp.q} placeholder="بحث" aria-label="بحث" className={inp} />{sp.s && <input type="hidden" name="s" value={sp.s} />}<button className="min-h-11 rounded-xl border px-4 text-sm font-semibold">بحث</button></form>
         {list.length === 0 ? <p className="rounded-xl border p-6 text-center text-sm text-muted-foreground">لا قوالب.</p> : (
-          <ul className="divide-y rounded-xl border bg-background">{list.map((r) => <li key={r.id}><Link href={`/staff/decisions/templates/${r.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-muted"><b dir="ltr" className="text-primary">{r.template_id}</b><span className="font-medium">{r.title_ar}</span><span className="text-xs text-muted-foreground">{ISSUER_LABEL[r.issuer]} · إصدار {r.version}</span><span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold">{STATUS_LABEL[r.status]}</span></Link></li>)}</ul>)}
+          <form action={bulkApprove} className="space-y-3">
+            <SelectAll />
+            <ul className="divide-y rounded-xl border bg-background">{list.map((r) => <li key={r.id} className="flex items-center gap-2 pe-3">
+              {r.status === "pending_legal_review" ? <input type="checkbox" name="ids" value={r.id} defaultChecked={false} aria-label={`تحديد ${r.title_ar}`} className="ms-3 size-5" /> : <span className="ms-3 w-5" />}
+              <Link href={`/staff/decisions/templates/${r.id}`} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-muted"><b dir="ltr" className="text-primary">{r.template_id}</b><span className="font-medium">{r.title_ar}</span><span className="text-xs text-muted-foreground">{ISSUER_LABEL[r.issuer]} · إصدار {r.version}</span><span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold">{STATUS_LABEL[r.status]}</span></Link></li>)}</ul>
+            {list.some((r) => r.status === "pending_legal_review") && (
+              <div className="space-y-2 rounded-2xl border-2 border-primary/40 p-4"><h2 className="font-bold">اعتماد المحدد (قرار المسؤول القانوني)</h2>
+                <p className="text-xs text-muted-foreground">حدّدوا القوالب أعلاه. يُسجَّل الاعتماد باسمكم وتاريخكم. اعتماد القالب لا يجعل مراجعه القانونية متحقَّقًا منها: تبقى قواعد السجل بانتظار التحقق ولا تدخل الصيغة الرسمية قبل ذلك.</p>
+                <div className="flex flex-wrap items-end gap-2"><label className="min-w-0 flex-1 text-sm">ملاحظة المراجعة (إلزامية)<input name="note" required className={`${inp} mt-1`} /></label>
+                  <label className="text-sm">تاريخ السريان<input type="date" name="effective" required className={`${inp} mt-1`} /></label></div>
+                <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirm" required className="mt-1 size-5" />أقرّ بأنني راجعتُ القوالب المحددة قانونيًا وأتحمل مسؤولية اعتمادها.</label>
+                <button className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground">اعتماد المحدد</button></div>)}
+          </form>)}
       </main>
     </>
   );
