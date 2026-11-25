@@ -54,23 +54,19 @@ export function Kiosk({
   const Card = ({ icon, title, hint, onClick, disabled, primary }: { icon: React.ReactNode; title: string; hint: string; onClick: () => void; disabled?: boolean; primary?: boolean }) => {
     const body = (
       <>
-        <span className="flex items-center justify-between">
-          <span className={`grid size-[5.5rem] shrink-0 place-items-center rounded-2xl ${primary ? "bg-primary text-primary-foreground" : disabled ? "border bg-background text-muted-foreground" : "bg-accent text-primary"}`}>{icon}</span>
-          {disabled
-            ? <span className="rounded-full border bg-background px-5 py-2 text-[1.15rem] font-semibold text-foreground">{t(lang, "comingSoon")}</span>
-            : <ChevronLeft className={`size-10 text-primary ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />}
-        </span>
-        <span className="mt-auto flex flex-col gap-2">
-          <span className="text-[2rem] font-bold leading-tight">{title}</span>
-          <span className="text-[1.3rem] leading-snug text-muted-foreground">{hint}</span>
+        {disabled && <span className="absolute end-5 top-5 rounded-full border bg-background px-4 py-1.5 text-[1.05rem] font-semibold text-foreground">{t(lang, "comingSoon")}</span>}
+        <span className={`grid size-[6.5rem] shrink-0 place-items-center rounded-[1.75rem] transition-colors duration-200 ${disabled ? "border bg-background text-muted-foreground" : primary ? "bg-primary text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary group-active:bg-primary-foreground group-active:text-primary" : "bg-accent text-primary group-hover:bg-primary group-hover:text-primary-foreground group-active:bg-primary group-active:text-primary-foreground"}`}>{icon}</span>
+        <span className="flex flex-col items-center gap-2 text-center">
+          <span className={`text-[2rem] font-bold leading-tight transition-colors duration-200 ${disabled ? "" : "group-hover:text-primary group-active:text-primary"}`}>{title}</span>
+          <span className="max-w-[26rem] text-[1.3rem] leading-snug text-muted-foreground">{hint}</span>
         </span>
       </>
     );
-    const base = "flex min-h-[16rem] flex-col gap-6 rounded-3xl border p-8 text-start";
+    const base = "relative flex min-h-[16rem] flex-col items-center justify-center gap-6 rounded-3xl border p-8 text-center";
     if (disabled) return <div role="group" aria-disabled="true" className={`${base} border-dashed bg-muted/60`}>{body}</div>;
     return (
       <button onClick={onClick}
-        className={`${base} elev elev-hover transition active:scale-[0.985] ${primary ? "border-primary/40 bg-accent/60 active:bg-accent" : "bg-background active:bg-muted"}`}>
+        className={`group ${base} elev elev-hover transition duration-200 active:scale-[0.985] hover:border-primary active:border-primary ${primary ? "border-primary/40 bg-accent/60" : "bg-background"}`}>
         {body}
       </button>
     );
@@ -88,19 +84,18 @@ export function Kiosk({
       {/* top bar */}
       <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-6 border-b pb-[1.6vh]">
         <div className="flex items-center justify-self-start">
-          {muni.logoUrl
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={muni.logoUrl} alt={lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr} className="h-[5.5rem] w-auto max-w-[12rem] object-contain" />
-            : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
-        </div>
-        <p className="text-center text-[1.9rem] font-bold text-primary">{t(lang, "headerTitle")}</p>
-        <div className="flex items-center justify-self-end gap-4">
           {view.name !== "home" && (
             <nav aria-label={t(lang, "home")} className="flex items-center gap-3">
               <Btn variant="secondary" onClick={goBack}><ArrowRight className={`size-7 ${dir === "ltr" ? "rotate-180" : ""}`} aria-hidden />{t(lang, "back")}</Btn>
               <Btn onClick={reset}><Home className="size-7" aria-hidden />{t(lang, "home")}</Btn>
             </nav>
           )}
+        </div>
+        {muni.logoUrl
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={muni.logoUrl} alt={lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr} className="h-[5.5rem] w-auto max-w-[14rem] justify-self-center object-contain" />
+          : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
+        <div className="flex items-center justify-self-end gap-4">
           <button onClick={() => setLang(lang === "ar" ? "en" : "ar")}
             className="inline-flex min-h-16 items-center gap-3 rounded-2xl border bg-background px-6 text-[1.25rem] font-semibold transition active:scale-[0.98] active:bg-muted">
             <Languages className="size-6" />{t(lang, "language")}
@@ -134,9 +129,9 @@ export function Kiosk({
               )}
             </div>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <Card primary icon={<FileSearch className="size-11" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
-              <Card icon={<Megaphone className="size-11" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
-              <Card icon={<ClipboardCheck className="size-11" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
+              <Card primary icon={<FileSearch className="size-14" />} title={t(lang, "transactions")} hint={t(lang, "transactionsHint")} onClick={() => goList("")} />
+              <Card icon={<Megaphone className="size-14" />} title={t(lang, "report")} hint={t(lang, "reportHint")} onClick={() => setView({ name: "report" })} disabled={!reportsEnabled} />
+              <Card icon={<ClipboardCheck className="size-14" />} title={t(lang, "track")} hint={t(lang, "trackHint")} onClick={() => setView({ name: "track" })} disabled={!reportsEnabled} />
             </div>
           </div>
         )}
@@ -152,7 +147,7 @@ export function Kiosk({
             <div className="flex flex-wrap gap-3">
               {(["all", ...CATEGORIES] as const).map((c) => (
                 <button key={c} onClick={() => setCat(c)}
-                  className={`inline-flex min-h-14 items-center gap-2 rounded-2xl border px-6 text-[1.2rem] font-semibold ${cat === c ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+                  className={`inline-flex min-h-14 items-center gap-2 rounded-2xl border px-6 text-[1.2rem] font-semibold ${cat === c ? "bg-primary text-primary-foreground" : "bg-background transition-colors hover:border-primary hover:text-primary active:bg-accent"}`}>
                   {c !== "all" && (() => { const Ic = CAT_ICON[c]; return <Ic className="size-6" aria-hidden />; })()}
                   {c === "all" ? t(lang, "all") : catLabel(lang, c)}
                 </button>
@@ -163,8 +158,8 @@ export function Kiosk({
               {services.length > 0 && results.length === 0 && <p className="col-span-full py-16 text-center text-[1.6rem] text-muted-foreground">{t(lang, "noResults")}</p>}
               {results.map((s) => (
                 <button key={s.slug} onClick={() => setView({ name: "service", slug: s.slug })}
-                  className="elev elev-hover flex min-h-28 items-center gap-5 rounded-2xl border bg-background p-5 text-start transition active:scale-[0.99]">
-                  {(() => { const Ic = CAT_ICON[s.category] ?? FileSearch; return <span className="grid size-[4.5rem] shrink-0 place-items-center rounded-2xl bg-accent text-primary"><Ic className="size-9" aria-hidden /></span>; })()}
+                  className="group elev elev-hover flex min-h-28 items-center gap-5 rounded-2xl border bg-background p-5 text-start transition hover:border-primary active:scale-[0.99] active:border-primary">
+                  {(() => { const Ic = CAT_ICON[s.category] ?? FileSearch; return <span className="grid size-[4.5rem] shrink-0 place-items-center rounded-2xl bg-accent text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground group-active:bg-primary group-active:text-primary-foreground"><Ic className="size-9" aria-hidden /></span>; })()}
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="text-[1.5rem] font-bold">{pick(lang, s.title)}</span>
                     <span className="text-[1.1rem] text-primary">{catLabel(lang, s.category)}</span>
@@ -214,12 +209,13 @@ export function Kiosk({
         )}
       </main>
 
-      <footer className="flex shrink-0 flex-col items-center justify-center gap-1 border-t pt-[1.2vh] text-[1.15rem] text-muted-foreground">
-        {view.name === "home" && <span>{t(lang, "touchHint")}</span>}
-        <span className="flex items-center gap-3">
-          {t(lang, "poweredBy")}
+      <footer className="flex shrink-0 flex-col items-center gap-2 border-t pt-[1.2vh]">
+        {view.name === "home" && <span className="text-[1.15rem] text-muted-foreground">{t(lang, "touchHint")}</span>}
+        <span className="inline-flex items-center gap-5 rounded-full border bg-background px-7 py-1.5 elev">
+          <span className="text-[0.95rem] font-semibold tracking-wide text-muted-foreground">{t(lang, "poweredBy")}</span>
+          <span className="h-7 w-px bg-border" aria-hidden />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-11 w-auto" />
         </span>
       </footer>
 
