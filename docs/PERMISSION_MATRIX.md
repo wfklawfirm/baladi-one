@@ -122,3 +122,11 @@ Proposed next migration, one logical change per statement. All are additive or `
 10. `_add_working_days`: cap `p_n` (for example ≤ 365) or revoke from `authenticated` and make it internal.
 11. Revoke `is_staff` and `is_any_admin` from `public, anon`.
 12. Enable leaked-password protection and enforce a longer minimum password in Supabase Auth (dashboard, owner action).
+
+## منشئ القرارات
+| الإجراء | admin | mayor | غيرهما |
+|---|---|---|---|
+| قراءة القوالب والمصادر | نعم | نعم | نعم (موظف) |
+| استيراد/تعديل/إرسال للمراجعة | نعم | لا | لا |
+| اعتماد قالب (شخص مختلف عن المقدِّم) | نعم | نعم | لا |
+| إنشاء/تحرير/اعتماد قرار من قالب | نعم | نعم | لا |

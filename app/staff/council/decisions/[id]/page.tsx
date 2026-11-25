@@ -35,6 +35,7 @@ export default async function DecisionPage({ params, searchParams }: { params: P
     <><StaffHeader back="/staff/council/decisions" backLabel="السجل" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
       <div className="space-y-2"><h1 className="text-2xl font-bold">قرار {d.decision_no}/{d.year}: {d.title}</h1>
+        {d.template_snapshot && <p><Link href={`/staff/decisions/${d.id}`} className="inline-flex min-h-10 items-center rounded-xl border px-3 text-sm font-semibold text-primary hover:bg-muted">فتح في منشئ القرارات (المحرر والطباعة والتصدير)</Link></p>}
         <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">قانونيًا: {LEGAL_STATUS[d.legal_status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">تنفيذًا: {EXEC_STATUS[d.execution_status]}</span>{late && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">متأخر عن موعد التنفيذ</span>}{d.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "date" ? "حدّد تاريخ النفاذ الوارد في المستند الرسمي." : sp.err === "validation" ? "لا يمكن تسجيل النفاذ قبل تسجيل تاريخ تصديق سلطة الرقابة، أو انقضاء مهلة الشهر من تاريخ استلامها للقرار (للفئات التي تسري عليها)." : "تعذّر تنفيذ العملية."}</p>}
 
