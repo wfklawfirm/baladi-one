@@ -139,11 +139,8 @@ export function Kiosk({
             ? <img src={muni.logoUrl} alt={lang === "en" && muni.nameEn ? muni.nameEn : muni.nameAr} className="h-[5.5rem] w-auto max-w-[14rem] object-contain" />
             : <span className="grid size-16 place-items-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">B</span>}
           <span className="h-[4.5rem] w-px bg-border" aria-hidden />
-          <span className="flex flex-col items-center gap-1">
-            <span className="text-[0.85rem] font-semibold tracking-wide text-muted-foreground">{t(lang, "poweredBy")}</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/aijur-logo.png" alt="AIJUR" className="h-[3.6rem] w-auto object-contain" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/aijur-logo.png" alt="AIJUR" className="h-[5.5rem] w-auto max-w-[14rem] object-contain" />
         </div>
         <div className="flex items-center justify-self-end gap-4">
           <button onClick={() => setLang(lang === "ar" ? "en" : "ar")}
