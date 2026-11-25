@@ -20,11 +20,11 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
       {!reportsEnabled() ? <ComingSoon title="متابعة طلب" slug={slug} /> : (
         <>
           <Link href={`/m/${slug}`} className="text-sm text-primary">← {muni.nameAr}</Link>
-          <h1 className="text-2xl font-bold">متابعة بلاغ</h1>
+          <h1 className="text-2xl font-bold">{result?.kind === "service_request" ? "متابعة معاملة" : "متابعة بلاغ"}</h1>
           {sp.new && result && (
             <div className="rounded-2xl border-2 border-primary bg-background p-4 text-center">
-              <p className="font-bold">تم استلام بلاغك</p>
-              <p className="mt-2 text-sm">احتفظ برمز التتبع، فهو الوحيد الذي يتيح لك متابعة البلاغ ولا يمكننا استرجاعه:</p>
+              <p className="font-bold">{result.kind === "service_request" ? "تم تسجيل معاملتك" : "تم استلام بلاغك"}</p>
+              <p className="mt-2 text-sm">احتفظ برمز التتبع، فهو الوحيد الذي يتيح لك المتابعة ولا يمكننا استرجاعه:</p>
               <p dir="ltr" className="mt-2 select-all text-2xl font-bold tracking-widest">{formatCode(code)}</p>
             </div>
           )}
@@ -32,10 +32,10 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
             <input name="code" defaultValue={sp.new ? "" : code} dir="ltr" placeholder="XXXX-XXXX-XXXX" autoComplete="off" className="min-h-12 flex-1 rounded-xl border bg-background px-4 tracking-widest" />
             <button className="min-h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">تتبّع</button>
           </form>
-          {code && !result && <p role="alert" className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">لا يوجد بلاغ بهذا الرمز. تأكد من كتابته كما ظهر لك.</p>}
+          {code && !result && <p role="alert" className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">لا يوجد طلب بهذا الرمز. تأكد من كتابته كما ظهر لك.</p>}
           {result && (
             <section className="space-y-3 rounded-2xl border bg-background p-4">
-              <p className="text-sm text-muted-foreground">{REPORT_TYPES.find(([k]) => k === result.reportType)?.[1] ?? "بلاغ"} · {fmt(result.createdAt)}</p>
+              <p className="text-sm text-muted-foreground">{result.kind === "service_request" ? (result.serviceTitle ?? "معاملة") : (REPORT_TYPES.find(([k]) => k === result.reportType)?.[1] ?? "بلاغ")} · {fmt(result.createdAt)}</p>
               <p className="text-xl font-bold text-primary">{STATUS_AR[result.status] ?? result.status}</p>
               <ol className="space-y-2 border-s ps-4">
                 {result.updates.map((u, i) => (

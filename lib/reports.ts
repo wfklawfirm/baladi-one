@@ -27,15 +27,33 @@ export async function submitReport(slug: string, input: { type: string; descript
   } catch { return { ok: false, error: "unavailable" }; }
 }
 
-export type Tracked = { status: string; reportType: string; createdAt: string; updatedAt: string; updates: { status: string; note: string | null; at: string }[] };
+export type ServiceRequestResult = { ok: true; code: string } | { ok: false; error: "invalid_name" | "invalid_phone" | "rate_limited" | "unavailable" };
+
+export async function submitServiceRequest(slug: string, input: { serviceSlug: string; serviceTitle: string; name: string; phone: string; note: string; channel: "kiosk" | "app" }): Promise<ServiceRequestResult> {
+  try {
+    const { data, error } = await db().rpc("submit_service_request", {
+      p_slug: slug, p_service_slug: input.serviceSlug, p_service_title: input.serviceTitle, p_name: input.name, p_phone: input.phone, p_note: input.note || null, p_channel: input.channel,
+    });
+    if (error) {
+      if (error.code === "54000") return { ok: false, error: "rate_limited" };
+      if (error.message?.includes("invalid_name")) return { ok: false, error: "invalid_name" };
+      if (error.message?.includes("invalid_phone")) return { ok: false, error: "invalid_phone" };
+      return { ok: false, error: "unavailable" };
+    }
+    return { ok: true, code: String(data) };
+  } catch { return { ok: false, error: "unavailable" }; }
+}
+
+export type Tracked = { kind?: string; serviceTitle?: string | null; status: string; reportType: string; createdAt: string; updatedAt: string; updates: { status: string; note: string | null; at: string }[] };
 
 export async function trackReport(code: string): Promise<Tracked | null> {
   if (code.replace(/[^A-Za-z0-9]/g, "").length !== 12) return null;
   try {
-    const { data, error } = await db().rpc("track_report", { p_code: code });
+    let { data, error } = await db().rpc("track_request", { p_code: code });
+    if (error) ({ data, error } = await db().rpc("track_report", { p_code: code })); // before 0028 is applied
     const r = Array.isArray(data) ? data[0] : null;
     if (error || !r) return null;
-    return { status: r.status, reportType: r.report_type, createdAt: r.created_at, updatedAt: r.updated_at, updates: r.updates ?? [] };
+    return { kind: r.kind, serviceTitle: r.service_title ?? null, status: r.status, reportType: r.report_type, createdAt: r.created_at, updatedAt: r.updated_at, updates: r.updates ?? [] };
   } catch { return null; }
 }
 

@@ -27,10 +27,11 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-2xl space-y-5 p-4 md:p-8 lg:max-w-7xl">
       <Link href="/staff/requests" className="text-sm text-primary">← الطلبات</Link>
-      <header className="space-y-1"><h1 className="text-2xl font-bold">{REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? "طلب"}</h1>
+      <header className="space-y-1"><h1 className="text-2xl font-bold">{r.kind === "service_request" ? `معاملة: ${r.service_title ?? ""}` : (REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? "طلب")}</h1>
         <p className="text-sm text-muted-foreground">{fmt(r.created_at)} · الحالة: <b className="text-primary">{STATUS_AR[r.status]}</b>{r.is_demo ? " · تجريبي" : ""}</p></header>
       <section className="space-y-2 rounded-2xl border bg-background p-4">
         <p className="whitespace-pre-line leading-8">{r.description}</p>
+        {r.applicant_name && <p className="text-sm"><b>مقدّم الطلب:</b> {r.applicant_name}{r.channel ? ` · ${r.channel === "kiosk" ? "من الكيوسك" : "من التطبيق"}` : ""}</p>}
         {r.location_text && <p className="text-sm"><b>الموقع:</b> {r.location_text}</p>}
         {r.contact_phone && <p className="text-sm"><b>الهاتف:</b> <span dir="ltr">{r.contact_phone}</span></p>}
       </section>

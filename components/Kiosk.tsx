@@ -1,15 +1,16 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Building2, ChevronLeft, ClipboardCheck, FileBadge, FileSearch, HardHat, Home, Languages, Megaphone, Search, Smartphone, Store } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, ChevronLeft, ClipboardCheck, FileBadge, FileSearch, HardHat, Home, Languages, Megaphone, PlayCircle, Search, Smartphone, Store } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CATEGORIES, catLabel, pick, t } from "@/lib/i18n";
 import { filterServices } from "@/lib/search";
 import type { CategoryId, Lang, Municipality, Service } from "@/lib/types";
 import { Qr } from "./Qr";
+import { RequestForm } from "./RequestForm";
 import { ServiceBody } from "./ServiceBody";
 import Mic from "@/components/Mic";
 
-type View = { name: "home" } | { name: "list" } | { name: "service"; slug: string } | { name: "report" } | { name: "track" };
+type View = { name: "home" } | { name: "list" } | { name: "service"; slug: string } | { name: "apply"; slug: string } | { name: "done"; code: string; title: string } | { name: "report" } | { name: "track" };
 
 const WARN_SECONDS = 15;
 const CAT_ICON: Record<CategoryId, LucideIcon> = { licenses: Building2, certificates: FileBadge, shops: Store, public_works: HardHat, reports: Megaphone };
@@ -45,9 +46,9 @@ export function Kiosk({
   }, [idleSeconds, reset, touch, view.name]);
 
   const results = useMemo(() => filterServices(services, query, cat, lang), [services, query, cat, lang]);
-  const service = view.name === "service" ? services.find((s) => s.slug === view.slug) : undefined;
+  const service = view.name === "service" || view.name === "apply" ? services.find((s) => s.slug === view.slug) : undefined;
   // One step back: service -> list -> home; report/track -> home.
-  const goBack = () => setView(view.name === "service" ? { name: "list" } : { name: "home" });
+  const goBack = () => setView(view.name === "service" ? { name: "list" } : view.name === "apply" ? { name: "service", slug: view.slug } : { name: "home" });
   const goList = (q?: string) => { if (q !== undefined) setQuery(q); setView({ name: "list" }); };
 
   // Primary = the one action that always works; secondary cards become "coming soon" (not clickable) until enabled.
@@ -183,14 +184,41 @@ export function Kiosk({
               <div className="min-h-0 flex-1 overflow-y-auto pb-2"><ServiceBody s={service} lang={lang} scale="kiosk" /></div>
             </div>
             <aside className="flex w-[27%] shrink-0 flex-col items-center gap-4 rounded-3xl border bg-background p-6 elev">
+              {reportsEnabled
+                ? <button onClick={() => setView({ name: "apply", slug: service.slug })}
+                    className="flex min-h-[7rem] w-full flex-col items-center justify-center gap-1 rounded-2xl bg-primary px-4 text-primary-foreground elev transition active:scale-[0.985]">
+                    <span className="flex items-center gap-3 text-[1.9rem] font-bold"><PlayCircle className="size-9" aria-hidden />{t(lang, "startTx")}</span>
+                    <span className="text-[1.1rem] opacity-90">{t(lang, "startTxSub")}</span>
+                  </button>
+                : <p className="w-full rounded-2xl bg-muted p-4 text-center text-[1.2rem] font-semibold">{t(lang, "regSoon")}</p>}
               <Smartphone className="size-10 text-primary" />
               <Qr path={service.phonePath ?? `/s/${muni.slug}/${service.slug}?lang=${lang}`} size={300} label={t(lang, "continueOnPhone")} />
               <p className="text-center text-[1.3rem] font-semibold">{t(lang, "continueOnPhone")}</p>
               <p className="text-center text-[1.05rem] text-muted-foreground">{t(lang, "scanQr")}</p>
-              {service.onlineEnabled && reportsEnabled
-                ? <Btn>{t(lang, "startOnline")}</Btn>
-                : <p className="rounded-xl bg-muted p-3 text-center text-[1.05rem] text-muted-foreground">{t(lang, "notOnline")}</p>}
+              <p className="rounded-xl bg-muted p-3 text-center text-[1.05rem] text-muted-foreground">{t(lang, "applyNote")}</p>
             </aside>
+          </div>
+        )}
+
+        {view.name === "apply" && service && (
+          <div className="mx-auto flex h-full w-full max-w-[56rem] flex-col gap-5 overflow-y-auto pb-4">
+            <div><p className="text-[1.2rem] text-primary">{t(lang, "applyTitle")}</p><h2 className="text-[2.4rem] font-bold leading-tight">{pick(lang, service.title)}</h2></div>
+            <RequestForm slug={muni.slug} serviceSlug={service.slug} channel="kiosk" lang={lang} onDone={(code, title) => setView({ name: "done", code, title })} />
+          </div>
+        )}
+
+        {view.name === "done" && (
+          <div className="grid h-full place-items-center">
+            <div className="flex w-full max-w-[60rem] flex-col items-center gap-6 rounded-3xl border bg-background p-10 text-center elev">
+              <span className="grid size-24 place-items-center rounded-full bg-primary text-primary-foreground"><CheckCircle2 className="size-14" aria-hidden /></span>
+              <p className="text-[2.4rem] font-bold">{t(lang, "doneTitle")}</p>
+              <p className="text-[1.5rem] text-muted-foreground">{view.title}</p>
+              <p dir="ltr" className="rounded-2xl bg-accent px-10 py-5 text-[3.2rem] font-bold tracking-[0.25em] text-primary">{view.code.replace(/(.{4})(?=.)/g, "$1-")}</p>
+              <p className="max-w-[42rem] text-[1.3rem] leading-snug">{t(lang, "keepCode")}</p>
+              <Qr path={`/m/${muni.slug}/track?code=${view.code}${lang === "en" ? "&lang=en" : ""}`} size={240} label={t(lang, "scanTrackDone")} />
+              <p className="text-[1.15rem] text-muted-foreground">{t(lang, "scanTrackDone")}</p>
+              <Btn onClick={reset}><Home className="size-7" aria-hidden />{t(lang, "home")}</Btn>
+            </div>
           </div>
         )}
 

@@ -12,7 +12,7 @@ const fmt = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "short"
 export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
   const { sb, memberships } = await requireStaff();
   const filter = (await searchParams).s;
-  let q = sb.from("citizen_request").select("id,kind,report_type,description,location_text,status,is_demo,created_at,updated_at").order("created_at", { ascending: false }).limit(200);
+  let q = sb.from("citizen_request").select("id,kind,report_type,service_title,applicant_name,description,location_text,status,is_demo,created_at,updated_at").order("created_at", { ascending: false }).limit(200);
   if (filter && STATUS_AR[filter]) q = q.eq("status", filter);
   const { data } = await q;
   const rows = data ?? [];
@@ -37,8 +37,8 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
       <ul className="divide-y rounded-xl border bg-background">
         {rows.map((r) => (
           <li key={r.id}><Link href={`/staff/r/${r.id}`} className="block space-y-1 p-3 hover:bg-muted">
-            <p className="flex flex-wrap items-center gap-2 text-sm"><b className="text-primary">{STATUS_AR[r.status]}</b><span>{REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? r.kind}</span>{r.is_demo && <span className="rounded bg-accent px-2 text-xs">تجريبي</span>}<span className="text-muted-foreground">{fmt(r.created_at)}</span></p>
-            <p className="line-clamp-2 text-sm leading-7">{r.description}</p></Link></li>
+            <p className="flex flex-wrap items-center gap-2 text-sm"><b className="text-primary">{STATUS_AR[r.status]}</b><span>{r.kind === "service_request" ? `معاملة: ${r.service_title ?? ""}` : (REPORT_TYPES.find(([k]) => k === r.report_type)?.[1] ?? r.kind)}</span>{r.is_demo && <span className="rounded bg-accent px-2 text-xs">تجريبي</span>}<span className="text-muted-foreground">{fmt(r.created_at)}</span></p>
+            <p className="line-clamp-2 text-sm leading-7">{r.kind === "service_request" ? `${r.applicant_name ?? ""}${r.description ? " — " + r.description : ""}` : r.description}</p></Link></li>
         ))}
         {!rows.length && <li className="p-6 text-center text-muted-foreground">لا توجد طلبات.</li>}
       </ul>
