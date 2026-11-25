@@ -13,6 +13,7 @@ const cur = (v: string) => (v === "LBP" ? "LBP" : "USD");
 const flag = (fd: FormData, k: string) => s(fd, k) === "1" || s(fd, k) === "on";
 /** Optional amount: empty -> null (unknown); invalid -> undefined (reject). */
 const amt = (v: string): number | null | undefined => (v ? (parseAmount(v) ?? undefined) : null);
+const BACK_DISPLAY = "/staff/admin/display";
 const BACK = { corr: "/staff/admin/correspondence", asset: "/staff/admin/assets", legal: "/staff/admin/legal", oversight: "/staff/admin/oversight", info: "/staff/admin/transparency", hr: "/staff/admin/hr" } as const;
 
 /** Calls an RPC; on failure redirects back with an error code (missing RPC -> "pending"); on success revalidates the module and the hub. */
@@ -133,4 +134,11 @@ export async function addPosition(fd: FormData) {
 export async function endPosition(fd: FormData) {
   const id = s(fd, "id"), d = optDate(s(fd, "ended_on"));
   await run("adm_hr_end", { p_id: id, p_ended_on: d }, BACK.hr, !uuidOk(id) || !d);
+}
+
+// ── display (conference mode): screensaver on/off + idle seconds (30/60/120/300; the RPC enforces the same list)
+export async function saveDisplay(fd: FormData) {
+  const idle = Number(s(fd, "idle"));
+  await run("adm_display_set", { p_enabled: flag(fd, "enabled"), p_idle: idle }, BACK_DISPLAY, ![30, 60, 120, 300].includes(idle));
+  redirect(`${BACK_DISPLAY}?ok=1`);
 }

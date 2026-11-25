@@ -56,6 +56,8 @@ export function Kiosk({
     f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f);
   }, []);
   const reset = useCallback(() => { setView({ name: "home" }); setQuery(""); setCat("all"); setPage(0); setWarn(null); setLang(initialLang); }, [initialLang]);
+  // The screensaver just took over: clear the previous visitor's session behind it.
+  useEffect(() => { const h = () => reset(); window.addEventListener("aijur:screensaver", h); return () => window.removeEventListener("aijur:screensaver", h); }, [reset]);
   const touch = useCallback(() => { last.current = Date.now(); setWarn(null); }, []);
 
   // Idle: warn WARN_SECONDS before the reset; reset clears every trace of the previous visitor.

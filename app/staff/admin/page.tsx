@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Building2, Gavel, ShieldCheck, Eye, IdCard, ChevronLeft } from "lucide-react";
+import { Mail, Building2, Gavel, ShieldCheck, Eye, IdCard, Monitor, ChevronLeft } from "lucide-react";
 import { Shell, guard } from "@/components/admin/ui";
 import { deadlineState, loadList } from "@/lib/admin";
 
@@ -8,13 +8,14 @@ export const metadata = { title: "الإدارة البلدية — BALADI ONE",
 
 export default async function AdminHub() {
   const { sb, today } = await guard();
-  const [co, as, ld, ov, ir, hr] = await Promise.all([
+  const [co, as, ld, ov, ir, hr, ds] = await Promise.all([
     loadList(sb, "correspondence", "id,status,deadline_on,archived"),
     loadList(sb, "asset", "id,status"),
     loadList(sb, "legal_deadline", "id,due_on,done"),
     loadList(sb, "oversight_item", "id,status,due_on"),
     loadList(sb, "info_request", "id,status,due_on,publishable"),
     loadList(sb, "hr_position", "id,ended_on"),
+    loadList(sb, "display_setting", "screensaver_enabled,idle_seconds"),
   ]);
   const fin = (s: string) => ["replied", "sent", "closed"].includes(s);
   const late = (rows: { due_on?: string | null; deadline_on?: string | null; done?: boolean; status?: string }[], key: "due_on" | "deadline_on", done: (r: any) => boolean) =>
@@ -26,6 +27,7 @@ export default async function AdminHub() {
     { href: "/staff/admin/oversight", Icon: ShieldCheck, title: "الرقابة الإدارية", sub: "كتب رقابية وملاحظات وإجراءات تصحيحية", m: ov.missing, n: ov.rows.filter((r) => r.status !== "closed").length, nl: "بند مفتوح", late: late(ov.rows, "due_on", (r) => r.status === "closed") },
     { href: "/staff/admin/transparency", Icon: Eye, title: "الشفافية والمعلومات", sub: "طلبات الوصول إلى المعلومات وقرارات النشر", m: ir.missing, n: ir.rows.filter((r) => !["replied", "refused", "closed"].includes(r.status)).length, nl: "طلب بلا ردّ", late: late(ir.rows, "due_on", (r) => ["replied", "refused", "closed"].includes(r.status)) },
     { href: "/staff/admin/hr", Icon: IdCard, title: "سجل الوظائف والتكليفات", sub: "المنصب والوحدة والتكليف (دون رواتب)", m: hr.missing, n: hr.rows.filter((r) => !r.ended_on).length, nl: "تكليف قائم", late: 0 },
+    { href: "/staff/admin/display", Icon: Monitor, title: "شاشة العرض والانتظار", sub: "شاشة الافتتاح وشاشة الانتظار في وضع المؤتمر ومعاينتهما", m: ds.missing, n: ds.rows[0] ? (ds.rows[0].screensaver_enabled ? ds.rows[0].idle_seconds : 0) : 60, nl: ds.rows[0] && !ds.rows[0].screensaver_enabled ? "الانتظار معطّلة" : "ثانية قبل الانتظار", late: 0 },
   ];
   return (
     <Shell title="الإدارة البلدية" sub="مراسلات وأملاك وشؤون قانونية ورقابة وشفافية. التسجيل مقتصر على رئيس البلدية ومدير النظام، وكل تعديل يُسجَّل في سجل التدقيق." hub>
