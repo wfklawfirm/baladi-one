@@ -132,6 +132,7 @@ const ERR: Record<string, string> = {
   exceeds_available: "المبلغ يتجاوز الاعتماد المتاح (الاعتماد الحالي ناقص الالتزامات).", bad_date: "التاريخ غير صالح.", commitment_not_found: "الالتزام غير موجود في هذا البند.",
   exceeds_commitment: "المبلغ يتجاوز المتبقي من الالتزام.", bad_payer_ref: "مرجع المكلّف رمز (رقم ملف أو معاملة) بأحرف وأرقام فقط، لا اسم ولا رقم هاتف.",
   receivable_not_found: "المستحق غير موجود.", receivable_closed: "المستحق مغلق.", bad_method: "طريقة الدفع غير صالحة.", exceeds_remaining: "المبلغ يتجاوز المتبقي من المستحق.",
+  decision_required: "تعديل الاعتماد يستلزم قرارًا صادرًا عن المجلس البلدي؛ اختر القرار.", decision_not_adopted: "القرار المختار ليس معتمدًا بعد.", already_applied: "هذا التعديل مطبَّق مسبقًا.",
 };
 /** Maps an RPC/error code (or a raw error message containing one) to a clear Arabic message. */
 export function financeError(code: string | null | undefined): string {

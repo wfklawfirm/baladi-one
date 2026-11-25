@@ -27,14 +27,14 @@ export async function loadFinance(sb: any, range: Range, fyYear?: number) {
     ? await Promise.all([
         sb.from("financial_commitment").select("id,line_id,amount,description,committed_on").in("line_id", ids).order("committed_on", { ascending: false }).limit(LIM),
         sb.from("expenditure").select("id,line_id,commitment_id,amount,paid_on,beneficiary").in("line_id", ids).order("paid_on", { ascending: false }).limit(LIM),
-        sb.from("budget_amendment").select("id,line_id,delta,reason,amended_on").in("line_id", ids).order("amended_on", { ascending: false }).limit(200),
+        sb.from("budget_amendment").select("id,line_id,delta,reason,amended_on,applied,validated_on,decision_id").in("line_id", ids).order("amended_on", { ascending: false }).limit(200),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
   return {
     error: false as const, years, fy, lines,
     commits: (cm.data ?? []) as (Commit & { id: string; description: string; committed_on: string })[],
     exps: (ex.data ?? []) as (Exp & { id: string; beneficiary: string })[],
-    amendments: (am.data ?? []) as { id: string; line_id: string; delta: number | string; reason: string; amended_on: string }[],
+    amendments: (am.data ?? []) as { id: string; line_id: string; delta: number | string; reason: string; amended_on: string; applied: boolean; validated_on: string | null; decision_id: string | null }[],
     recvs: (rc.error ? [] : rc.data ?? []) as (Recv & { created_at: string })[],
     linked: (cl.data ?? []) as Coll[],            // all collections linked to receivables (any date)
     periodColls: (ac.data ?? []) as Coll[],       // all collections within the period (linked or not)

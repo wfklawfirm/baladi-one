@@ -3,7 +3,7 @@ import { financeError } from "@/lib/finance";
 
 export const field = "min-h-12 w-full rounded-xl border-2 bg-background px-3 outline-none focus:border-primary";
 export const btn = "min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground active:opacity-90";
-const OK: Record<string, string> = { line: "أُضيف بند الموازنة.", amend: "سُجّل تعديل الاعتماد.", commit: "سُجّل الالتزام.", pay: "سُجّلت النفقة.", recv: "أُضيف المستحق.", settle: "سُجّل التحصيل على المستحق." };
+const OK: Record<string, string> = { line: "أُضيف بند الموازنة.", amend: "سُجّل تعديل الاعتماد.", amend_validated: "صُدِّق التعديل وطُبّق على الاعتماد.", commit: "سُجّل الالتزام.", pay: "سُجّلت النفقة.", recv: "أُضيف المستحق.", settle: "سُجّل التحصيل على المستحق." };
 
 export function FinanceNav({ current }: { current: "overview" | "budget" | "receivables" }) {
   const tabs = [["overview", "/staff/finance", "نظرة عامة"], ["budget", "/staff/finance/budget", "الموازنة"], ["receivables", "/staff/finance/receivables", "المستحقات"]] as const;

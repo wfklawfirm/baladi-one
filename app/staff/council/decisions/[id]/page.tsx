@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
-import { EXEC_STATUS, LEGAL_STATUS, isLate, uuidOk } from "@/lib/council";
-import { addTask, setDecisionStatus, toggleTask } from "../../actions";
+import { CATEGORY, EXEC_STATUS, LEGAL_STATUS, VALIDATION_LEVEL, decisionAlerts, isLate, uuidOk } from "@/lib/council";
+import { addTask, setDecisionStatus, setReview, toggleTask } from "../../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ملف القرار — BALADI ONE", referrer: "no-referrer" as const };
@@ -28,13 +28,14 @@ export default async function DecisionPage({ params, searchParams }: { params: P
   const who = (u: string | null) => people.find((p) => p.user_id === u)?.display_name ?? "—";
   const t = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut" }).format(new Date());
   const late = isLate(d, t);
+  const alerts = decisionAlerts(d, t);
   const label = (kind: string, v: string | null) => (v ? (kind === "legal_status" ? LEGAL_STATUS[v] : kind === "execution_status" ? EXEC_STATUS[v] : v) : "");
   return (
     <><StaffHeader back="/staff/council/decisions" backLabel="السجل" />
     <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
       <div className="space-y-2"><h1 className="text-2xl font-bold">قرار {d.decision_no}/{d.year}: {d.title}</h1>
         <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">قانونيًا: {LEGAL_STATUS[d.legal_status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">تنفيذًا: {EXEC_STATUS[d.execution_status]}</span>{late && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">متأخر عن موعد التنفيذ</span>}{d.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "date" ? "حدّد تاريخ النفاذ الوارد في المستند الرسمي." : "تعذّر تنفيذ العملية."}</p>}
+      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "date" ? "حدّد تاريخ النفاذ الوارد في المستند الرسمي." : sp.err === "validation" ? "لا يمكن تسجيل النفاذ قبل تسجيل تاريخ تصديق سلطة الرقابة، أو انقضاء مهلة الشهر من تاريخ استلامها للقرار (للفئات التي تسري عليها)." : "تعذّر تنفيذ العملية."}</p>}
 
       <section className="elev grid gap-3 rounded-2xl border bg-background p-4 text-sm sm:grid-cols-3">
         <p><span className="text-muted-foreground">تاريخ الاتخاذ</span><br /><b>{fd(d.decided_on)}</b></p>
@@ -45,6 +46,22 @@ export default async function DecisionPage({ params, searchParams }: { params: P
         <p><span className="text-muted-foreground">المسؤول عن التنفيذ</span><br /><b>{d.responsible || "—"}</b></p>
         {d.legal_basis && <p className="sm:col-span-3"><span className="text-muted-foreground">الأساس القانوني</span><br />{d.legal_basis}</p>}
         {d.body && <p className="whitespace-pre-wrap leading-7 sm:col-span-3"><span className="text-muted-foreground">نص القرار</span><br />{d.body}</p>}
+      </section>
+
+      {alerts.length > 0 && <ul className="space-y-1 rounded-2xl border border-amber-400/60 bg-amber-50 p-4 text-sm leading-7 text-amber-950">{alerts.map((a) => <li key={a}>⚠ {a}</li>)}</ul>}
+
+      <section className="elev space-y-3 rounded-2xl border bg-background p-4">
+        <h2 className="font-bold">الإرسال والتصديق (المرسوم الاشتراعي 118/1977)</h2>
+        <p className="text-xs leading-6 text-muted-foreground">ترسل قرارات المجلس إلى سلطة الرقابة خلال ثمانية أيام (م.58). بعض القرارات تحتاج تصديق القائمقام أو المحافظ أو الوزير (م.60–62)، وتُعدّ مصدَّقة حكمًا بانقضاء شهر من تسجيلها إلا قرارات الموازنة والحسابات والتنظيم المدني والقروض (م.63). النظام يذكّر فقط ولا يغيّر أي حالة قانونية تلقائيًا. تحقّق من النص الرسمي النافذ وتعديلاته.</p>
+        <form action={setReview} className="grid gap-3 sm:grid-cols-3"><input type="hidden" name="id" value={id} />
+          <label className="space-y-1 text-sm font-medium">فئة القرار<select name="category" defaultValue={d.category} className={`${field} w-full`}>{Object.entries(CATEGORY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+          <label className="space-y-1 text-sm font-medium">سلطة التصديق<select name="level" defaultValue={d.validation_level} className={`${field} w-full`}>{Object.entries(VALIDATION_LEVEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+          <label className="space-y-1 text-sm font-medium">تاريخ الإرسال<input type="date" name="sent" defaultValue={d.sent_on ?? ""} className={`${field} w-full`} /></label>
+          <label className="space-y-1 text-sm font-medium">تاريخ الاستلام لدى السلطة<input type="date" name="received" defaultValue={d.received_on ?? ""} className={`${field} w-full`} /></label>
+          <label className="space-y-1 text-sm font-medium">تاريخ التصديق الخطي<input type="date" name="validated" defaultValue={d.validated_on ?? ""} className={`${field} w-full`} /></label>
+          <label className="space-y-1 text-sm font-medium">ملاحظة<input name="note" defaultValue={d.validation_note ?? ""} maxLength={1000} className={`${field} w-full`} /></label>
+          <button className="min-h-11 rounded-xl border px-4 text-sm font-semibold active:bg-muted sm:col-span-3">حفظ بيانات الإرسال والتصديق</button></form>
+        <p className="text-xs text-muted-foreground">الفئة: <b>{CATEGORY[d.category]}</b> · السلطة: <b>{VALIDATION_LEVEL[d.validation_level]}</b>{d.validated_on ? <> · مصدَّق بتاريخ <b>{fd(d.validated_on)}</b></> : null}</p>
       </section>
 
       <section className="elev space-y-3 rounded-2xl border bg-background p-4">

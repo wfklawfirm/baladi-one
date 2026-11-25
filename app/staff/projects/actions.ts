@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import { dateOk, uuidOk } from "@/lib/council";
-import { CONTRACT_STATUS, PRIORITY, PROJECT_STATUS, parseAmount } from "@/lib/projects";
+import { CONTRACT_ERR, CONTRACT_STATUS, PRIORITY, PROJECT_STATUS, parseAmount } from "@/lib/projects";
+import { METHOD } from "@/lib/council";
+const codeOf = (m?: string) => Object.keys(CONTRACT_ERR).find((k) => (m ?? "").includes(k)) ?? "1";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const opt = (v: string) => (v ? v : null);
@@ -57,21 +59,41 @@ export async function setSpend(fd: FormData) {
 }
 export async function addContract(fd: FormData) {
   const pid = s(fd, "project"), back = uuidOk(pid) ? `/staff/projects/${pid}` : "/staff/projects/contracts";
-  const value = parseAmount(s(fd, "value"));
-  if (!s(fd, "contractor") || !s(fd, "subject") || value === null) redirect(`${back}?err=1`);
+  const value = parseAmount(s(fd, "value")), gRaw = s(fd, "guarantee"), g = gRaw ? parseAmount(gRaw) : null, dec = s(fd, "decision");
+  if (!s(fd, "contractor") || !s(fd, "subject") || value === null || (gRaw && g === null)) redirect(`${back}?err=1`);
+  if (!METHOD[s(fd, "method")]) redirect(`${back}?err=bad_method`);
   const sb = await supabaseServer();
   const { error } = await sb.rpc("contract_add", {
     p_project: uuidOk(pid) ? pid : null, p_contractor: s(fd, "contractor"), p_subject: s(fd, "subject"), p_value: value, p_currency: cur(s(fd, "currency")),
-    p_start: optDate(s(fd, "start")), p_end: optDate(s(fd, "end")), p_procurement: opt(s(fd, "procurement")), p_notes: opt(s(fd, "notes")),
+    p_start: optDate(s(fd, "start")), p_end: optDate(s(fd, "end")), p_method: s(fd, "method"), p_justification: opt(s(fd, "justification")), p_tender_ref: opt(s(fd, "tender_ref")),
+    p_published_on: optDate(s(fd, "published")), p_decision: uuidOk(dec) ? dec : null, p_guarantee: g, p_notes: opt(s(fd, "notes")),
   });
-  if (error) redirect(`${back}?err=1`);
+  if (error) redirect(`${back}?err=${codeOf(error.message)}`);
   revalidatePath(back); revalidatePath("/staff/projects/contracts");
 }
 export async function setContractStatus(fd: FormData) {
   const id = s(fd, "id"), v = s(fd, "value"), back = s(fd, "back"); if (!uuidOk(id) || !CONTRACT_STATUS[v]) return;
-  const sb = await supabaseServer();
-  const { error } = await sb.rpc("contract_set_status", { p_id: id, p_status: v, p_note: opt(s(fd, "note")) });
   const dest = uuidOk(back) ? `/staff/projects/${back}` : "/staff/projects/contracts";
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("contract_set_status", { p_id: id, p_status: v, p_note: opt(s(fd, "note")), p_date: optDate(s(fd, "signed")) });
+  if (error) redirect(`${dest}?err=${codeOf(error.message)}`);
+  revalidatePath(dest); revalidatePath("/staff/projects/contracts");
+}
+export async function setContractDates(fd: FormData) {
+  const id = s(fd, "id"), back = s(fd, "back"); if (!uuidOk(id)) return;
+  const dest = uuidOk(back) ? `/staff/projects/${back}` : "/staff/projects/contracts";
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("contract_set_dates", { p_id: id, p_published: optDate(s(fd, "published")), p_award: optDate(s(fd, "award")), p_ppa: optDate(s(fd, "ppa")) });
   if (error) redirect(`${dest}?err=1`);
+  revalidatePath(dest); revalidatePath("/staff/projects/contracts");
+}
+export async function amendContract(fd: FormData) {
+  const id = s(fd, "id"), back = s(fd, "back"); if (!uuidOk(id)) return;
+  const dest = uuidOk(back) ? `/staff/projects/${back}` : "/staff/projects/contracts";
+  const rawD = s(fd, "delta"), neg = /^[-−]/.test(rawD), mag = parseAmount(rawD.replace(/^[-−+]/, "")), delta = mag === null ? null : neg ? -mag : mag, dec = s(fd, "decision");
+  if (delta === null || delta === 0 || !s(fd, "reason")) redirect(`${dest}?err=1`);
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("contract_amend", { p_contract: id, p_delta: delta, p_reason: s(fd, "reason"), p_decision: uuidOk(dec) ? dec : null });
+  if (error) redirect(`${dest}?err=${codeOf(error.message)}`);
   revalidatePath(dest); revalidatePath("/staff/projects/contracts");
 }

@@ -5,6 +5,7 @@ import StaffHeader from "@/components/StaffHeader";
 import { REPORT_TYPES, STATUS_AR } from "@/lib/reports";
 import { FIRST_RESPONSE_H, PERIODS, SLA_DAYS, parsePeriod } from "@/lib/ops";
 import { buildCards, decisionStats, loadOps } from "@/lib/opsData";
+import KpiGrid from "@/components/ops/KpiGrid";
 import AnalyzeButton from "@/components/ops/AnalyzeButton";
 import { C, Columns, Donut, HBars, IntakeChart, Spark } from "@/components/ops/Charts";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
@@ -75,24 +76,7 @@ export default async function Operations({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
-      <section aria-label="المؤشرات الرئيسية" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {cards.map((c) => {
-          const D = c.delta;
-          const Ar = D?.dir === "up" ? ArrowUpRight : D?.dir === "down" ? ArrowDownRight : Minus;
-          const inner = (
-            <>
-              <div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{c.def.ar}</span>{c.spark && <Spark values={c.spark} />}</div>
-              {c.value !== null ? <b className="mt-2 block text-3xl text-primary">{c.value}</b> : <b className="mt-2 block text-base text-muted-foreground">بيانات غير متوفرة</b>}
-              {c.value !== null && c.lines?.map((l) => <span key={l} className="block text-xs text-muted-foreground">{l}</span>)}
-              {c.value === null && <span className="mt-1 block text-xs text-muted-foreground">{c.reason}</span>}
-              {D && <span className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${D.good === null ? "text-muted-foreground" : D.good ? "text-[#2f7d4f]" : "text-destructive"}`}><Ar className="size-4" aria-hidden />{D.text} عن الفترة السابقة</span>}
-              {c.def.target !== null && <span className="mt-1 block text-xs text-muted-foreground">المستهدف: {c.def.target}{c.def.unit}</span>}
-            </>
-          );
-          const cls = "elev block rounded-2xl border bg-background p-4";
-          return c.def.href === "#" ? <div key={c.def.id} className={`${cls} opacity-80`}>{inner}</div> : <Link key={c.def.id} href={c.def.href} className={`${cls} elev-hover active:bg-muted`}>{inner}</Link>;
-        })}
-      </section>
+      <KpiGrid cards={cards} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="الوارد والمنجز" sub={`أعمدة: واردة · خط: منجزة (${range.label}، مقارنة بالسابقة: ${o.intakePrev} واردة / ${o.processedPrev} منجزة)`} className="lg:col-span-2" analyze="حلّل مؤشر الوارد والمنجز في الفترة المحددة: الاتجاه والانحرافات وحدود البيانات ثم اقترح إجراءات"><IntakeChart data={o.series} /></Card>

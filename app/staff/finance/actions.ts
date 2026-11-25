@@ -28,7 +28,7 @@ export async function amendLine(fd: FormData) {
   const delta = parseAmount(s(fd, "delta"), { signed: true }), line = uuid(s(fd, "line"));
   if (delta === null || delta === 0) return fail(fd, "bad_amount");
   if (!line) return fail(fd, "line_not_found");
-  return call(fd, "finance_amend", { p_line: line, p_delta: delta, p_reason: s(fd, "reason"), p_date: date(s(fd, "date")) }, "amend");
+  return call(fd, "finance_amend", { p_line: line, p_delta: delta, p_reason: s(fd, "reason"), p_decision: uuid(s(fd, "decision")), p_validated_on: date(s(fd, "validated")), p_date: date(s(fd, "date")) }, "amend");
 }
 export async function commitLine(fd: FormData) {
   const amount = parseAmount(s(fd, "amount")), line = uuid(s(fd, "line"));
@@ -54,4 +54,10 @@ export async function settleReceivable(fd: FormData) {
   if (amount === null) return fail(fd, "bad_amount");
   if (!id) return fail(fd, "receivable_not_found");
   return call(fd, "receivable_settle", { p_receivable: id, p_amount: amount, p_method: s(fd, "method") || "cash", p_receipt_no: s(fd, "receipt") || null }, "settle");
+}
+export async function validateAmendment(fd: FormData) {
+  const id = uuid(s(fd, "amendment")), v = date(s(fd, "validated"));
+  if (!id) return fail(fd, "unknown");
+  if (!v) return fail(fd, "bad_date");
+  return call(fd, "finance_amend_validate", { p_amendment: id, p_validated_on: v }, "amend_validated");
 }

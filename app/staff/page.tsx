@@ -6,6 +6,9 @@ import { STATUS_AR } from "@/lib/reports";
 import { BRAND, OFFICIAL } from "@/lib/brand";
 import { brainConfigured } from "@/lib/brain/rag";
 import Emblem from "@/components/Emblem";
+import KpiGrid from "@/components/ops/KpiGrid";
+import { buildCards, loadOps } from "@/lib/opsData";
+import { parsePeriod } from "@/lib/ops";
 import AutoIngest from "@/components/brain/AutoIngest";
 
 const ROLE_AR: Record<string, string> = { staff: "موظف البلدية", mayor: "رئيس البلدية", admin: "مدير النظام" };
@@ -22,17 +25,32 @@ export default async function StaffHome() {
   const top = memberships.some((m) => m.role === "mayor" || m.role === "admin");
   const admin = memberships.some((m) => m.role === "admin");
   const on = brainConfigured();
-  const tools = [
-    { href: "/staff/assistant", Icon: Bot, title: "المساعد الذكي", sub: "اسأل في القوانين والاجتهادات" },
-    { href: "/staff/analyze", Icon: ScanSearch, title: "قراءة المعاملة", sub: "ملاحظات وخيارات قرار جاهزة" },
-    { href: "/staff/decisions", Icon: FileSignature, title: "مولّد القرارات", sub: "قرارات وكتب ومحاضر للتوقيع" },
-    { href: "/staff/requests", Icon: Inbox, title: "الطلبات الواردة", sub: `${rows.filter((r) => r.status === "received").length} جديدة` },
-    ...(top ? [{ href: "/staff/operations", Icon: Gauge, title: "مركز القيادة", sub: "مؤشرات وتتبع وتقييم" }, { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" }, { href: "/staff/finance", Icon: Wallet, title: "المالية والموازنة", sub: "اعتمادات ومستحقات وتحصيل" }, { href: "/staff/projects", Icon: HardHat, title: "المشاريع والعقود", sub: "إنجاز وتأخر وعقود" }, { href: "/staff/reports", Icon: FileBarChart, title: "التقارير والتصدير", sub: "Excel وطباعة PDF" }] : []),
-    { href: "/staff/collections", Icon: Banknote, title: "التحصيل", sub: "تسجيل الإيصالات" },
-    ...(top ? [{ href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" }] : []),
-    ...(admin ? [{ href: "/staff/brain", Icon: DatabaseZap, title: "قاعدة معرفة الذكاء", sub: "تحميل مكتبة القوانين" }] : []),
-    ...(admin ? [{ href: "/staff/accounts", Icon: UsersRound, title: "الحسابات", sub: "إدارة المستخدمين" }] : []),
+  const cards = top ? buildCards(await loadOps(sb, parsePeriod("month", undefined, undefined))) : null;
+  const aiOff = (h: string) => !on && ["/staff/assistant", "/staff/analyze", "/staff/decisions"].includes(h);
+  const groups: { title: string; items: { href: string; Icon: typeof Bot; title: string; sub: string }[] }[] = [
+    { title: "العمل اليومي", items: [
+      { href: "/staff/requests", Icon: Inbox, title: "الطلبات الواردة", sub: `${rows.filter((r) => r.status === "received").length} جديدة` },
+      { href: "/staff/collections", Icon: Banknote, title: "التحصيل", sub: "تسجيل الإيصالات" },
+      { href: "/staff/decisions", Icon: FileSignature, title: "مولّد القرارات", sub: "قرارات وكتب ومحاضر للتوقيع" },
+      { href: "/staff/analyze", Icon: ScanSearch, title: "قراءة المعاملة", sub: "ملاحظات وخيارات قرار جاهزة" },
+      { href: "/staff/assistant", Icon: Bot, title: "المساعد الذكي", sub: "اسأل في القوانين والاجتهادات" },
+    ] },
+    ...(top ? [{ title: "القيادة والإدارة", items: [
+      { href: "/staff/operations", Icon: Gauge, title: "مركز القيادة", sub: "مؤشرات وتتبع وتقييم" },
+      { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" },
+      { href: "/staff/finance", Icon: Wallet, title: "المالية والموازنة", sub: "اعتمادات ومستحقات وتحصيل" },
+      { href: "/staff/projects", Icon: HardHat, title: "المشاريع والعقود", sub: "إنجاز وتأخر وعقود" },
+      { href: "/staff/reports", Icon: FileBarChart, title: "التقارير والتصدير", sub: "Excel وطباعة PDF" },
+      { href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" },
+    ] }] : []),
+    ...(admin ? [{ title: "إدارة النظام", items: [
+      { href: "/staff/brain", Icon: DatabaseZap, title: "قاعدة معرفة الذكاء", sub: "تحميل مكتبة القوانين" },
+      { href: "/staff/accounts", Icon: UsersRound, title: "الحسابات", sub: "إدارة المستخدمين" },
+    ] }] : []),
   ];
+  const today = new Intl.DateTimeFormat("ar-LB", { dateStyle: "full", timeZone: "Asia/Beirut" }).format(new Date());
+  const roleTxt = memberships.map((m) => ROLE_AR[m.role] ?? m.role).filter((v, i, a) => a.indexOf(v) === i).join("، ");
+  const KP = [["received", "تم الاستلام"], ["in_progress", "قيد المعالجة"], ["needs_info", "بحاجة إلى معلومات"], ["done", "تمت المعالجة"]] as const;
   const links = [
     { href: "/laws", Icon: Scale, title: "القوانين والأنظمة", sub: "نصوص وبحث سريع" },
     { href: "/catalog", Icon: BookOpen, title: "دليل المعاملات", sub: "شروط ومستندات ورسوم" },
@@ -45,30 +63,48 @@ export default async function StaffHome() {
     <>
       <header className="border-b bg-background"><div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
         <Emblem size={44} />
-        <div className="text-center"><p className="font-bold">{memberships.map((m) => ROLE_AR[m.role] ?? m.role).filter((v, i, a) => a.indexOf(v) === i).join("، ")}</p><p className="text-xs text-muted-foreground">{memberships[0]?.municipality?.name_ar}</p></div>
+        <p className="text-sm font-bold text-primary">مساحة العمل</p>
         <img src="/aijur-logo.png" alt="AIJUR" className="h-10 w-auto" />
       </div></header>
-      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-6 px-4 py-6 md:py-8">
+      <main dir="rtl" lang="ar" className="mx-auto max-w-5xl space-y-7 px-4 py-5 md:py-8">
         {admin && on && <AutoIngest />}
-        {(
-          <section aria-label="نظرة عامة" className="grid grid-cols-4 gap-2 sm:gap-3">
-            {(["received", "in_progress", "needs_info", "done"] as const).map((k) => (
-              <Link key={k} href={`/staff/requests?s=${k}`} className="elev rounded-2xl border bg-background p-3 text-center active:bg-muted"><b className="block text-2xl text-primary sm:text-3xl">{rows.filter((r) => r.status === k).length}</b><span className="block text-[11px] leading-tight text-muted-foreground sm:text-sm">{STATUS_AR[k]}</span></Link>
+        <section className="overflow-hidden rounded-3xl bg-primary text-primary-foreground shadow-sm">
+          <div className="space-y-1 px-5 pb-4 pt-5 sm:px-7">
+            <p className="text-xs opacity-80">{today}</p>
+            <h1 className="text-xl font-extrabold leading-tight sm:text-2xl">{memberships[0]?.municipality?.name_ar}</h1>
+            <p className="text-sm opacity-90">{roleTxt}{isDemo ? " · نسخة تجريبية" : ""}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-px bg-white/15 sm:grid-cols-4">
+            {KP.map(([k, label]) => (
+              <Link key={k} href={`/staff/requests?s=${k}`} className="flex items-center justify-between gap-2 bg-primary px-4 py-3 active:bg-white/10 sm:flex-col sm:items-start sm:gap-0.5">
+                <span className="text-xs opacity-85 sm:text-[13px]">{label}</span>
+                <b className="text-2xl leading-none sm:text-3xl">{rows.filter((r) => r.status === k).length}</b>
+              </Link>
             ))}
+          </div>
+        </section>
+        {cards && (
+          <section aria-label="مركز القيادة" className="space-y-3">
+            <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>مركز القيادة — المؤشرات</span><span className="h-px flex-1 bg-border" /><Link href="/staff/operations" className="text-primary">التفاصيل الكاملة ←</Link></h2>
+            <KpiGrid cards={cards} />
           </section>
         )}
-        <h2 className="text-center text-sm font-bold text-muted-foreground">أدوات العمل</h2>
-        <section className="-mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {tools.map(({ href, Icon, title, sub }) => (
-            <Link key={href} href={href} className="elev elev-hover flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-44">
-              <span className="grid size-14 place-items-center rounded-2xl bg-accent text-primary sm:size-16"><Icon className="size-7 sm:size-8" aria-hidden /></span>
-              <b className="text-base sm:text-lg">{title}</b>
-              <span className="text-xs text-muted-foreground sm:text-sm">{!on && ["/staff/assistant", "/staff/analyze", "/staff/decisions"].includes(href) ? "قريبًا" : sub}</span>
-            </Link>
-          ))}
-        </section>
-        <h2 className="text-center text-sm font-bold text-muted-foreground">مراجع وروابط سريعة</h2>
-        <section className="-mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        {groups.map((g) => (
+          <section key={g.title} aria-label={g.title} className="space-y-3">
+            <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>{g.title}</span><span className="h-px flex-1 bg-border" /></h2>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+              {g.items.map(({ href, Icon, title, sub }) => (
+                <Link key={href} href={href} className="elev elev-hover flex min-h-32 flex-col items-center justify-center gap-2 rounded-3xl border bg-background p-4 text-center active:bg-muted sm:min-h-36">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-accent text-primary sm:size-14"><Icon className="size-6 sm:size-7" aria-hidden /></span>
+                  <b className="text-[15px] sm:text-lg">{title}</b>
+                  <span className="text-xs text-muted-foreground sm:text-sm">{aiOff(href) ? "قريبًا" : sub}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))}
+        <h2 className="flex items-center gap-3 text-sm font-bold text-muted-foreground"><span>مراجع وروابط سريعة</span><span className="h-px flex-1 bg-border" /></h2>
+        <section className="-mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {links.map(({ href, Icon, title, sub, external }) => (
             <Link key={href} href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="elev elev-hover flex min-h-20 items-center gap-3 rounded-2xl border bg-background px-4 py-3 text-start active:bg-muted max-sm:flex-col max-sm:text-center">
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon className="size-5" aria-hidden /></span>

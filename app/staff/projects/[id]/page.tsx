@@ -4,9 +4,10 @@ import { requireStaff } from "@/lib/supabase-server";
 import StaffHeader from "@/components/StaffHeader";
 import ProgressBars from "@/components/projects/ProgressBars";
 import ContractForm from "@/components/projects/ContractForm";
+import ContractControls from "@/components/projects/ContractControls";
 import { uuidOk } from "@/lib/council";
-import { CONTRACT_STATUS, PRIORITY, PROJECT_STATUS, financialConsumption, fmtPct, isDelayed, physicalProgress, plannedProgress, scheduleVariance } from "@/lib/projects";
-import { addMilestone, setContractStatus, setMilestoneProgress, setProjectStatus, setSpend } from "../actions";
+import { CONTRACT_STATUS, PRIORITY, PROJECT_STATUS, financialConsumption, fmtPct, isDelayed, physicalProgress, plannedProgress, scheduleVariance, contractErr } from "@/lib/projects";
+import { addMilestone, setMilestoneProgress, setProjectStatus, setSpend } from "../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ملف المشروع — BALADI ONE", referrer: "no-referrer" as const };
@@ -22,10 +23,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const { data: p } = await sb.from("project").select("*").eq("id", id).maybeSingle();
   if (!p) notFound();
+  const { data: dd } = await sb.from("municipal_decision").select("id,decision_no,year,title").in("legal_status", ["adopted", "under_review", "effective"]).order("created_at", { ascending: false }).limit(100);
+  const decOpts = ((dd ?? []) as { id: string; decision_no: string; year: number; title: string }[]).map((d) => ({ id: d.id, label: `${d.decision_no}/${d.year} — ${d.title}` }));
   const [ms, ev, cs, dec] = await Promise.all([
     sb.from("project_milestone").select("id,title,weight,progress_pct,planned_pct,due_on").eq("project_id", id).order("created_at"),
     sb.from("project_update").select("id,kind,from_value,to_value,note,created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(200),
-    sb.from("contract").select("id,contractor,subject,value,currency,start_on,end_on,status,procurement_method").eq("project_id", id).order("created_at"),
+    sb.from("contract").select("id,contractor,subject,value,currency,start_on,end_on,status,procurement_method,published_on,award_notice_on,ppa_notice_on,signed_on,decision_id,justification").eq("project_id", id).order("created_at"),
     p.decision_id ? sb.from("municipal_decision").select("id,decision_no,year,title").eq("id", p.decision_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const t = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut" }).format(new Date());
@@ -39,7 +42,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       <div className="space-y-2"><h1 className="text-2xl font-bold">{p.title}</h1>
         <p className="flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-accent px-3 py-1 font-bold text-primary">{PROJECT_STATUS[p.status]}</span><span className="rounded-full bg-muted px-3 py-1 font-bold">أولوية {PRIORITY[p.priority]}</span>
           {isDelayed(p, t) && <span className="rounded-full bg-destructive/10 px-3 py-1 font-bold text-destructive">تجاوز الموعد المحدد</span>}{p.is_demo && <span className="rounded bg-muted px-2 py-1">تجريبي</span>}</p></div>
-      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "pct" ? "النسبة يجب أن تكون بين 0 و100." : "تعذّر تنفيذ العملية، تحقق من المدخلات."}</p>}
+      {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">{sp.err === "pct" ? "النسبة يجب أن تكون بين 0 و100." : contractErr(sp.err)}</p>}
 
       <section className="elev grid gap-3 rounded-2xl border bg-background p-4 text-sm sm:grid-cols-3">
         <p><span className="text-muted-foreground">الموقع</span><br /><b>{p.location_text || "—"}</b></p>
@@ -94,10 +97,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         <h2 className="font-bold">العقود</h2>
         <ul className="divide-y text-sm">{(cs.data ?? []).map((c) => (
           <li key={c.id} className="space-y-1 py-3"><div className="flex flex-wrap items-center gap-2"><b>{c.contractor}</b><span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-primary">{CONTRACT_STATUS[c.status]}</span></div>
-            <p>{c.subject}</p><p className="text-xs text-muted-foreground">{Number(c.value).toLocaleString("en-US")} {c.currency === "LBP" ? "ل.ل." : "$"} · {c.start_on ?? "—"} ← {c.end_on ?? "—"}{c.procurement_method ? ` · ${c.procurement_method}` : ""}</p>
-            <form action={setContractStatus} className="flex flex-wrap gap-2"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="back" value={id} />
-              <select name="value" defaultValue={c.status} aria-label="حالة العقد" className="min-h-10 rounded-xl border-2 bg-background px-2">{Object.entries(CONTRACT_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-              <button className="min-h-10 rounded-xl border px-4 text-sm font-semibold active:bg-muted">تحديث</button></form></li>))}</ul>
+            <p>{c.subject}</p><p className="text-xs text-muted-foreground">{Number(c.value).toLocaleString("en-US")} {c.currency === "LBP" ? "ل.ل." : "$"} · {c.start_on ?? "—"} ← {c.end_on ?? "—"}</p>
+            <ContractControls c={c} back={id} decisions={decOpts} /></li>))}</ul>
         {(cs.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">لا عقود مرتبطة.</p>}
         <details><summary className="cursor-pointer text-sm font-bold text-primary">تسجيل عقد لهذا المشروع</summary><ContractForm project={id} /></details>
       </section>

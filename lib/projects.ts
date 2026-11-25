@@ -59,3 +59,13 @@ export function parseAmount(v: string): number | null {
   return Number(s);
 }
 export const fmtPct = (n: number | null) => (n === null ? "—" : `${Math.round(n)}%`);
+
+export const CONTRACT_ERR: Record<string, string> = {
+  bad_method: "حدّد أسلوب التلزيم (مناقصة عامة، استدراج عروض، اتفاق رضائي…).",
+  justification_required: "الاتفاق الرضائي استثناء ويستلزم تبريرًا مكتوبًا.",
+  sign_date_required: "سجّل تاريخ التوقيع الفعلي (لا يكون في المستقبل).",
+  decision_required: "هذا العقد يستلزم قرارًا من المجلس البلدي؛ اربطه بقرار قبل التوقيع.",
+  standstill: "لا يمكن التوقيع قبل تسجيل تاريخ إشعار الترسية وانقضاء مهلة التريّث (14 يومًا على الأقل) لتقديم الاعتراضات.",
+  negotiated_notice: "الاتفاق الرضائي يستلزم تبريرًا وتاريخ إبلاغ هيئة الشراء العام قبل 10 أيام على الأقل من التوقيع.",
+};
+export const contractErr = (code?: string) => (code && CONTRACT_ERR[code]) || "تعذّر تنفيذ العملية، تحقق من المدخلات.";

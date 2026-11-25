@@ -47,7 +47,7 @@ export async function setDecisionStatus(fd: FormData) {
   const id = s(fd, "id"), kind = s(fd, "kind"); if (!uuidOk(id) || !["legal", "execution"].includes(kind)) return;
   const sb = await supabaseServer();
   const { error } = await sb.rpc("decision_set_status", { p_id: id, p_kind: kind, p_value: s(fd, "value"), p_note: opt(s(fd, "note")), p_date: optDate(s(fd, "date")) });
-  if (error) redirect(`/staff/council/decisions/${id}?err=${error.message.includes("effective_date_required") ? "date" : "1"}`);
+  if (error) redirect(`/staff/council/decisions/${id}?err=${error.message.includes("effective_date_required") ? "date" : error.message.includes("validation_required") ? "validation" : "1"}`);
   revalidatePath(`/staff/council/decisions/${id}`);
 }
 export async function addTask(fd: FormData) {
@@ -61,5 +61,22 @@ export async function toggleTask(fd: FormData) {
   const t = s(fd, "task"), id = s(fd, "id"); if (!uuidOk(t)) return;
   const sb = await supabaseServer();
   await sb.rpc("decision_toggle_task", { p_task: t, p_done: s(fd, "done") === "1" });
+  revalidatePath(`/staff/council/decisions/${id}`);
+}
+
+export async function setAttendance(fd: FormData) {
+  const id = s(fd, "session"); if (!uuidOk(id)) return;
+  const total = Number(s(fd, "total")), present = Number(s(fd, "present"));
+  if (!Number.isInteger(total) || !Number.isInteger(present)) redirect(`/staff/council/${id}?err=1`);
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("council_set_attendance", { p_session: id, p_total: total, p_present: present, p_summoned: optDate(s(fd, "summoned")), p_second: s(fd, "second") === "1" });
+  if (error) redirect(`/staff/council/${id}?err=1`);
+  revalidatePath(`/staff/council/${id}`);
+}
+export async function setReview(fd: FormData) {
+  const id = s(fd, "id"); if (!uuidOk(id)) return;
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc("decision_set_review", { p_id: id, p_category: s(fd, "category"), p_level: s(fd, "level"), p_sent: optDate(s(fd, "sent")), p_received: optDate(s(fd, "received")), p_validated: optDate(s(fd, "validated")), p_note: opt(s(fd, "note")) });
+  if (error) redirect(`/staff/council/decisions/${id}?err=1`);
   revalidatePath(`/staff/council/decisions/${id}`);
 }
