@@ -36,11 +36,9 @@ export default async function StaffHome() {
       { href: "/staff/assistant", Icon: Bot, title: "المساعد الذكي", sub: "اسأل في القوانين والاجتهادات" },
     ] },
     ...(top ? [{ title: "القيادة والإدارة", items: [
-      { href: "/staff/operations", Icon: Gauge, title: "مركز القيادة", sub: "مؤشرات وتتبع وتقييم" },
       { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" },
       { href: "/staff/finance", Icon: Wallet, title: "المالية والموازنة", sub: "اعتمادات ومستحقات وتحصيل" },
       { href: "/staff/projects", Icon: HardHat, title: "المشاريع والعقود", sub: "إنجاز وتأخر وعقود" },
-      { href: "/staff/reports", Icon: FileBarChart, title: "التقارير والتصدير", sub: "Excel وطباعة PDF" },
       { href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" },
     ] }] : []),
     ...(admin ? [{ title: "إدارة النظام", items: [
@@ -83,6 +81,12 @@ export default async function StaffHome() {
             ))}
           </div>
         </section>
+        {top && (
+          <nav aria-label="وصول سريع" className="grid grid-cols-2 gap-3">
+            <Link href="/staff/operations" className="elev elev-hover flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-accent px-4 py-3 text-primary active:opacity-90"><Gauge className="size-7 shrink-0" aria-hidden /><span><b className="block text-base sm:text-lg">مركز القيادة</b><span className="block text-xs opacity-80">الحالة والمؤشرات</span></span></Link>
+            <Link href="/staff/reports" className="elev elev-hover flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-accent px-4 py-3 text-primary active:opacity-90"><FileBarChart className="size-7 shrink-0" aria-hidden /><span><b className="block text-base sm:text-lg">التقارير</b><span className="block text-xs opacity-80">Excel وطباعة PDF</span></span></Link>
+          </nav>
+        )}
         {cards && (
           <section aria-label="مركز القيادة" className="space-y-3">
             <h2 className="flex items-center gap-2 px-1 text-base font-extrabold text-primary"><span className="h-5 w-1.5 rounded-full bg-primary" aria-hidden /><span className="flex-1">مؤشرات مركز القيادة</span><Link href="/staff/operations" className="text-sm font-semibold">التفاصيل ←</Link></h2>
