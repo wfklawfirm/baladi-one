@@ -3,8 +3,8 @@ vi.mock("server-only", () => ({}));
 import { LAWS, getLaw, searchLaws } from "./laws";
 
 describe("laws library", () => {
-  it("has the four instruments with sequential article numbers", () => {
-    expect(LAWS.map((l) => l.id).sort()).toEqual(["ACC-14969", "MACC-5595", "MUN-118", "PROC-244"]);
+  it("has the five instruments with sequential article numbers", () => {
+    expect(LAWS.map((l) => l.id).sort()).toEqual(["ACC-14969", "MACC-5595", "MUN-118", "PROC-244", "WASTE-38"]);
     for (const l of LAWS) {
       const ns = l.articles.map((a) => a.n);
       expect(ns).toEqual([...ns].sort((a, b) => a - b));

@@ -18,7 +18,7 @@ export default async function LegalRegistry() {
     <><StaffHeader />
       <main dir="rtl" lang="ar" className="mx-auto max-w-4xl space-y-4 p-4">
         <Intro title="القواعد القانونية">هنا القواعد التي يعتمد عليها التطبيق لتنبيهك. بجانب كل قاعدة تجد هل هي «مؤكدة» أم لا.</Intro>
-        <Link href="/staff/legal/updates" className={BTN_SECONDARY}>ما الجديد في القانون؟ ←</Link>
+        <div className="flex flex-wrap gap-2"><Link href="/staff/legal/updates" className={BTN_SECONDARY}>ما الجديد في القانون؟ ←</Link><Link href="/staff/legal/waste-fees" className={BTN_SECONDARY}>حدود رسم النفايات ←</Link></div>
         {rules.length > 0 && <Notice tone={pending ? "bad" : "ok"}>{pending ? `${pending} من ${rules.length} قاعدة لم يؤكدها محامٍ بعد، لذا لا تعتمد عليها وحدها في قرار رسمي.` : `كل القواعد (${rules.length}) مؤكدة.`}</Notice>}
         <Explain term="قاعدة مؤكدة">قاعدة راجعها محامٍ مختص وطابقها مع النص الرسمي في الجريدة الرسمية. غير المؤكدة هي ملخص مأخوذ من مصدر منشور، ويصلح للاسترشاد فقط.</Explain>
         {rules.length === 0 ? <Empty>لا توجد قواعد مسجّلة بعد.</Empty> : (

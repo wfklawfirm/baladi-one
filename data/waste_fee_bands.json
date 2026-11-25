@@ -1,0 +1,188 @@
+{
+ "source": "الجريدة الرسمية العدد 3 تاريخ 15/1/2026، ص.605–606، القانون 38/2026 (المادة 28 البند 6-ب)",
+ "basis": "نسبة مئوية من الحد الأدنى الرسمي للأجور في القطاع الخاص (البدل الشهري)",
+ "verified": false,
+ "note": "نُقلت الأرقام بالنظر من نسخة الجريدة المرفوعة؛ تحتاج مطابقة قانونية",
+ "bands": [
+  {
+   "key": "public",
+   "label": "إدارات ومؤسسات عامة وجهات حكومية",
+   "min_pct": 5,
+   "max_pct": 20
+  },
+  {
+   "key": "intl",
+   "label": "منظمات دولية وسفارات",
+   "min_pct": 10,
+   "max_pct": 40
+  },
+  {
+   "key": "ngo",
+   "label": "جمعيات وجهات غير حكومية",
+   "min_pct": 7,
+   "max_pct": 20
+  },
+  {
+   "key": "ind1",
+   "label": "مؤسسات صناعية — الفئة 1",
+   "min_pct": 75,
+   "max_pct": 300
+  },
+  {
+   "key": "ind2",
+   "label": "مؤسسات صناعية — الفئة 2",
+   "min_pct": 58,
+   "max_pct": 230
+  },
+  {
+   "key": "ind3",
+   "label": "مؤسسات صناعية — الفئة 3",
+   "min_pct": 38,
+   "max_pct": 154
+  },
+  {
+   "key": "ind4",
+   "label": "مؤسسات صناعية — الفئة 4",
+   "min_pct": 19,
+   "max_pct": 77
+  },
+  {
+   "key": "ind5",
+   "label": "مؤسسات صناعية — الفئة 5",
+   "min_pct": 10,
+   "max_pct": 38
+  },
+  {
+   "key": "cls1",
+   "label": "مؤسسات مصنفة — الفئة 1",
+   "min_pct": 28,
+   "max_pct": 115
+  },
+  {
+   "key": "cls2",
+   "label": "مؤسسات مصنفة — الفئة 2",
+   "min_pct": 19,
+   "max_pct": 77
+  },
+  {
+   "key": "cls3",
+   "label": "مؤسسات مصنفة — الفئة 3",
+   "min_pct": 9,
+   "max_pct": 38
+  },
+  {
+   "key": "construction",
+   "label": "ورش البناء",
+   "min_pct": 19,
+   "max_pct": 77
+  },
+  {
+   "key": "restaurants",
+   "label": "المطاعم والحانات والنوادي الليلية",
+   "min_pct": 77,
+   "max_pct": 300
+  },
+  {
+   "key": "hotels",
+   "label": "الفنادق",
+   "min_pct": 144,
+   "max_pct": 576
+  },
+  {
+   "key": "resorts",
+   "label": "المنتجعات السياحية",
+   "min_pct": 100,
+   "max_pct": 400
+  },
+  {
+   "key": "supermarkets",
+   "label": "السوبرماركت",
+   "min_pct": 100,
+   "max_pct": 400
+  },
+  {
+   "key": "malls",
+   "label": "المجمعات التجارية (مولات)",
+   "min_pct": 150,
+   "max_pct": 600
+  },
+  {
+   "key": "shops",
+   "label": "المؤسسات التجارية (المحلات والحوانيت)",
+   "min_pct": 14,
+   "max_pct": 57
+  },
+  {
+   "key": "offices",
+   "label": "الشركات والمكاتب",
+   "min_pct": 3,
+   "max_pct": 11
+  },
+  {
+   "key": "banks",
+   "label": "المصارف",
+   "min_pct": 20,
+   "max_pct": 70
+  },
+  {
+   "key": "hospitals",
+   "label": "المستشفيات",
+   "min_pct": 100,
+   "max_pct": 400
+  },
+  {
+   "key": "slaughterhouses",
+   "label": "المسالخ",
+   "min_pct": 100,
+   "max_pct": 400
+  },
+  {
+   "key": "clinics_care",
+   "label": "المستوصفات ودور العناية",
+   "min_pct": 4,
+   "max_pct": 15
+  },
+  {
+   "key": "clinics_labs",
+   "label": "العيادات والمختبرات",
+   "min_pct": 20,
+   "max_pct": 77
+  },
+  {
+   "key": "education",
+   "label": "مؤسسات التعليم",
+   "min_pct": 57,
+   "max_pct": 230
+  },
+  {
+   "key": "sports",
+   "label": "الأندية الرياضية",
+   "min_pct": 20,
+   "max_pct": 77
+  },
+  {
+   "key": "veg_markets",
+   "label": "أسواق الخضار",
+   "min_pct": 125,
+   "max_pct": 385
+  },
+  {
+   "key": "parking",
+   "label": "مواقف السيارات",
+   "min_pct": 3,
+   "max_pct": 13
+  },
+  {
+   "key": "other",
+   "label": "غيرها من المؤسسات",
+   "min_pct": 6,
+   "max_pct": 40
+  },
+  {
+   "key": "homes",
+   "label": "المنازل وما بحكمها مهما كانت مادة صنعها أو تشييدها، بما في ذلك الخيَم أو المركبات المركزة في الأرض",
+   "min_pct": 1,
+   "max_pct": 4
+  }
+ ]
+}
