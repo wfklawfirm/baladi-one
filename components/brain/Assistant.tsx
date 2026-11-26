@@ -25,7 +25,7 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }:
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); setTimeout(() => end.current?.scrollIntoView({ behavior: "smooth" }), 50); }
   }
   return (
-    <div className="space-y-4">
+    <div className={compact ? "flex min-h-full flex-1 flex-col gap-4" : "space-y-4"}>
       {!turns.length && (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-muted-foreground">اقتراحات للبدء</p>
@@ -47,7 +47,7 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }:
       {busy && <p className="flex items-center gap-2 text-base text-muted-foreground"><Loader2 className="size-4 animate-spin" />نبحث لك في القوانين، لحظة من فضلك…</p>}
       {err && <p role="alert" className="rounded-xl bg-destructive/10 p-4 text-base text-destructive">{err} — حاول مرة أخرى بعد قليل.</p>}
       <div ref={end} />
-      <form onSubmit={(e) => { e.preventDefault(); send(q); }} className="sticky bottom-2 flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-md focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15">
+      <form onSubmit={(e) => { e.preventDefault(); send(q); }} className={`sticky bottom-0 flex items-end gap-2 ${compact ? "mt-auto" : ""}  rounded-2xl border bg-background p-2 shadow-md focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15`}>
         <textarea value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(q); } }} id="ask-q" rows={2} maxLength={2000} aria-label="اكتب سؤالك بكلماتك" placeholder="اكتب سؤالك، أو اضغط الميكروفون وتكلّم…" className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none placeholder:text-muted-foreground" />
         <Mic target="ask-q" />
         <button disabled={busy || !q.trim()} aria-label="أرسل السؤال" className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"><Send className="size-[18px] -scale-x-100" /></button>

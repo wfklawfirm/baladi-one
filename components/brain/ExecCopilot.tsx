@@ -1,16 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Sparkles, X, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import Assistant from "./Assistant";
 
-const IDEAS: [string, string[]][] = [
-  ["/staff/procurement", ["ما الإجراء التالي؟", "ما المستندات التي تنقص الملف؟", "هل توجد مؤشرات تجزئة محتملة؟", "متى يمكن توقيع العقد؟", "اشرح لي المادة القانونية بطريقة مبسطة", "حضّر الملف الرقابي"]],
-  ["/staff/operations", ["حلّل أداء البلدية في الفترة المحددة", "ما الأولويات الحالية؟", "ما المؤشرات المتراجعة؟", "حضّر موجزًا تنفيذيًا قصيرًا"]],
-  ["/staff/council", ["ما الإجراءات المطلوبة لإدراج موضوع على جدول أعمال المجلس؟", "ما مهل الطعن بقرارات المجلس البلدي؟", "راجع الأساس القانوني لقرار اتخاذه المجلس"]],
-  ["/staff/collections", ["ما الرسوم والأنظمة المتعلقة بالتحصيل البلدي؟"]],
+const GENERAL = [
+  "ما صلاحيات رئيس البلدية في هذه المسألة؟", "اشرح الإجراء القانوني المطلوب", "حضّر مسودة كتاب رسمي", "ما مهل الطعن بقرارات المجلس البلدي؟",
+  "ما الفرق بين صلاحية رئيس البلدية وصلاحية المجلس؟", "ما القرارات البلدية التي تحتاج تصديق سلطة الوصاية؟", "كيف أُدرج موضوعًا على جدول أعمال المجلس؟",
+  "ما شروط انعقاد جلسة المجلس البلدي ونصابها؟", "ما الأحكام المتعلقة بالأملاك العامة والخاصة للبلدية؟", "حضّر نموذج قرار إسقاط ملك عام بلدي إلى ملك خاص",
+  "ما المستندات المطلوبة لعقد نفقة بلدي؟", "كيف تُنظَّم الرسوم والبدلات البلدية؟", "ما إجراءات رخص البناء ومخالفاتها في البلدية؟", "لخّص لي وضع البلدية في بند واحد",
 ];
-const DEFAULT = ["ما صلاحيات رئيس البلدية في هذه المسألة؟", "اشرح الإجراء القانوني المطلوب", "حضّر مسودة كتاب رسمي"];
+const IDEAS: [string, string[]][] = [
+  ["/staff/procurement", ["ما الإجراء التالي؟", "ما المستندات التي تنقص الملف؟", "هل توجد مؤشرات تجزئة محتملة؟", "متى يمكن توقيع العقد؟", "اشرح لي المادة القانونية بطريقة مبسطة", "حضّر الملف الرقابي", "ما طريقة الشراء المناسبة لهذه القيمة؟", "ما اللجان المطلوبة وما دور كل منها؟", "هل توجد اعتراضات مفتوحة؟", "ما الفرق بين الاستدراج والفاتورة؟", "ما مهلة التجميد قبل توقيع العقد؟", "ما ملاحظات المراجعة المحتملة على هذا الملف؟"]],
+  ["/staff/operations", ["حلّل أداء البلدية في الفترة المحددة", "ما الأولويات الحالية؟", "ما المؤشرات المتراجعة؟", "حضّر موجزًا تنفيذيًا قصيرًا", "ما أكثر الطلبات تأخرًا؟", "أين تتركز الشكاوى؟", "ما الذي تغيّر عن الفترة السابقة؟"]],
+  ["/staff/council", ["ما الإجراءات المطلوبة لإدراج موضوع على جدول أعمال المجلس؟", "ما مهل الطعن بقرارات المجلس البلدي؟", "راجع الأساس القانوني لقرار اتخذه المجلس", "ما النصاب المطلوب للتصويت؟", "ما القرارات التي تحتاج تصديقًا؟", "حضّر مسودة محضر جلسة", "كيف تُنشر قرارات المجلس وتُبلَّغ؟"]],
+  ["/staff/collections", ["ما الرسوم والأنظمة المتعلقة بالتحصيل البلدي؟", "ما الإجراءات القانونية لتحصيل الرسوم المتأخرة؟", "ما مدة سقوط الحق بالرسوم؟", "حضّر إنذارًا بدفع رسم متأخر"]],
+];
+const pick = (pool: string[], n = 3) => { const a = [...pool]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); };
 
 /** Floating executive copilot (bottom-left): side panel that keeps the page and filters untouched. Context is sent as a hint only; the server recomputes any figures. */
 export default function ExecCopilot() {
@@ -23,7 +29,9 @@ export default function ExecCopilot() {
     window.addEventListener("copilot:ask", h); window.addEventListener("keydown", k);
     return () => { window.removeEventListener("copilot:ask", h); window.removeEventListener("keydown", k); };
   }, []);
-  const ideas = IDEAS.find(([p]) => path.startsWith(p))?.[1] ?? DEFAULT;
+  // a fresh random set of 3 each time the panel opens or a new conversation starts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ideas = useMemo(() => pick(IDEAS.find(([p]) => path.startsWith(p))?.[1] ?? GENERAL), [path, session, open]);
   // procurement pages: a plan-item id in the URL (e.g. /staff/procurement/audit-pack/<id>) is sent as a hint only; the server re-reads everything under RLS
   const item = path.startsWith("/staff/procurement") ? path.match(/\/([0-9a-f]{8}-[0-9a-f-]{27})(?:\/|$)/i)?.[1] : undefined;
   const ctx = { path, item, p: sp.get("p") ?? undefined, from: sp.get("from") ?? undefined, to: sp.get("to") ?? undefined };
@@ -43,7 +51,7 @@ export default function ExecCopilot() {
             <button type="button" onClick={() => setWide((w) => !w)} aria-label={wide ? "تصغير" : "توسيع"} className="hidden size-10 place-items-center rounded-lg active:bg-muted sm:grid">{wide ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}</button>
             <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" className="grid size-10 place-items-center rounded-lg active:bg-muted"><X className="size-6" /></button>
           </header>
-          <div className="flex-1 overflow-y-auto p-4"><Assistant key={session} ideas={ideas} ctx={ctx} auto={auto} compact /></div>
+          <div className="flex-1 overflow-y-auto p-4"><div className="flex min-h-full flex-col"><Assistant key={session} ideas={ideas} ctx={ctx} auto={auto} compact /></div></div>
           <p className="border-t px-4 py-2 text-[11px] leading-5 text-muted-foreground">يقترح المساعد ويصوغ المسودات فقط؛ لا يعتمد قرارًا ولا ينفّذ إجراءً. راجع المصادر قبل الاعتماد.</p>
         </aside>
       )}
