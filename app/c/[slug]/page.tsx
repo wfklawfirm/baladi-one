@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardList, FileSearch, FileText, Globe, Receipt, Search, Siren } from "lucide-react";
+import { ClipboardList, FileSearch, Globe, Receipt, Search, Siren } from "lucide-react";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { BRAND, OFFICIAL } from "@/lib/brand";
 import { t } from "@/lib/i18n";
@@ -67,7 +67,6 @@ export default async function CitizenOnly({ params, searchParams }: { params: Pr
         </section>
 
         <section className="flex flex-wrap items-center justify-center gap-3">
-          <a href={OFFICIAL.forms} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-xl border-2 border-primary px-6 font-bold text-primary"><FileText className="size-5" aria-hidden />{ar ? "النماذج الرسمية" : "Official forms"} ↗</a>
           <a href={OFFICIAL.home} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-xl border-2 border-primary px-6 font-bold text-primary"><Globe className="size-5" aria-hidden />{ar ? "الموقع الرسمي للبلدية" : "Official website"} ↗</a>
         </section>
       </main>
