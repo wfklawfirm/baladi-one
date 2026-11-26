@@ -4,6 +4,7 @@ import { Kiosk } from "@/components/Kiosk";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { draftServices } from "@/lib/draft";
 import { BRAND } from "@/lib/brand";
+import { kioskAllowed } from "@/lib/kioskAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,11 @@ export default async function KioskPage({
 }: { params: Promise<{ slug: string }>; searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const { slug } = await params;
   const sp = await searchParams;
+  // Private kiosk: only admins and listed viewers (set KIOSK_OPEN=1 to open it to everyone).
+  if (!(await kioskAllowed())) {
+    const qs = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
+    redirect(`/kiosk-login?next=${encodeURIComponent(`/kiosk/${slug}${qs ? `?${qs}` : ""}`)}`);
+  }
   // Phones get the mobile portal; the kiosk layout is built for large touch screens (?force=1 overrides).
   const ua = (await headers()).get("user-agent") ?? "";
   if (/iPhone|iPod|Android.+Mobile|Mobile.+Firefox/i.test(ua) && sp.force !== "1") redirect(`/m/${slug}${sp.lang === "en" ? "?lang=en" : ""}`);
