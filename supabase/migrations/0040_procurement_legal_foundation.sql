@@ -1,4 +1,4 @@
--- 0040 (DRAFT — NOT APPLIED): procurement legal foundation. Idempotent and non-destructive. Depends on 0024.
+-- 0040 (APPLIED 2026-11-26): procurement legal foundation. Idempotent and non-destructive. Depends on 0024.
 -- NO legal value is loaded here: no threshold, no deadline, no article text. Every row is entered later, with a source,
 -- through reviewed RPCs, and starts as 'pending_review'. Nothing in this file asserts what any law says.
 

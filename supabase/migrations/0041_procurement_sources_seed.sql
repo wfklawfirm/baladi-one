@@ -1,9 +1,9 @@
--- 0041 (DRAFT — NOT APPLIED): seed of procurement legal SOURCE METADATA only, read on 2026-11-26 from the PPA site listings
+-- 0041 (APPLIED 2026-11-26): seed of procurement legal SOURCE METADATA only, read on 2026-11-26 from the PPA site listings
 -- (https://www.ppa.gov.lb/ar/pages/details/11 and /ar/listing-pages/president-memos). NO article text, NO threshold, NO deadline is loaded.
 -- All rows stay 'pending_review': a lawyer must read the instrument itself before anything here is relied on. Depends on 0040.
 insert into public.procurement_legal_source (instrument_type, instrument_number, instrument_date, official_title, official_source_url, applicable_entities, verification_status, note) values
  ('law','244',  '2021-07-19','قانون الشراء العام', 'https://www.ppa.gov.lb/ar/pages/details/11', '{}', 'pending_review', 'الصفحة تعرض أيضًا تاريخ 2023-07-18 يتعارض مع التاريخ أعلاه؛ النشر في الجريدة الرسمية العدد 30 تاريخ 2021-07-29 كما تعرضه الصفحة. النسخة المجمّعة بتعديل السقوف (تشرين الأول 2024) مرفقة على الصفحة ولم تُقرأ بعد.'),
- ('decree','14063','2024-10-03','مرسوم تعديل السقوف المالية', 'https://www.ppa.gov.lb/ar/pages/details/53', '{}', 'pending_review', 'ملف PDF لم يُقرأ بعد (تعذّر الوصول إلى مضيف الملفات)؛ لا تُحمَّل أي سقوف قبل قراءته.'),
+ ('decree','14063','2024-10-03','مرسوم تعديل السقوف المالية', 'https://www.ppa.gov.lb/ar/pages/details/53', '{}', 'pending_review', 'ملف PDF على مضيف الهيئة لا يعرض نص المرسوم (ترويسة الجريدة الرسمية فقط)؛ لا تُحمَّل أي سقوف قبل الحصول على النص.'),
  ('law','21',   '2025-07-17','قانون تفعيل عمل البلديات وصلاحيات المحافظين والقائمقامين', 'https://www.ppa.gov.lb/ar/breaking-news/details/8', '{municipality}', 'pending_review', 'تعرضه الهيئة كجدول توضيحي؛ النص الرسمي في الجريدة الرسمية لم يُراجع بعد.'),
  ('memo','2/2022','2022-08-11','تطبيق قانون الشراء العام في البلديات واتحادات البلديات', 'https://www.ppa.gov.lb/ar/pages/details/18', '{municipality,union_of_municipalities}', 'pending_review', null),
  ('memo','1/2026','2026-01-14','الخطة السنوية الموحدة للشراء لعام 2026', 'https://www.ppa.gov.lb/ar/pages/details/138', '{}', 'pending_review', null),
