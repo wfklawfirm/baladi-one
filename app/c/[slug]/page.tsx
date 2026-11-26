@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardList, FileSearch, Globe, Receipt, Search, Siren } from "lucide-react";
+import { ClipboardList, FileSearch, Globe, Search, Siren } from "lucide-react";
 import { loadCatalog, loadMunicipality } from "@/lib/catalog";
 import { BRAND, OFFICIAL } from "@/lib/brand";
 import { t } from "@/lib/i18n";
@@ -28,7 +28,6 @@ export default async function CitizenOnly({ params, searchParams }: { params: Pr
     { h: `/m/${slug}/services${q}`, Icon: FileSearch, l: t(lang, "transactions"), d: ar ? "المستندات والشروط والخطوات لكل معاملة" : "Documents, conditions and steps", sub: countAr(total), main: true },
     { h: `/m/${slug}/report${q}`, Icon: Siren, l: t(lang, "report"), d: ar ? "أبلغ عن عطل أو مخالفة في منطقتك" : "Report a fault or violation" },
     { h: `/m/${slug}/track${q}`, Icon: ClipboardList, l: t(lang, "track"), d: ar ? "تابع حالة طلبك برقم المتابعة" : "Follow your request with its code" },
-    { h: OFFICIAL.fees, Icon: Receipt, l: ar ? "الاستعلام عن الرسوم" : "Fee inquiry", d: ar ? "اعرف ما يترتب عليك من رسوم" : "Check what fees are due", ext: true },
   ];
   return (
     <div dir={ar ? "rtl" : "ltr"} lang={lang} className="flex min-h-dvh flex-col bg-background">
@@ -54,7 +53,7 @@ export default async function CitizenOnly({ params, searchParams }: { params: Pr
           </form>
         </section>
 
-        <section aria-label={ar ? "الخدمات" : "Services"} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        <section aria-label={ar ? "الخدمات" : "Services"} className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-5">
           {tiles.map(({ h, Icon, l, d, sub, main, ext }) => (
             <Link key={h} href={h} {...(ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="elev elev-hover flex min-h-44 flex-col items-center justify-center gap-2 rounded-3xl border bg-background p-5 text-center active:bg-muted">
