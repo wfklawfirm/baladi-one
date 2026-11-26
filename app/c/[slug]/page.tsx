@@ -54,11 +54,11 @@ export default async function CitizenOnly({ params, searchParams }: { params: Pr
         </section>
 
         <section aria-label={ar ? "الخدمات" : "Services"} className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-5">
-          {tiles.map(({ h, Icon, l, d, sub, main, ext }) => (
-            <Link key={h} href={h} {...(ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          {tiles.map(({ h, Icon, l, d, sub, main }) => (
+            <Link key={h} href={h}
               className="elev elev-hover flex min-h-44 flex-col items-center justify-center gap-2 rounded-3xl border bg-background p-5 text-center active:bg-muted">
               <span className={`grid size-16 place-items-center rounded-2xl ${main ? "bg-primary text-primary-foreground" : "bg-accent text-primary"}`}><Icon className="size-8" aria-hidden /></span>
-              <b className="text-xl leading-snug">{l}{ext ? " ↗" : ""}</b>
+              <b className="text-xl leading-snug">{l}</b>
               <span className="text-sm text-muted-foreground">{d}</span>
               {sub && <span className="text-xs font-semibold text-primary">{sub}</span>}
             </Link>
