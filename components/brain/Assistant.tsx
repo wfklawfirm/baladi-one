@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, ChevronLeft } from "lucide-react";
 import { Md, Doc, Sources, splitTemplates, callBrain, type Src } from "./Answer";
 import Mic from "@/components/Mic";
 
@@ -26,7 +26,18 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }:
   }
   return (
     <div className="space-y-4">
-      {!turns.length && <div className="space-y-2"><p className="text-base font-semibold">لا تعرف ماذا تكتب؟ اضغط على سؤال:</p><div className={`grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>{ideas.map((i) => <button key={i} onClick={() => send(i)} className="elev min-h-14 rounded-2xl border-2 bg-background p-4 text-start text-base leading-7 active:bg-muted">{i}</button>)}</div></div>}
+      {!turns.length && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-muted-foreground">اقتراحات للبدء</p>
+          <div className={`grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>
+            {ideas.map((i) => (
+              <button key={i} onClick={() => send(i)} className="group flex min-h-12 items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 text-start text-[15px] leading-6 transition-colors hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10">
+                <span>{i}</span><ChevronLeft className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {turns.map((t, i) => {
         if (t.role === "user") return <p key={i} className="ms-auto w-fit max-w-[90%] rounded-2xl bg-primary px-4 py-3 text-base leading-7 text-primary-foreground">{t.content}</p>;
         if (t.clarify) return <ClarifyCard key={i} id={i} c={t.clarify} live={i === turns.length - 1 && !busy} onSend={(a) => send(a.length ? `${t.clarify!.original}\n\nتوضيحات:\n${a.map(([x, y]) => `- ${x} ${y}`).join("\n")}` : t.clarify!.original, { noClarify: true, display: a.length ? a.map(([, y]) => y).join("\n") : null })} />;
@@ -36,10 +47,10 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }:
       {busy && <p className="flex items-center gap-2 text-base text-muted-foreground"><Loader2 className="size-4 animate-spin" />نبحث لك في القوانين، لحظة من فضلك…</p>}
       {err && <p role="alert" className="rounded-xl bg-destructive/10 p-4 text-base text-destructive">{err} — حاول مرة أخرى بعد قليل.</p>}
       <div ref={end} />
-      <form onSubmit={(e) => { e.preventDefault(); send(q); }} className="sticky bottom-3 flex items-end gap-2 rounded-3xl border-2 bg-background p-2 shadow-lg">
-        <textarea value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(q); } }} id="ask-q" rows={3} maxLength={2000} aria-label="اكتب سؤالك بكلماتك" placeholder="اكتب سؤالك بكلماتك، أو اضغط على الميكروفون وتكلّم…" className="min-h-12 flex-1 resize-none bg-transparent p-2 text-lg outline-none" />
+      <form onSubmit={(e) => { e.preventDefault(); send(q); }} className="sticky bottom-2 flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-md focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15">
+        <textarea value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(q); } }} id="ask-q" rows={2} maxLength={2000} aria-label="اكتب سؤالك بكلماتك" placeholder="اكتب سؤالك، أو اضغط الميكروفون وتكلّم…" className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none placeholder:text-muted-foreground" />
         <Mic target="ask-q" />
-        <button disabled={busy || !q.trim()} aria-label="أرسل السؤال" className="grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-40"><Send className="size-5 -scale-x-100" /></button>
+        <button disabled={busy || !q.trim()} aria-label="أرسل السؤال" className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"><Send className="size-[18px] -scale-x-100" /></button>
       </form>
     </div>
   );

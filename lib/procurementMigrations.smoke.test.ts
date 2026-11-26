@@ -22,7 +22,7 @@ beforeAll(async () => {
       returns uuid language plpgsql security definer as $$ declare i uuid; begin insert into municipal_decision(municipality_id,title) values (_council_muni(), p_title) returning id into i; return i; end $$;
     grant execute on function public.decision_builder_create(uuid,uuid,text,jsonb) to authenticated;
     grant select on public.municipal_decision, public.decision_template_version to authenticated;`);
-  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql"]) await E.db.exec(read(f));
+  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql", "0048_procurement_legal_ceilings_seed.sql"]) await E.db.exec(read(f));
   P = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_add(2026,'Item','need',500,'USD') as id`))[0].id;
   TPL_OK = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('PROC01','1','تأليف لجنة','procurement') returning id`))[0].id;
   TPL_OTHER = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('FIN01','1','مالي','finance') returning id`))[0].id;
@@ -139,5 +139,13 @@ describe("0047 threshold kinds, reviewer trail, demo guard (F-3)", () => {
     await E.su(`update municipality set is_demo = true where id = $1`, [E.muniA]);
     expect(await E.err(u(E.demoMayorA), `select public.procurement_supplier_add('Z')`)).toBeNull();
     await E.su(`update municipality set is_demo = false where id = $1`, [E.muniA]);
+  });
+});
+
+describe("0048 legal ceilings seed", () => {
+  it("is idempotent and leaves everything pending_review", async () => {
+    await E.db.exec(read("0048_procurement_legal_ceilings_seed.sql"));
+    const r = await E.db.query<{ n: number }>("select count(*)::int n from procurement_threshold where review_status <> 'pending_review' and (source like '%14063%' or source like '%21/2025%')");
+    expect(r.rows[0].n).toBe(0);
   });
 });
