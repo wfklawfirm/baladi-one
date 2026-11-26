@@ -1,5 +1,7 @@
 import "server-only";
-import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT } from "./prompts";
+import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
+import { auditDraft } from "./audit";
+import { expandQuery, matchTemplate, templateGrounding, wantsTemplate } from "./expand";
 import { supabaseServer } from "@/lib/supabase-server";
 
 // Port of baladi-api (BALADI AI): same prompts and ranking rules; the legal knowledge lives in Supabase (pgvector) instead of Qdrant.
@@ -45,8 +47,13 @@ async function search(vec: number[], limit: number): Promise<Hit[]> {
 }
 
 export async function retrieve(query: string, complexity: "mini" | "full", topK = 20): Promise<Hit[]> {
-  const [vec] = await embedTexts([query]);
-  return search(vec, complexity === "mini" ? 8 : topK);
+  const queries = expandQuery(query);
+  const vecs = await embedTexts(queries);
+  const per = complexity === "mini" ? 8 : topK;
+  const lists = await Promise.all(vecs.map((v) => search(v, per)));
+  const best = new Map<string, Hit>();
+  for (const h of lists.flat()) { const o = best.get(h.chunk_id); if (!o || h.score > o.score) best.set(h.chunk_id, h); }
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, per + 6);
 }
 
 export function filterAndRank(hits: Hit[]): Hit[] {
@@ -104,15 +111,43 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   }
   const complexity = classify(query);
   let chunks: Hit[] = [];
-  try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* answer from legal knowledge without sources */ }
-  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني (قانون البلديات 118/1977 وسائر القوانين ذات الصلة)، وصرّح بأن هذا النص مسودة أولية وفق المعايير القانونية المعتمدة، وأنشئ النموذج كاملاً. لا تقتبس نص أي مادة حرفياً ولا تنسب صياغة إلى مادة بعينها: اذكر اسم القانون ورقمه، ورقم المادة فقط حين تكون متأكداً منه، ونبّه إلى وجوب مراجعة النص الرسمي.";
-  const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر نصوص المواد حرفياً وكل الاجتهادات الواردة في المصادر]" : "[تلميح: لا مصادر مسترجعة — استخدم الهيكل الكامل دون اقتباس حرفي لنصوص المواد]";
-  const msgs: Msg[] = [{ role: "system", content: opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT }];
+  try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* no sources → refuse below */ }
+  const tpl = wantsTemplate(query) ? matchTemplate(query) : null;
+  // Nothing to ground on (no sources, no library template, no system facts): refuse instead of improvising.
+  if (!chunks.length && !tpl && !opts.facts) return { answer: REFUSAL, sources: [], confidence: "low" as const };
+  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. لا تذكر أي مادة أو رقم قانون، ولا تؤلّف نموذجاً؛ استند فقط إلى بيانات النظام أو القالب المرفق إن وُجدا.";
+  const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
+  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}`;
+  const msgs: Msg[] = [{ role: "system", content: sys }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
-  msgs.push({ role: "user", content: `${HINT}\n\n${FACTS}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}` });
-  const j = await openai("chat/completions", { model: complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL, messages: msgs, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 });
-  return { answer: (j.choices[0].message.content as string) || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
+  const TPL = tpl ? `${templateGrounding(tpl)}\n\n` : "";
+  const userMsg = `${HINT}\n\n${FACTS}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
+  msgs.push({ role: "user", content: userMsg });
+  const model = complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL;
+  const gen = async (m: Msg[]) => ((await openai("chat/completions", { model, messages: m, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 })).choices[0].message.content as string) || "";
+  const sourcesForAudit = [...chunks.map((c) => ({ title: c.title, text: c.text })), ...(tpl ? [{ title: tpl.title_ar, text: `${tpl.legal_reference_candidates?.map((r) => `المادة ${r.article_candidates ?? ""}`).join(" ") ?? ""} ${(tpl.operative_clauses_ar ?? []).join(" ")}` }] : [])];
+  const verify = async (answer: string): Promise<string[]> => {
+    const issues = auditDraft(answer, sourcesForAudit, query).issues;
+    try {
+      const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 400, response_format: { type: "json_object" }, messages: [
+        { role: "system", content: "أنت مدقق قانوني للبلديات اللبنانية. قارن المسودة بالسؤال والمصادر. أبلغ فقط عن: (1) خلط الجهة (وزير/وزارة بدل المجلس البلدي أو رئيس البلدية)، (2) ادعاء قانوني أو رقم مادة غير موجود في المصادر، (3) عدم الإجابة عن السؤال المطروح فعلاً. لا تُبلغ عن أسلوب أو صياغة. أجب JSON: {\"ok\":true|false,\"issues\":[\"...\"]}" },
+        { role: "user", content: `السؤال:\n${query.slice(0, 1500)}\n\nالمصادر:\n${(chunks.length ? buildContext(chunks, "mini") : "") + (tpl ? `\n${templateGrounding(tpl)}` : "") || "لا مصادر"}\n\nالمسودة:\n${answer.slice(0, 7000)}` },
+      ] });
+      const v = JSON.parse(j.choices[0].message.content || "{}");
+      if (v.ok === false && Array.isArray(v.issues)) issues.push(...v.issues.map((x: unknown) => String(x).slice(0, 200)).slice(0, 4));
+    } catch { /* deterministic audit still applies */ }
+    return issues;
+  };
+  let answer = await gen(msgs);
+  let issues = await verify(answer);
+  if (issues.length) {
+    const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `رفض المدقق المسودة للأسباب التالية:\n- ${issues.join("\n- ")}\nأعد كتابة الإجابة كاملة وصحّح هذه النقاط حصراً، والتزم بأن الجهة بلدية، ولا تذكر ما لا تسنده المصادر المرفقة. إن تعذّر ذلك فاعتذر بوضوح.` }]);
+    const again = await verify(retry);
+    if (again.length) return { answer: `${REFUSAL}\n\nتعذّر التحقق من مسودة دقيقة لهذا الطلب: ${again.slice(0, 3).join("؛ ")}.`, sources: makeSources(chunks), confidence: "low" as const };
+    answer = retry;
+  }
+  return { answer: answer || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
 }
 
 /** Read a citizen request / uploaded document against the law and produce findings + ready-to-sign decision options. */
@@ -120,7 +155,7 @@ export async function analyze(input: { text?: string; imageDataUrl?: string; nam
   const searchText = ((input.question ?? "") + " " + (input.text ?? "طلب بلدي وثيقة تحليل")).trim().slice(0, 2000);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(searchText, "full", 20)); } catch { /* answer without sources */ }
-  const ctx = chunks.length ? buildContext(chunks) : "لا توجد مصادر متاحة في قاعدة المعرفة. استند إلى معرفتك بالقانون اللبناني دون اقتباس حرفي لنصوص المواد: اذكر اسم القانون ورقمه، ورقم المادة فقط حين تكون متأكداً منه.";
+  const ctx = chunks.length ? buildContext(chunks) : "لا توجد مصادر متاحة في قاعدة المعرفة. لا تذكر رقم مادة ولا تنسب حكماً إلى نص بعينه؛ صرّح بأن التحليل أولي وغير متحقق منه، وأن الجهة المصدِرة بلدية (المجلس البلدي/رئيس البلدية) ما لم يثبت خلافه.";
   let intro = `المستند المُحمَّل: ${input.name || "وثيقة"}\n`;
   if (input.question) intro += `سؤال المستخدم: ${input.question}\n`;
   const legal = `\n\n=== قاعدة المعرفة القانونية ===\n${ctx}`;
