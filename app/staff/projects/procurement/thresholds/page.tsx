@@ -10,6 +10,7 @@ import { btn, fld, money, safe } from "@/components/projects/procurement/data";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "سقوف الشراء — BALADI ONE", referrer: "no-referrer" as const };
+const KIND: Record<string, string> = { method: "أسلوب شراء", competence: "صلاحية الجهة", admin_approval: "تصديق إداري", financial_control: "رقابة مالية" };
 type Setting = { split_window_days: number; split_min_similarity: number; art29_limit_pct: number | null; art29_source: string | null; art29_review_status: string };
 
 export default async function Thresholds({ searchParams }: { searchParams: Promise<{ err?: string }> }) {
@@ -17,7 +18,7 @@ export default async function Thresholds({ searchParams }: { searchParams: Promi
   if (!memberships.some((m) => m.role === "mayor" || m.role === "admin")) redirect("/staff");
   const sp = await searchParams;
   const [th, st] = await Promise.all([
-    safe<Threshold & { id: string }>(sb.from("procurement_threshold").select("id,method,min_value,max_value,currency,effective_from,effective_to,source,review_status").order("effective_from", { ascending: false }).limit(500)),
+    safe<Threshold & { id: string; applies_to?: string | null; conditions?: string | null }>(sb.from("procurement_threshold").select("id,method,min_value,max_value,currency,effective_from,effective_to,source,review_status,threshold_kind,applies_to,conditions").order("effective_from", { ascending: false }).limit(500)),
     safe<Setting>(sb.from("procurement_setting").select("split_window_days,split_min_similarity,art29_limit_pct,art29_source,art29_review_status").limit(1)),
   ]);
   const cfg = st.data[0] ?? { split_window_days: 90, split_min_similarity: 0.5, art29_limit_pct: null, art29_source: null, art29_review_status: "pending_review" };
@@ -32,14 +33,16 @@ export default async function Thresholds({ searchParams }: { searchParams: Promi
       <section className="elev space-y-2 rounded-2xl border bg-background p-4"><h2 className="text-lg font-bold text-primary">الحدود المسجّلة ({th.data.length})</h2>
         {th.data.length === 0 ? <Empty>لم تُسجَّل حدود بعد. سجّلوا أول حدّ من الأسفل.</Empty> : (
           <ul className="space-y-2 text-sm">{th.data.map((x) => (
-            <li key={x.id} className="space-y-1 rounded-xl border p-3"><p><b>{METHOD[x.method] ?? x.method}</b> · من {money(Number(x.min_value), x.currency)} إلى {x.max_value === null ? "بلا حد أعلى" : money(Number(x.max_value), x.currency)}</p>
+            <li key={x.id} className="space-y-1 rounded-xl border p-3"><p><span className="me-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{KIND[x.threshold_kind ?? "method"] ?? x.threshold_kind}</span><b>{x.method ? (METHOD[x.method] ?? x.method) : (x.applies_to ?? "—")}</b> · من {money(Number(x.min_value), x.currency)} إلى {x.max_value === null ? "بلا حد أعلى" : money(Number(x.max_value), x.currency)}</p>
+              {x.conditions && <p className="text-sm leading-6 text-amber-900">ملاحظة: {x.conditions}</p>}
               <p className="text-sm text-muted-foreground">نافذ من {x.effective_from}{x.effective_to ? ` إلى ${x.effective_to}` : ""} · {REVIEW_STATUS[x.review_status]} · المصدر: {x.source}</p>
               <form action={setThresholdReview} className="flex flex-wrap items-end gap-2"><input type="hidden" name="id" value={x.id} />
                 <select name="value" defaultValue={x.review_status} aria-label="حالة المراجعة" className={fld}>{Object.entries(REVIEW_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
                 <label className="text-sm">تاريخ الانتهاء<input type="date" name="to" defaultValue={x.effective_to ?? ""} className={`${fld} block`} /></label><button className={btn}>حفظ</button></form></li>))}</ul>)}</section>
       <details className="elev rounded-2xl border bg-background p-4"><summary className="cursor-pointer text-lg font-bold text-primary">+ تسجيل حدّ جديد</summary>
         <form action={addThreshold} className="mt-3 space-y-4">
-          <Field label="أي أسلوب شراء؟" required><select name="method" required className={`${fld} w-full`}>{Object.entries(METHOD).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="نوع الحدّ" hint="الحدود غير الخاصة بالأسلوب لا تؤثر على توصية الأسلوب."><select name="kind" defaultValue="method" className={`${fld} w-full`}>{Object.entries(KIND).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="أي أسلوب شراء؟" hint="لنوع «أسلوب شراء» فقط." required><select name="method" className={`${fld} w-full`}>{Object.entries(METHOD).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="من قيمة" hint="أقل قيمة تدخل في هذا الحدّ." required example="0"><input name="min" required defaultValue="0" inputMode="decimal" className={`${fld} w-full`} /></Field>
             <Field label="إلى قيمة" hint="اتركوه فارغًا إن لم يوجد حدّ أعلى."><input name="max" inputMode="decimal" className={`${fld} w-full`} /></Field>

@@ -38,8 +38,9 @@ export async function linkPlanContract(fd: FormData) {
 }
 export async function addThreshold(fd: FormData) {
   const dest = `${ROOT}/thresholds`, min = parseAmount(s(fd, "min")), maxRaw = s(fd, "max"), max = maxRaw ? parseAmount(maxRaw) : null, from = optDate(s(fd, "from"));
-  if (!METHOD[s(fd, "method")] || min === null || (maxRaw && max === null) || !from) redirect(`${dest}?err=bad_input`);
-  await call("procurement_threshold_add", { p_method: s(fd, "method"), p_min: min, p_max: max, p_currency: cur(s(fd, "currency")), p_from: from, p_to: optDate(s(fd, "to")), p_source: s(fd, "source") }, dest);
+  const kind = ["method", "competence", "admin_approval", "financial_control"].includes(s(fd, "kind")) ? s(fd, "kind") : "method";
+  if ((kind === "method" && !METHOD[s(fd, "method")]) || min === null || (maxRaw && max === null) || !from) redirect(`${dest}?err=bad_input`);
+  await call("procurement_threshold_add", { p_method: kind === "method" ? s(fd, "method") : null, p_kind: kind, p_min: min, p_max: max, p_currency: cur(s(fd, "currency")), p_from: from, p_to: optDate(s(fd, "to")), p_source: s(fd, "source") }, dest);
 }
 export async function setThresholdReview(fd: FormData) {
   const id = s(fd, "id"); if (!uuidOk(id)) return;
