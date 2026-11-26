@@ -21,7 +21,7 @@ export default async function Procurement({ searchParams }: { searchParams: Prom
   const sp = await searchParams, t = today(), year = /^\d{4}$/.test(sp.year ?? "") ? Number(sp.year) : Number(t.slice(0, 4));
   const [plan, th, st, cs, bl] = await Promise.all([
     safe<PlanRow>(sb.from("procurement_plan_item").select("*").eq("fiscal_year", year).order("created_at", { ascending: false }).limit(300)),
-    safe<Threshold>(sb.from("procurement_threshold").select("id,method,min_value,max_value,currency,effective_from,effective_to,source,review_status").limit(500)),
+    safe<Threshold>(sb.from("procurement_threshold").select("id,method,min_value,max_value,currency,effective_from,effective_to,source,review_status").eq("threshold_kind", "method").limit(500)),
     safe<{ split_window_days: number; split_min_similarity: number }>(sb.from("procurement_setting").select("split_window_days,split_min_similarity").limit(1)),
     safe<{ id: string; contractor: string; subject: string; value: number; currency: string; created_at: string; signed_on: string | null; published_on: string | null }>(sb.from("contract").select("id,contractor,subject,value,currency,created_at,signed_on,published_on").order("created_at", { ascending: false }).limit(500)),
     safe<{ id: string; code: string; title_ar: string }>(sb.from("budget_line").select("id,code,title_ar").eq("kind", "expense").limit(500)),

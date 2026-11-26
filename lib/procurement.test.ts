@@ -97,3 +97,17 @@ describe("error mapping", () => {
     expect(procErrCode(null)).toBe("1");
   });
 });
+
+describe("recommendMethod ignores non-'method' threshold kinds", () => {
+  const base = { method: "quotations", min_value: 0, max_value: 1000, currency: "USD", effective_from: "2026-01-01", effective_to: null, source: "unit-test", review_status: "pending_review" } as Threshold;
+  it("a competence / approval / financial-control row never produces a method recommendation", () => {
+    for (const k of ["competence", "admin_approval", "financial_control"]) {
+      const r = recommendMethod(500, "USD", [{ ...base, threshold_kind: k }], "2026-11-25");
+      expect(r.status).toBe("no_data");
+    }
+  });
+  it("method rows (explicit or legacy without the field) still match", () => {
+    expect(recommendMethod(500, "USD", [{ ...base, threshold_kind: "method" }], "2026-11-25").status).toBe("matched");
+    expect(recommendMethod(500, "USD", [base], "2026-11-25").status).toBe("matched");
+  });
+});

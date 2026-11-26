@@ -22,7 +22,7 @@ beforeAll(async () => {
       returns uuid language plpgsql security definer as $$ declare i uuid; begin insert into municipal_decision(municipality_id,title) values (_council_muni(), p_title) returning id into i; return i; end $$;
     grant execute on function public.decision_builder_create(uuid,uuid,text,jsonb) to authenticated;
     grant select on public.municipal_decision, public.decision_template_version to authenticated;`);
-  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql"]) await E.db.exec(read(f));
+  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql"]) await E.db.exec(read(f));
   P = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_add(2026,'Item','need',500,'USD') as id`))[0].id;
   TPL_OK = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('PROC01','1','تأليف لجنة','procurement') returning id`))[0].id;
   TPL_OTHER = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('FIN01','1','مالي','finance') returning id`))[0].id;
@@ -110,5 +110,34 @@ describe("0046 draft security fixes (F-1/F-2)", () => {
   });
   it("a user without a staff row cannot read legal sources", async () => {
     expect((await E.q(u(E.outsider), `select id from procurement_legal_source`)).length).toBe(0);
+  });
+});
+
+describe("0047 threshold kinds, reviewer trail, demo guard (F-3)", () => {
+  const add = (kind: string, method: string | null, extra = "") => `select public.procurement_threshold_add(${method ? `'${method}'` : "null"},0,100,'USD','2026-01-01',null,'unit-test source','${kind}'${extra})`;
+  it("method kind still requires a method; other kinds load without one and start pending_review", async () => {
+    expect((await E.err(u(E.mayorA), add("method", null)))?.message).toBe("bad_input");
+    expect((await E.err(u(E.mayorA), add("bogus", "quotations")))?.message).toBe("bad_input");
+    const id = (await E.q<{ id: string }>(u(E.mayorA), add("competence", null).replace("select ", "select ") + " as id"))[0].id;
+    const r = (await E.su<{ threshold_kind: string; review_status: string }>(`select threshold_kind, review_status from procurement_threshold where id=$1`, [id]))[0];
+    expect(r).toEqual({ threshold_kind: "competence", review_status: "pending_review" });
+  });
+  it("rejects unknown legal source / provision ids, clerk is forbidden", async () => {
+    expect((await E.err(u(E.mayorA), add("method", "quotations", ",'00000000-0000-0000-0000-000000000000'")))?.message).toBe("bad_input");
+    expect((await E.err(u(E.clerkA), add("method", "quotations")))?.message).toBe("forbidden");
+  });
+  it("set_review records reviewer and time", async () => {
+    const id = (await E.q<{ id: string }>(u(E.mayorA), add("method", "invoice") + " as id"))[0].id;
+    await E.q(u(E.adminA), `select public.procurement_threshold_set_review($1,'verified')`, [id]);
+    const r = (await E.su<{ reviewed_by: string; last_reviewed_at: string | null }>(`select reviewed_by, last_reviewed_at from procurement_threshold where id=$1`, [id]))[0];
+    expect(r.reviewed_by).toBe(E.adminA); expect(r.last_reviewed_at).not.toBeNull();
+  });
+  it("F-3: a demo mayor attached to a REAL municipality is forbidden; to a demo municipality is allowed", async () => {
+    await E.su(`update municipality set is_demo = false where id = $1`, [E.muniA]);
+    expect((await E.err(u(E.demoMayorA), `select public.procurement_supplier_add('X')`))?.message).toBe("forbidden");
+    expect(await E.err(u(E.mayorA), `select public.procurement_supplier_add('Y')`)).toBeNull();
+    await E.su(`update municipality set is_demo = true where id = $1`, [E.muniA]);
+    expect(await E.err(u(E.demoMayorA), `select public.procurement_supplier_add('Z')`)).toBeNull();
+    await E.su(`update municipality set is_demo = false where id = $1`, [E.muniA]);
   });
 });

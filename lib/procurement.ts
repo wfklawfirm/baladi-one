@@ -46,16 +46,16 @@ export function isMissingErr(e: { message?: string; code?: string } | null | und
 }
 
 // ---------- thresholds & recommender ----------
-export type Threshold = { id?: string; method: string; min_value: number | string; max_value: number | string | null; currency: string; effective_from: string; effective_to: string | null; source: string; review_status: string };
+export type Threshold = { id?: string; threshold_kind?: string; method: string; min_value: number | string; max_value: number | string | null; currency: string; effective_from: string; effective_to: string | null; source: string; review_status: string };
 export type Recommendation =
   | { status: "no_data"; message: string; methods: [] }
   | { status: "no_match"; message: string; methods: [] }
   | { status: "matched"; message: string; methods: { method: string; label: string; review_status: string; source: string; note: string }[] };
 
 const n = (v: unknown) => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
-/** Thresholds in force on `today` for a currency. Rejected / superseded rows are ignored. */
+/** Thresholds in force on `today` for a currency. Rejected / superseded rows are ignored; only 'method' thresholds drive the method recommendation (competence / approval / financial-control values never do). */
 export function activeThresholds(ts: Threshold[], currency: string, today: string): Threshold[] {
-  return ts.filter((t) => t.currency === currency && t.effective_from <= today && (!t.effective_to || t.effective_to >= today) && t.review_status !== "rejected" && t.review_status !== "superseded");
+  return ts.filter((t) => (t.threshold_kind ?? "method") === "method" && t.currency === currency && t.effective_from <= today && (!t.effective_to || t.effective_to >= today) && t.review_status !== "rejected" && t.review_status !== "superseded");
 }
 /** Table-driven recommender. Returns 'no_data' when NO threshold is loaded at all (never guesses); never blocks anything. Both bounds are inclusive; boundary cases return several methods for human review. */
 export function recommendMethod(value: number, currency: string, ts: Threshold[], today: string): Recommendation {
