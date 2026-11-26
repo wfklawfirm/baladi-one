@@ -5,6 +5,9 @@ import { safe, fld, money } from "@/components/projects/procurement/data";
 import { ErrNotice } from "@/components/projects/procurement/Notice";
 import { uuidOk } from "@/lib/council";
 import { addBid, evaluateBid, setBidsOpen } from "../../actions";
+import Link from "next/link";
+import ObjectionsCommitteePanel from "@/components/procurement/ObjectionsCommitteePanel";
+import type { Committee, Member } from "@/components/projects/procurement/CommitteeSection";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "العروض — BALADI ONE", referrer: "no-referrer" as const };
@@ -24,6 +27,12 @@ export default async function Bids({ params, searchParams }: { params: Promise<{
     opened ? safe<Bid>(sb.from("procurement_bid").select("*").eq("plan_item_id", id).order("total_value")) : Promise.resolve({ data: [] as Bid[], missing: false }),
     sb.rpc("procurement_bid_count", { p_item: id }),
   ]);
+  const [com, mem, dec] = await Promise.all([
+    safe<Committee>(sb.from("procurement_committee").select("id,kind,formation_decision_id,formed_on,notes,report_text,report_on,result,result_on").eq("plan_item_id", id).order("created_at")),
+    safe<Member>(sb.from("procurement_committee_member").select("id,committee_id,name,role_ar,declaration_on,has_conflict,declaration_note").order("created_at").limit(500)),
+    safe<{ id: string; decision_no: string; year: number; title: string }>(sb.from("municipal_decision").select("id,decision_no,year,title").in("legal_status", ["adopted", "under_review", "effective"]).order("created_at", { ascending: false }).limit(200)),
+  ]);
+  const comIds = new Set(com.data.map((c) => c.id));
   const name = (sid: string) => sup.data.find((x) => x.id === sid)?.name ?? "—";
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut" }).format(new Date());
   const count = typeof cnt.data === "number" ? cnt.data : null;
@@ -34,6 +43,8 @@ export default async function Bids({ params, searchParams }: { params: Promise<{
       <h1 className="text-2xl font-bold">عروض: {item.title}</h1>
       <p className="text-sm text-muted-foreground">القيمة التقديرية {money(item.estimated_value, item.currency)} · عروض مستلمة: {count ?? "—"}</p>
       <ErrNotice err={sp.err} />
+      <p className="text-sm"><Link href={`/staff/procurement/objections/${id}`} className="font-semibold text-primary underline">سجل الاعتراضات على هذا الإجراء</Link></p>
+      <ObjectionsCommitteePanel itemId={id} committees={com.data} members={mem.data.filter((m) => comIds.has(m.committee_id))} decisions={dec.data.map((d) => ({ id: d.id, label: `${d.decision_no}/${d.year} — ${d.title}` }))} />
       <section className="space-y-2 rounded-2xl border p-4"><h2 className="font-bold text-primary">موعد فتح العروض</h2>
         {item.bids_open_on ? <p className="text-sm">{opened ? "فُتحت العروض في" : "العروض مختومة حتى"} {new Intl.DateTimeFormat("ar-LB-u-nu-latn", { timeZone: "Asia/Beirut", dateStyle: "medium", timeStyle: "short" }).format(new Date(item.bids_open_on))}</p>
           : <p className="text-sm text-amber-900">لم يُحدَّد موعد الفتح: لا يمكن الاطلاع على العروض قبل تحديده وحلوله.</p>}

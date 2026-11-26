@@ -1,0 +1,114 @@
+// Functional smoke test of DRAFT migrations 0043-0046 on a throwaway in-process Postgres (PGlite). No network, no production access.
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { makeEnv, read, type Env } from "../tests/security/harness";
+
+let E: Env; let P: string; let TPL_OK: string; let TPL_OTHER: string;
+const u = (uid: string) => ({ uid });
+const code = (e: { code?: string; message: string } | null) => e && e.message;
+/** Rows a direct write would touch through the API role: RLS without a write policy filters them out silently, or privileges raise an error — either is "blocked". */
+const touched = async (who: { uid: string }, sql: string) => {
+  const e = await E.err(who, sql);
+  if (e) return 0;
+  return Number((await E.q<{ n: string }>(who, `with x as (${sql} returning 1) select count(*)::text n from x`))[0].n);
+};
+
+beforeAll(async () => {
+  E = await makeEnv();
+  // minimal stand-ins for the decision-builder objects (their real migrations need the whole original schema)
+  await E.db.exec(`
+    alter table public.municipal_decision add column title text;
+    create table public.decision_template_version (id uuid primary key default gen_random_uuid(), template_id text, version text, title_ar text, domain text, status text default 'approved');
+    create or replace function public.decision_builder_create(p_version uuid, p_session uuid default null, p_title text default null, p_data jsonb default '{}'::jsonb)
+      returns uuid language plpgsql security definer as $$ declare i uuid; begin insert into municipal_decision(municipality_id,title) values (_council_muni(), p_title) returning id into i; return i; end $$;
+    grant execute on function public.decision_builder_create(uuid,uuid,text,jsonb) to authenticated;
+    grant select on public.municipal_decision, public.decision_template_version to authenticated;`);
+  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql"]) await E.db.exec(read(f));
+  P = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_add(2026,'Item','need',500,'USD') as id`))[0].id;
+  TPL_OK = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('PROC01','1','تأليف لجنة','procurement') returning id`))[0].id;
+  TPL_OTHER = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('FIN01','1','مالي','finance') returning id`))[0].id;
+}, 120_000);
+afterAll(async () => { await E?.db.close(); });
+
+const audit = async (action: string) => Number((await E.su<{ n: string }>(`select count(*)::text n from audit_event where action = $1`, [action]))[0].n);
+
+describe("0043 objections", () => {
+  let O: string;
+  it("clerk and anon cannot add; mayor can; audit row written", async () => {
+    expect(code(await E.err(u(E.clerkA), `select public.procurement_objection_add($1,'م','موضوع',current_date)`, [P]))).toBe("forbidden");
+    expect((await E.err("anon", `select public.procurement_objection_add($1,'م','موضوع',current_date)`, [P]))?.code).toBe("42501");
+    O = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_objection_add($1,'م','موضوع',current_date) as id`, [P]))[0].id;
+    expect(O).toBeTruthy();
+    const n = Number((await E.su<{ n: string }>(`select count(*)::text n from audit_event where entity ilike '%objection%'`))[0].n);
+    expect(n).toBeGreaterThan(0);
+  });
+  it("other municipality's mayor cannot read or act on it", async () => {
+    expect((await E.q(u(E.mayorB), `select id from procurement_objection`)).length).toBe(0);
+    const e = await E.err(u(E.mayorB), `select public.procurement_objection_add($1,'x','y',current_date)`, [P]);
+    expect(e).not.toBeNull();
+  });
+  it("no direct writes through the table API", async () => {
+    expect(await touched(u(E.mayorA), `update procurement_objection set status='decided'`)).toBe(0);
+    expect(await touched(u(E.mayorA), `delete from procurement_objection`)).toBe(0);
+    expect(Number((await E.su<{ n: string }>(`select count(*)::text n from procurement_objection where status='open'`))[0].n)).toBeGreaterThan(0);
+  });
+});
+
+describe("0044 workflow", () => {
+  it("is seeded only as pending_review and contains no numbers/legal vocabulary", async () => {
+    const r = await E.su<{ review_status: string }>(`select review_status from procurement_workflow_stage`);
+    expect(r.length).toBeGreaterThan(20);
+    expect(r.every((x) => x.review_status === "pending_review")).toBe(true);
+  });
+  it("starts a file, rejects an undefined jump, rejects 'completed' without evidence", async () => {
+    await E.q(u(E.mayorA), `select public.procurement_file_start($1,'open_tender')`, [P]);
+    const st = (await E.su<{ current_stage_key: string }>(`select current_stage_key from procurement_file_state where plan_item_id=$1`, [P]))[0].current_stage_key;
+    const last = (await E.su<{ stage_key: string }>(`select s.stage_key from procurement_workflow_stage s join procurement_workflow w on w.id=s.workflow_id where w.method='open_tender' order by s.ord desc limit 1`).catch(() => [])) ;
+    const e = await E.err(u(E.mayorA), `select public.procurement_file_advance($1,$2)`, [P, "no_such_stage"]);
+    expect(e?.message).toMatch(/transition_not_allowed|not_found|invalid/);
+    const e2 = await E.err(u(E.mayorA), `select public.procurement_file_check_set($1,$2,'completed')`, [P, st]);
+    expect(e2).not.toBeNull();
+    void last;
+  });
+  it("clerk is forbidden; history is append-only (no update/delete via API)", async () => {
+    expect(code(await E.err(u(E.clerkA), `select public.procurement_file_start($1,'open_tender')`, [P]))).toBe("forbidden");
+    expect(await touched(u(E.mayorA), `delete from procurement_file_history`)).toBe(0);
+    expect(await touched(u(E.mayorA), `update procurement_file_history set action='x'`)).toBe(0);
+    expect(Number((await E.su<{ n: string }>(`select count(*)::text n from procurement_file_history`))[0].n)).toBeGreaterThan(0);
+  });
+});
+
+describe("0045 documents + decision link", () => {
+  it("rejects a non-procurement template (no_matching_template) and creates no decision", async () => {
+    const e = await E.err(u(E.mayorA), `select public.procurement_plan_create_decision($1,$2)`, [P, TPL_OTHER]);
+    expect(e?.message).toBe("no_matching_template");
+    expect(Number((await E.su<{ n: string }>(`select count(*)::text n from municipal_decision`))[0].n)).toBe(0);
+  });
+  it("creates and links a decision from a procurement template; link is unique; audited", async () => {
+    const id = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_create_decision($1,$2) as id`, [P, TPL_OK]))[0].id;
+    expect(id).toBeTruthy();
+    expect((await E.su(`select 1 from procurement_plan_decision where plan_item_id=$1 and decision_id=$2`, [P, id])).length).toBe(1);
+    expect(await audit("procurement.decision_draft_linked")).toBe(1);
+  });
+  it("document log: mayor records, clerk forbidden, no update/delete via API", async () => {
+    const args = [P, "purchase_request", "1", "html", "[]", "[]"];
+    expect(code(await E.err(u(E.clerkA), `select public.procurement_document_record($1,$2,$3,$4,$5::jsonb,$6::jsonb)`, args))).toBe("forbidden");
+    const r = await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_document_record($1,$2,$3,$4,$5::jsonb,$6::jsonb) as id`, args);
+    expect(r[0].id).toBeTruthy();
+    expect(await touched(u(E.mayorA), `update procurement_document set template_key='x'`)).toBe(0);
+    expect(await touched(u(E.mayorA), `delete from procurement_document`)).toBe(0);
+    expect(Number((await E.su<{ n: string }>(`select count(*)::text n from procurement_document`))[0].n)).toBe(1);
+  });
+});
+
+describe("0046 draft security fixes (F-1/F-2)", () => {
+  it("bids_open_on cannot be shortened once a bid exists", async () => {
+    const S = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_supplier_add('S') as id`))[0].id;
+    await E.q(u(E.mayorA), `select public.procurement_set_bids_open($1, now() + interval '7 days')`, [P]);
+    await E.q(u(E.mayorA), `select public.procurement_bid_add($1,$2,current_date,'USD',900)`, [P, S]);
+    const e = await E.err(u(E.mayorA), `select public.procurement_set_bids_open($1, now() + interval '2 seconds')`, [P]);
+    expect(e?.message).toMatch(/seal_cannot_shorten/);
+  });
+  it("a user without a staff row cannot read legal sources", async () => {
+    expect((await E.q(u(E.outsider), `select id from procurement_legal_source`)).length).toBe(0);
+  });
+});

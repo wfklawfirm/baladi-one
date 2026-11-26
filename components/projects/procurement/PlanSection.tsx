@@ -21,6 +21,10 @@ export default function PlanSection({ rows, lines, contracts, year }: { rows: Pl
             <p className="text-sm text-muted-foreground">النشر {r.planned_publish_on ?? "—"} · الترسية {r.planned_award_on ?? "—"} · البدء {r.planned_start_on ?? "—"}</p>
             <div className="flex flex-wrap items-end gap-2">
               <Link href={`/staff/procurement/bids/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">العروض</Link>
+              <Link href={`/staff/procurement/file/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">مسار الملف</Link>
+              <Link href={`/staff/procurement/docs/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">المستندات</Link>
+              <Link href={`/staff/procurement/objections/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">الاعتراضات</Link>
+              <Link href={`/staff/procurement/audit-pack/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">الملف الرقابي</Link>
               <form action={setPlanStatus} className="flex items-end gap-2"><input type="hidden" name="id" value={r.id} />
                 <select name="value" defaultValue={r.status} aria-label="حالة البند" className={fld}>{Object.entries(PLAN_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select><button className={btn}>تحديث</button></form>
               <form action={linkPlanContract} className="flex items-end gap-2"><input type="hidden" name="id" value={r.id} />

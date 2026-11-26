@@ -5,6 +5,7 @@ import { Sparkles, X, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import Assistant from "./Assistant";
 
 const IDEAS: [string, string[]][] = [
+  ["/staff/procurement", ["ما الإجراء التالي؟", "ما المستندات التي تنقص الملف؟", "هل توجد مؤشرات تجزئة محتملة؟", "متى يمكن توقيع العقد؟", "اشرح لي المادة القانونية بطريقة مبسطة", "حضّر الملف الرقابي"]],
   ["/staff/operations", ["حلّل أداء البلدية في الفترة المحددة", "ما الأولويات الحالية؟", "ما المؤشرات المتراجعة؟", "حضّر موجزًا تنفيذيًا قصيرًا"]],
   ["/staff/council", ["ما الإجراءات المطلوبة لإدراج موضوع على جدول أعمال المجلس؟", "ما مهل الطعن بقرارات المجلس البلدي؟", "راجع الأساس القانوني لقرار اتخاذه المجلس"]],
   ["/staff/collections", ["ما الرسوم والأنظمة المتعلقة بالتحصيل البلدي؟"]],
@@ -23,7 +24,9 @@ export default function ExecCopilot() {
     return () => { window.removeEventListener("copilot:ask", h); window.removeEventListener("keydown", k); };
   }, []);
   const ideas = IDEAS.find(([p]) => path.startsWith(p))?.[1] ?? DEFAULT;
-  const ctx = { path, p: sp.get("p") ?? undefined, from: sp.get("from") ?? undefined, to: sp.get("to") ?? undefined };
+  // procurement pages: a plan-item id in the URL (e.g. /staff/procurement/audit-pack/<id>) is sent as a hint only; the server re-reads everything under RLS
+  const item = path.startsWith("/staff/procurement") ? path.match(/\/([0-9a-f]{8}-[0-9a-f-]{27})(?:\/|$)/i)?.[1] : undefined;
+  const ctx = { path, item, p: sp.get("p") ?? undefined, from: sp.get("from") ?? undefined, to: sp.get("to") ?? undefined };
   return (
     <>
       {!open && (

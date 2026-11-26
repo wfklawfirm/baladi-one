@@ -169,7 +169,7 @@ export function buildFile(i: FileInput): StageState[] {
       case "award": return c.award_notice_on ? `قبول العرض ${c.award_notice_on}` : null;
       case "notice": return c.award_notice_on ? `نشر قبول العرض ${c.award_notice_on}` : null;
       case "objections": return c.objection_pending ? null : c.award_notice_on ? (c.objection_resolved_on ? `اعتراض مبتوت ${c.objection_resolved_on}` : "لا اعتراض قائم مسجَّل") : null;
-      case "standstill": { if (!c.award_notice_on || !c.signed_on) return null; return c.signed_on > c.award_notice_on ? `التوقيع ${c.signed_on} بعد نشر القبول ${c.award_notice_on} (تحقق من 10 أيام عمل)` : null; }
+      case "standstill": { if (!c.award_notice_on || !c.signed_on) return null; return c.signed_on > c.award_notice_on ? `التوقيع ${c.signed_on} بعد نشر القبول ${c.award_notice_on} (يُتحقق من فترة التجميد المعتمدة قانونيًا)` : null; }
       case "contract": return c.signed_on ? `موقّع ${c.signed_on}` : null;
       case "execution": return ["active", "completed"].includes(c.status) ? "العقد ساري/منفَّذ" : null;
       case "acceptance": { const k = i.committees.find((x) => x.kind === "acceptance" && ["accepted", "accepted_reservations"].includes(x.result)); return k ? COMMITTEE_RESULT[k.result] : null; }
