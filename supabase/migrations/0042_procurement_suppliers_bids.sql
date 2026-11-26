@@ -1,4 +1,4 @@
--- 0042 (DRAFT — NOT APPLIED): supplier registry and sealed bids (Phase 3). Idempotent. Depends on 0024. No legal value is stored or assumed here.
+-- 0042 (APPLIED 2026-11-26): supplier registry and sealed bids (Phase 3). Idempotent. Depends on 0024. No legal value is stored or assumed here.
 -- Bids are SEALED: staff cannot read bid rows until the plan item's bids_open_on has passed (RLS); before that only the count is visible (RPC).
 -- A received bid is never edited; only the post-opening evaluation fields change, through an RPC. Reads cannot be logged from RLS; writes are audited.
 create table if not exists public.procurement_supplier (

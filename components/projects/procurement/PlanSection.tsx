@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { METHOD } from "@/lib/council";
 import { PLAN_STATUS } from "@/lib/procurement";
 import { addPlanItem, linkPlanContract, setPlanStatus } from "@/app/staff/projects/procurement/actions";
@@ -19,6 +20,7 @@ export default function PlanSection({ rows, lines, contracts, year }: { rows: Pl
             <p className="text-sm text-muted-foreground">التمويل: {lineName(r.budget_line_id) ?? "غير مربوط ببند موازنة"}{r.funding_note ? ` — ${r.funding_note}` : ""}</p>
             <p className="text-sm text-muted-foreground">النشر {r.planned_publish_on ?? "—"} · الترسية {r.planned_award_on ?? "—"} · البدء {r.planned_start_on ?? "—"}</p>
             <div className="flex flex-wrap items-end gap-2">
+              <Link href={`/staff/procurement/bids/${r.id}`} className="min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold active:bg-muted">العروض</Link>
               <form action={setPlanStatus} className="flex items-end gap-2"><input type="hidden" name="id" value={r.id} />
                 <select name="value" defaultValue={r.status} aria-label="حالة البند" className={fld}>{Object.entries(PLAN_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select><button className={btn}>تحديث</button></form>
               <form action={linkPlanContract} className="flex items-end gap-2"><input type="hidden" name="id" value={r.id} />

@@ -25,6 +25,9 @@ export const PROC_ERR: Record<string, string> = {
   result_date_required: "سجّل تاريخ النتيجة.",
   acceptance_warning: "تنبيه: لا يوجد محضر لجنة استلام بنتيجة إيجابية لهذا العقد. أكّد الإنهاء صراحةً إن أردت المتابعة.",
   acceptance_required: "لا يمكن إنهاء العقد: لا محضر لجنة استلام بنتيجة إيجابية (القاعدة مراجَعة).",
+  bids_closed: "انتهى موعد فتح العروض: لا تُقبل عروض جديدة.",
+  bids_sealed: "العروض مختومة حتى موعد الفتح: لا يجوز الاطلاع عليها أو تقييمها قبله.",
+  bids_already_open: "فُتحت العروض أصلًا؛ لا يُغيَّر موعد الفتح.",
   pending: PENDING_NOTICE,
 };
 export const procErr = (code?: string) => (code && PROC_ERR[code]) || "تعذّر تنفيذ العملية، تحقق من المدخلات.";

@@ -37,7 +37,7 @@ export default async function ProcurementHome() {
       </ul>
       {(th.missing || src.missing) && <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">بعض الجداول غير متاحة بعد في قاعدة البيانات.</p>}
       {!th.missing && th.data.length === 0 && <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">لم تُحمَّل أي سقوف قانونية بعد، لذلك لا يقترح النظام طريقة شراء بحسب القيمة: يتطلب تحققًا قانونيًا.</p>}
-      <p className="text-sm text-muted-foreground"><Link href="/staff/legal" className="font-semibold text-primary underline">النماذج والمراجع القانونية</Link>{!src.missing && ` · ${src.data.length} مصدراً مسجَّلاً، ${unverified} منها بانتظار المراجعة القانونية`}</p>
+      <p className="text-sm text-muted-foreground"><Link href="/staff/procurement/suppliers" className="font-semibold text-primary underline">الموردون</Link> · <Link href="/staff/legal" className="font-semibold text-primary underline">النماذج والمراجع القانونية</Link>{!src.missing && ` · ${src.data.length} مصدراً مسجَّلاً، ${unverified} منها بانتظار المراجعة القانونية`}</p>
     </main></>
   );
 }
