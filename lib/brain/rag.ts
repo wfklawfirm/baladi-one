@@ -1,4 +1,4 @@
-import { auditCommitteeMayor, SAFE_COMMITTEE_NOTE } from "./committeeGuard";
+import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT } from "./assistantGuards";
 import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
@@ -73,7 +73,7 @@ export function buildContext(chunks: Hit[], complexity: "mini" | "full" = "full"
   const max = complexity === "mini" ? 1500 : 3500;
   // newest source first, each tagged with its year: when sources disagree the model must lead with the newest in-force one
   const ordered = newestFirst(chunks, (c) => issueYear(c.title));
-  return ordered.map((c, i) => `[${i + 1}] **${c.title}** (${yearLabel(issueYear(c.title))})${c.source === JUR_SOURCE ? " [استشارة هيئة التشريع]" : ""}\n${c.text.slice(0, max)}`).join("\n\n---\n\n");
+  return ordered.map((c, i) => `[${i + 1}] **${c.title}** (${yearLabel(issueYear(c.title))}) {${sourceTier(c.chunk_id).label}}${c.source === JUR_SOURCE ? " [استشارة هيئة التشريع]" : ""}\n${c.text.slice(0, max)}`).join("\n\n---\n\n");
 }
 export function confidence(chunks: Hit[]): "high" | "medium" | "low" {
   if (!chunks.length) return "low";
@@ -116,13 +116,18 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const complexity = classify(query);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* no sources → refuse below */ }
+  // layer 2: with in-force PPA texts present, older books/summaries are removed from the context for procurement topics
+  chunks = dropSuperseded(chunks, query, !!opts.authority);
+  // layer 4: a categorical ruling on procurement with no in-force text → no model call, fixed safe notice
+  if (mustRefuseRuling(query, !!opts.authority)) return { answer: NO_AUTHORITY_NOTE, sources: [], confidence: "low" as const };
   // people say «لجنة الشراء»; the approved library template and the law call it «لجنة التلزيم»
   const tpl = wantsTemplate(query) ? matchTemplate(query.replace(/لجنة\s+الشراء/g, "لجنة تلزيم")) : null;
   // No sources: still answer from general knowledge, but cautiously (no article numbers, no invented templates) and flagged as unverified.
   const ungrounded = !chunks.length && !tpl && !opts.facts;
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
-  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}`;
+  const ruling = isRulingQuestion(query) && isProcurementTopic(query);
+  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}`;
   const msgs: Msg[] = [{ role: "system", content: sys }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
@@ -136,8 +141,8 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const verify = async (answer: string): Promise<{ hard: string[]; soft: string[] }> => {
     const a = auditDraft(answer, sourcesForAudit, query);
     const hard = [...a.hard], soft = [...a.soft];
-    const cm = auditCommitteeMayor(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`);
-    if (cm) hard.push(cm);
+    const gv = auditGuards(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`);
+    if (gv) hard.push(`[guard:${gv.id}] ${gv.message}`);
     // the model verifier only runs when the draft contains a decision template or cites articles (saves latency; avoids false alarms on plain advice)
     if (!ungrounded && (/<TEMPLATE:/.test(answer) || /(?:المادة|مادة)\s*[0-9٠-٩]/.test(answer))) {
       try {
@@ -159,8 +164,9 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
     const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `ملاحظات التدقيق على مسودتك:\n- ${all.join("\n- ")}\nأعد كتابة الإجابة كاملة مصحّحة هذه النقاط: الجهة بلدية، ولا تذكر رقم مادة غير وارد في المصادر المرفقة (اكتفِ باسم القانون)، ولا تُلغِ بقية الإجابة المفيدة.` }]);
     if (retry.trim()) {
       const v2 = await verify(retry);
-      if (v2.hard.some((h) => h.includes("لجنة تلزيم/استلام"))) {
-        answer = SAFE_COMMITTEE_NOTE; v = { hard: [], soft: [] };
+      const gh = v2.hard.find((h) => h.startsWith("[guard:"));
+      if (gh) {
+        answer = auditGuards(retry, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`)?.safe_note ?? NO_AUTHORITY_NOTE; v = { hard: [], soft: [] };
       } else if (v2.hard.length) {
         // never show a ministerial / entity-less municipal template; give the rest of the answer without it
         const stripped = retry.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
