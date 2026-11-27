@@ -63,12 +63,14 @@ export const parseContradiction = (raw: string): { contradicts: boolean; reason:
   try { const j = JSON.parse(raw); return typeof j.contradicts === "boolean" ? { contradicts: j.contradicts, reason: String(j.reason ?? "").slice(0, 200) } : null; } catch { return null; }
 };
 
-type Grounded = Guard & { grounded_head?: string; grounded_points?: { when: string; text: string }[]; grounded_caveat?: string };
+type Grounded = Guard & { grounded_head?: string; grounded_points?: { when: string; text: string }[]; grounded_caveat?: string; grounded_caveat_verified?: string };
 /** When a guard fires twice, answer from the in-force text itself (clean, structured) instead of a bare apology. Points appear only if the retrieved text contains them. */
 export function groundedFallback(g: Grounded, authority: string): string {
   const pts = (g.grounded_points ?? []).filter((p) => new RegExp(n(p.when)).test(n(authority)));
   if (!g.grounded_head || !pts.length) return g.safe_note;
   const title = (/^###\s*(.+)$/m.exec(authority)?.[1] ?? "").split(" — ")[0].trim();
+  const blk = authority.split(/\n(?=### )/).find((b) => /###/.test(b) && pts.some((p) => new RegExp(n(p.when)).test(n(b)))) ?? "";
+  const verified = /الحالة:\s*معتمد من المالك/.test(blk);
   const link = /المصدر:\s*(https?:\/\/\S+)/.exec(authority)?.[1];
-  return [g.grounded_head, "", "**السند (الأحدث النافذ – قيد المراجعة القانونية):**", ...(title ? [`- ${title}`] : []), ...pts.map((p) => `- ${p.text}`), ...(g.grounded_caveat ? ["", `> ${g.grounded_caveat}`] : []), ...(link ? ["", `المصدر: ${link}`] : [])].join("\n");
+  return [g.grounded_head, "", `**السند (الأحدث النافذ – ${verified ? "معتمد من المالك" : "قيد المراجعة القانونية"}):**`, ...(title ? [`- ${title}`] : []), ...pts.map((p) => `- ${p.text}`), ...((verified ? g.grounded_caveat_verified : g.grounded_caveat) ? ["", `> ${verified ? g.grounded_caveat_verified : g.grounded_caveat}`] : []), ...(link ? ["", `المصدر: ${link}`] : [])].join("\n");
 }

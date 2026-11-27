@@ -114,7 +114,7 @@ export async function clarify(query: string, history: Turn[]): Promise<string[]>
 
 const supportedOnly = (cs: Claim[] | null) => {
   const ok = (cs ?? []).filter((c) => c.status === "supported" || c.status === "unreviewed");
-  return ok.length ? `لم أستطع التحقق من كل ما ورد في الجواب مقابل النصوص، فأقتصر على ما أيّده نص:\n${ok.slice(0, 6).map((c) => `- ${c.text}${c.source ? ` (${c.source})` : ""} — قيد المراجعة`).join("\n")}\n\nراجع النصوص المذكورة في المصادر قبل أي قرار.` : "⚠️ تعذّر التحقق من الجواب مقابل نصوص هيئة الشراء العام المرفقة، فلم أعرض جوابًا قاطعًا. راجع النصوص المذكورة في المصادر أو أعد صياغة السؤال.";
+  return ok.length ? `لم أستطع التحقق من كل ما ورد في الجواب مقابل النصوص، فأقتصر على ما أيّده نص:\n${ok.slice(0, 6).map((c) => `- ${c.text}${c.source ? ` (${c.source})` : ""} — ${c.status === "supported" ? "معتمد من المالك" : "قيد المراجعة"}`).join("\n")}\n\nراجع النصوص المذكورة في المصادر قبل أي قرار.` : "⚠️ تعذّر التحقق من الجواب مقابل نصوص هيئة الشراء العام المرفقة، فلم أعرض جوابًا قاطعًا. راجع النصوص المذكورة في المصادر أو أعد صياغة السؤال.";
 };
 export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string; authority?: string; authorityMeta?: AuthMeta[] } = {}) {
   if (!opts.noClarify) {
