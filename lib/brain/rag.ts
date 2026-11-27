@@ -4,6 +4,7 @@ import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK, TEMPLATE_RULES } from "./prompts";
 import { graphNotes } from "./legalGraph";
 import { CLAIMS_SYSTEM, parseClaims, blockingClaims, computeConfidence, LEVEL_AR, type AuthMeta, type Claim } from "./claims";
+import { parseArticleRefs } from "./hybrid";
 import { decompose, coverageMatrix, uncoveredIssues } from "./issues";
 import { authorityCitations } from "./citations";
 import { searchTerms } from "./supersession";
@@ -61,7 +62,17 @@ export async function retrieve(query: string, complexity: "mini" | "full", topK 
   const lists = await Promise.all(vecs.map((v) => search(v, per)));
   const best = new Map<string, Hit>();
   for (const h of lists.flat()) { const o = best.get(h.chunk_id); if (!o || h.score > o.score) best.set(h.chunk_id, h); }
-  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, per + 6);
+  // hybrid legs: exact article lookup (high confidence) + full-text; both best-effort and never fatal
+  try {
+    const sb = await supabaseServer();
+    for (const r of parseArticleRefs(query)) {
+      const { data } = await sb.rpc("law_article_lookup", { p_law: r.law, p_article: r.article });
+      for (const x of data ?? []) best.set(x.chunk_id, { chunk_id: x.chunk_id, title: x.title, text: x.body, domain: "D01", source: "law_library", score: 0.9 });
+    }
+    const { data: fts } = await sb.rpc("law_fts_search", { p_query: query, p_limit: 12 });
+    for (const x of fts ?? []) if (x.source === STATUTE_SOURCE && !best.has(x.chunk_id)) best.set(x.chunk_id, { chunk_id: x.chunk_id, title: x.title, text: x.body, domain: x.domain, source: x.source, score: 0.3 });
+  } catch { /* vector results still apply */ }
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, per + 10);
 }
 
 export function filterAndRank(hits: Hit[]): Hit[] {
