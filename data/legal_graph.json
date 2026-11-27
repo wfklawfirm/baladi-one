@@ -1,5 +1,5 @@
 {
-  "_note": "رسم مفاهيم قانوني عام لربط المصطلحات والنصوص. المفاهيم ليست مترادفات مطلقة: كل علاقة لها نوع وسند وحالة. كل العلاقات 'pending_review' إلى أن يعتمدها المالك؛ لا تُستعمل كحكم بل كخريطة للاسترجاع والتنبيه. لم تُقرأ المادة 67 من قانون البلديات آليًا (موقع الجريدة رفض الجلب الآلي) فعلاقتها موسومة 'needs_source_reading'.",
+  "_note": "رسم مفاهيم قانوني عام لربط المصطلحات والنصوص. المفاهيم ليست مترادفات مطلقة: كل علاقة لها نوع وسند وحالة. كل العلاقات 'pending_review' إلى أن يعتمدها المالك؛ لا تُستعمل كحكم بل كخريطة للاسترجاع والتنبيه. قُرئ نص المادة 67 من قانون البلديات من نسخة المنصة (MUN-118، صيغة معدّلة بالقانون 665/1997 فقط، قيد المراجعة؛ التعديلات اللاحقة غير متحقَّق منها).",
   "concepts": [
     { "id": "mayor", "ar": "رئيس البلدية", "match": "رئيس\\s+(?:ال)?بلدي[ةه]|رئيس\\s+المجلس\\s+البلدي", "topic": "municipal", "search": ["رئيس البلدية", "المجلس البلدي"] },
     { "id": "executive_authority", "ar": "رئيس السلطة التنفيذية", "match": "السلطة\\s+التنفيذي[ةه]", "topic": "procurement", "search": ["السلطة التنفيذية", "البلديات"] },
@@ -15,8 +15,8 @@
     { "id": "procuring_entity", "ar": "الجهة الشارية", "match": "الجه[ةه]\\s+الشاري[ةه]|هيئ[ةه]\\s+الشراء|قانون\\s+الشراء|الشراء\\s+العام|مناقص|تلزيم|مزايد|استدراج|دفتر\\s+شروط", "topic": "procurement", "search": ["الجهة الشارية", "الشراء العام"] }
   ],
   "edges": [
-    { "from": "mayor", "to": "executive_authority", "relation": "typically_holder_of", "absolute": false, "basis": ["قانون البلديات، المادة 67 (لم تُقرأ آليًا)"], "status": "needs_source_reading",
-      "caveats": ["ليسا مترادفين مطلقين", "بلدية بيروت لها خصوصية في السلطة التنفيذية", "قد يتولى نائب الرئيس مهام السلطة التنفيذية في حالات محددة"] },
+    { "from": "mayor", "to": "executive_authority", "relation": "typically_holder_of", "absolute": false, "basis": ["قانون البلديات، المادة 67 (نسخة المنصة MUN-118، معدّلة 665/1997 فقط)"], "status": "pending_review",
+      "caveats": ["ليسا مترادفين مطلقين", "في بيروت المحافظ هو السلطة التنفيذية (قُرئ من نسخة المنصة)", "الشغور المؤقت: المادة 72؛ التفويض: المادة 77؛ الحلول: المادة 135 — قيد المراجعة"] },
     { "from": "executive_authority", "to": "tender_committee", "relation": "prohibited_from_chairing_or_membership", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، سادسًا (3)"], "status": "pending_review", "caveats": ["قراءة من نص مستخرج آليًا"] },
     { "from": "executive_authority", "to": "receiving_committee", "relation": "prohibited_from_chairing_or_membership", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، سادسًا (3)"], "status": "pending_review", "caveats": [] },
     { "from": "mayor", "to": "tender_committee", "relation": "excluded_when_council_members_are_used", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، أولًا"], "status": "pending_review", "caveats": [] },

@@ -1,0 +1,8 @@
+{
+  "_note": "Deterministic rule parameters. A rule with value=null is NOT usable: the engine returns needs_verification. Values are filled only after a human reviewer reads the cited article and sets status=verified. Nothing here is a legal assertion until verified.",
+  "rules": [
+    { "id": "council_quorum", "label": "نصاب جلسة المجلس البلدي", "source_hint": "MUN-118 (نصاب الجلسات)", "kind": "fraction_of_members", "value": null, "status": "pending_review" },
+    { "id": "council_majority", "label": "الأكثرية المطلوبة للقرار العادي", "source_hint": "MUN-118 (الأكثرية)", "kind": "fraction_of_present", "value": null, "status": "pending_review" },
+    { "id": "invitation_notice_days", "label": "مهلة الدعوة إلى الجلسة (أيام)", "source_hint": "MUN-118 (الدعوة)", "kind": "days", "value": null, "status": "pending_review" }
+  ]
+}

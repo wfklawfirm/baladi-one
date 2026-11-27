@@ -4,6 +4,7 @@ import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK, TEMPLATE_RULES } from "./prompts";
 import { graphNotes } from "./legalGraph";
 import { CLAIMS_SYSTEM, parseClaims, blockingClaims, computeConfidence, LEVEL_AR, type AuthMeta, type Claim } from "./claims";
+import { decompose, coverageMatrix, uncoveredIssues } from "./issues";
 import { authorityCitations } from "./citations";
 import { searchTerms } from "./supersession";
 import { auditDraft } from "./audit";
@@ -16,6 +17,7 @@ const EMBED_DIMS = 1536;
 const CHAT_MODEL = "gpt-4o";
 const CHAT_MODEL_MINI = "gpt-4o-mini";
 const MIN_SCORE = 0.22, MAX_CONTEXT = 15, MAX_CONTEXT_JUR = 5;
+const STATUTE_SOURCE = "law_library";
 const JUR_SOURCE = "استشارات_هيئة_التشريع_البلديات";
 const LEGAL_DOMAINS = new Set(["D01", "D07", "D09", "D13"]);
 export const DOMAIN_NAMES: Record<string, string> = {
@@ -64,7 +66,8 @@ export async function retrieve(query: string, complexity: "mini" | "full", topK 
 
 export function filterAndRank(hits: Hit[]): Hit[] {
   const ok = hits.filter((h) => h.score >= MIN_SCORE);
-  const key = (h: Hit) => (LEGAL_DOMAINS.has(h.domain) ? 1 : 0) * 10 + h.score;
+  // statutes (law_library: MUN/PROC/MACC/ACC) outrank books within the shared D01 domain; books only fill the remaining slots
+  const key = (h: Hit) => (LEGAL_DOMAINS.has(h.domain) ? 1 : 0) * 10 + (h.source === STATUTE_SOURCE ? 5 : 0) + h.score;
   const jur = ok.filter((h) => h.source === JUR_SOURCE).sort((a, b) => key(b) - key(a));
   const reg = ok.filter((h) => h.source !== JUR_SOURCE).sort((a, b) => key(b) - key(a));
   const seen: Record<string, number> = {}, out: Hit[] = [];
@@ -135,6 +138,10 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
   const NO_FRESH = isProcurementTopic(query) && !opts.authority ? "\n[تنبيه: لم يُسترجع أي نص نافذ حديث للشراء العام؛ المصادر المتاحة أقدم أو تفسيرية فقط — لا تجزم بأي حكم ولا تعتمد عليها لحسم صلاحية أو عضوية أو مهلة، وقل ذلك صراحة]" : "";
+  // V3: multi-issue decomposition + coverage matrix — issues with no retrieved statute are declared, never answered from memory
+  const matrix = coverageMatrix(decompose(query), chunks.map((c) => c.chunk_id), opts.authorityMeta?.map((m) => m.title ?? "") ?? (opts.authority ? ["PPA"] : []));
+  const GAPS = uncoveredIssues(matrix);
+  const COVER = matrix.length ? `\n[تغطية المسائل: ${matrix.map((m) => `${m.issue.label}=${m.status === "covered" ? "مغطّاة" : m.status === "partial" ? "جزئية" : "غير مغطّاة"}`).join("؛ ")}${GAPS.length ? ` — لا نص في السياق للمسائل غير المغطّاة (${GAPS.join("، ")}): قل صراحةً إن النص غير متوفر ولا تجب عنها من الذاكرة` : ""}]` : "";
   const mode = answerMode(query, wantsTemplate(query));
   const ruling = isRulingQuestion(query) && isProcurementTopic(query);
   const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}${mode === "draft" ? `\n\n${TEMPLATE_RULES}` : `\n\n${NO_DRAFT_RULE}`}`;
@@ -144,7 +151,7 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const GRAPH = (() => { const g = graphNotes(query); return g ? `${g}\n\n` : ""; })();
   const AUTH = opts.authority ? `${opts.authority}\nهذه النصوص الأحدث وتسود على أي مصدر أقدم يخالفها أدناه.\n\n` : "";
   const TPL = tpl ? `${templateGrounding(tpl)}\n\n` : "";
-  const userMsg = `${HINT}${NO_FRESH}\n\n${FACTS}${GRAPH}${AUTH}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
+  const userMsg = `${HINT}${NO_FRESH}${COVER}\n\n${FACTS}${GRAPH}${AUTH}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
   msgs.push({ role: "user", content: userMsg });
   const model = complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL;
   const gen = async (m: Msg[]) => ((await openai("chat/completions", { model, messages: m, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 })).choices[0].message.content as string) || "";

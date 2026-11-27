@@ -44,7 +44,7 @@ describe("legal graph", () => {
   it("non-procurement questions are untouched", () => { expect(isProcurementQuery("كيف أسجل ولادة؟")).toBe(false); expect(graphNotes("كيف أسجل ولادة؟")).toBeUndefined(); });
   it("keeps mayor and executive authority distinct and flags special cases", () => {
     expect(detectConcepts("رئيس البلدية").map((c) => c.id)).toEqual(["mayor"]);
-    const n = graphNotes("هل رئيس البلدية مسموح له بتقييم العروض؟")!; expect(n).toContain("بلدية بيروت"); expect(n).toContain("تمييز");
+    const n = graphNotes("هل رئيس البلدية مسموح له بتقييم العروض؟")!; expect(n).toContain("بيروت"); expect(n).toContain("تمييز");
   });
   it("offers alternative legal phrasing for a second retrieval", () => { expect(altSearchTerms("هل رئيس البلدية مسموح له بتقييم العروض؟").length).toBeGreaterThan(3); });
 });
