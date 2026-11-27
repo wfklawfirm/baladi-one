@@ -1,7 +1,11 @@
-import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT, answerMode, NO_DRAFT_RULE, stripDrafts, CONTRADICTION_SYSTEM, parseContradiction, groundedFallback } from "./assistantGuards";
+import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT, answerMode, NO_DRAFT_RULE, stripDrafts, groundedFallback } from "./assistantGuards";
 import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
-import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
+import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK, TEMPLATE_RULES } from "./prompts";
+import { graphNotes } from "./legalGraph";
+import { CLAIMS_SYSTEM, parseClaims, blockingClaims, computeConfidence, LEVEL_AR, type AuthMeta, type Claim } from "./claims";
+import { authorityCitations } from "./citations";
+import { searchTerms } from "./supersession";
 import { auditDraft } from "./audit";
 import { expandQuery, matchTemplate, templateGrounding, wantsTemplate } from "./expand";
 import { supabaseServer } from "@/lib/supabase-server";
@@ -108,7 +112,11 @@ export async function clarify(query: string, history: Turn[]): Promise<string[]>
   } catch { return []; }
 }
 
-export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string; authority?: string } = {}) {
+const supportedOnly = (cs: Claim[] | null) => {
+  const ok = (cs ?? []).filter((c) => c.status === "supported" || c.status === "unreviewed");
+  return ok.length ? `لم أستطع التحقق من كل ما ورد في الجواب مقابل النصوص، فأقتصر على ما أيّده نص:\n${ok.slice(0, 6).map((c) => `- ${c.text}${c.source ? ` (${c.source})` : ""} — قيد المراجعة`).join("\n")}\n\nراجع النصوص المذكورة في المصادر قبل أي قرار.` : "⚠️ تعذّر التحقق من الجواب مقابل نصوص هيئة الشراء العام المرفقة، فلم أعرض جوابًا قاطعًا. راجع النصوص المذكورة في المصادر أو أعد صياغة السؤال.";
+};
+export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string; authority?: string; authorityMeta?: AuthMeta[] } = {}) {
   if (!opts.noClarify) {
     const questions = await clarify(query, history);
     if (questions.length) return { clarify: questions };
@@ -126,34 +134,38 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const ungrounded = !chunks.length && !tpl && !opts.facts;
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
+  const NO_FRESH = isProcurementTopic(query) && !opts.authority ? "\n[تنبيه: لم يُسترجع أي نص نافذ حديث للشراء العام؛ المصادر المتاحة أقدم أو تفسيرية فقط — لا تجزم بأي حكم ولا تعتمد عليها لحسم صلاحية أو عضوية أو مهلة، وقل ذلك صراحة]" : "";
   const mode = answerMode(query, wantsTemplate(query));
   const ruling = isRulingQuestion(query) && isProcurementTopic(query);
-  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}${mode !== "draft" ? `\n\n${NO_DRAFT_RULE}` : ""}`;
+  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}${mode === "draft" ? `\n\n${TEMPLATE_RULES}` : `\n\n${NO_DRAFT_RULE}`}`;
   const msgs: Msg[] = [{ role: "system", content: sys }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
+  const GRAPH = (() => { const g = graphNotes(query); return g ? `${g}\n\n` : ""; })();
   const AUTH = opts.authority ? `${opts.authority}\nهذه النصوص الأحدث وتسود على أي مصدر أقدم يخالفها أدناه.\n\n` : "";
   const TPL = tpl ? `${templateGrounding(tpl)}\n\n` : "";
-  const userMsg = `${HINT}\n\n${FACTS}${AUTH}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
+  const userMsg = `${HINT}${NO_FRESH}\n\n${FACTS}${GRAPH}${AUTH}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
   msgs.push({ role: "user", content: userMsg });
   const model = complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL;
   const gen = async (m: Msg[]) => ((await openai("chat/completions", { model, messages: m, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 })).choices[0].message.content as string) || "";
   const sourcesForAudit = [...chunks.map((c) => ({ title: c.title, text: c.text })), ...(tpl ? [{ title: tpl.title_ar, text: `${tpl.legal_reference_candidates?.map((r) => `المادة ${r.article_candidates ?? ""}`).join(" ") ?? ""} ${(tpl.operative_clauses_ar ?? []).join(" ")}` }] : [])];
+  let lastClaims: Claim[] | null = null;
   const verify = async (answer: string): Promise<{ hard: string[]; soft: string[] }> => {
     const a = auditDraft(answer, sourcesForAudit, query);
     const hard = [...a.hard], soft = [...a.soft];
-    const gv = auditGuards(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`);
+    const gv = auditGuards(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`, undefined, query);
     if (gv) hard.push(`[guard:${gv.id}] ${gv.message}`);
-    // model contradiction check against the in-force texts (fail-closed on ruling questions: no verdict → no categorical answer)
+    // claim-level audit against the in-force texts (fail-closed on ruling questions: no audit → no categorical answer)
     if (opts.authority && isProcurementTopic(query) && !gv) {
-      let cx: { contradicts: boolean; reason: string } | null = null;
+      let cl: Claim[] | null = null;
       try {
-        const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 200, response_format: { type: "json_object" }, messages: [
-          { role: "system", content: CONTRADICTION_SYSTEM }, { role: "user", content: `النصوص النافذة:\n${opts.authority.slice(0, 9000)}\n\nالجواب:\n${answer.slice(0, 5000)}` }] });
-        cx = parseContradiction(j.choices[0].message.content || "");
-      } catch { cx = null; }
-      if (cx?.contradicts) hard.push(`[guard:llm-contradiction] الجواب يناقض نصًا نافذًا مرفقًا: ${cx.reason}`);
-      else if (!cx && ruling) hard.push("[guard:verifier-unavailable] تعذّر التحقق من الجواب مقابل النص النافذ");
+        const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 900, response_format: { type: "json_object" }, messages: [
+          { role: "system", content: CLAIMS_SYSTEM }, { role: "user", content: `النصوص:\n${opts.authority.slice(0, 9000)}\n\nالجواب:\n${answer.slice(0, 5000)}` }] });
+        cl = parseClaims(j.choices[0].message.content || "", opts.authorityMeta ?? []);
+      } catch { cl = null; }
+      lastClaims = cl;
+      if (cl) for (const c of blockingClaims(cl).slice(0, 3)) hard.push(`[guard:claim-${c.status}] ${c.status === "conflict" ? "ادعاء يناقض نصًا مرفقًا" : "ادعاء قاطع بلا سند كافٍ"}: ${c.text}`);
+      else if (ruling) hard.push("[guard:verifier-unavailable] تعذّر التحقق من الجواب مقابل النص النافذ");
     }
     // the model verifier only runs when the draft contains a decision template or cites articles (saves latency; avoids false alarms on plain advice)
     if (!ungrounded && (/<TEMPLATE:/.test(answer) || /(?:المادة|مادة)\s*[0-9٠-٩]/.test(answer))) {
@@ -180,7 +192,7 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
       const v2 = await verify(retry);
       const gh = v2.hard.find((h) => h.startsWith("[guard:"));
       if (gh) {
-        { const gg = auditGuards(retry, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`); answer = gg ? groundedFallback(gg, opts.authority ?? "") : "⚠️ تعذّر التحقق من الجواب مقابل نصوص هيئة الشراء العام المرفقة، فلم أعرض جوابًا قاطعًا. راجع النصوص المذكورة في المصادر أو أعد صياغة السؤال."; } v = { hard: [], soft: [] };
+        { const gg = auditGuards(retry, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`, undefined, query); answer = gg ? groundedFallback(gg, opts.authority ?? "") : supportedOnly(lastClaims); } v = { hard: [], soft: [] };
       } else if (v2.hard.length) {
         // never show a ministerial / entity-less municipal template; give the rest of the answer without it
         const stripped = retry.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
@@ -191,7 +203,13 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   }
   if (v.soft.length && answer !== REFUSAL) answer += `\n\n> ملاحظات التدقيق (غير متحقَّق منها في المصادر): ${v.soft.slice(0, 3).join("؛ ")}. راجع النص الرسمي.`;
   if (ungrounded && answer !== REFUSAL) answer = DISCLAIMER + answer;
-  return { answer: answer || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
+  // structured citations: authority documents with a supporting excerpt + retrieved law chunks that carry real text (no empty sources)
+  const cites = [...authorityCitations(opts.authorityMeta ?? [], searchTerms(query)), ...makeSources(chunks).filter((x) => x.preview.trim().length >= 25)];
+  if (opts.authorityMeta?.length && answer !== REFUSAL) {
+    const rep = computeConfidence(opts.authorityMeta, lastClaims);
+    return { answer: answer || REFUSAL, sources: cites, confidence: rep.overall, confidence_detail: { extraction: LEVEL_AR[rep.extraction], inference: LEVEL_AR[rep.inference], in_force: LEVEL_AR[rep.in_force] } };
+  }
+  return { answer: answer || REFUSAL, sources: cites, confidence: confidence(chunks) };
 }
 
 /** Read a citizen request / uploaded document against the law and produce findings + ready-to-sign decision options. */

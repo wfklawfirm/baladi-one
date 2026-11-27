@@ -4,7 +4,7 @@ import { Send, Loader2, ChevronLeft } from "lucide-react";
 import { Md, Doc, Sources, splitTemplates, callBrain, type Src } from "./Answer";
 import Mic from "@/components/Mic";
 
-type Turn = { role: "user" | "assistant"; content: string; sources?: Src[]; confidence?: string; clarify?: { questions: string[]; original: string } };
+type Turn = { role: "user" | "assistant"; content: string; sources?: Src[]; confidence?: string; detail?: import("./Answer").ConfDetail; clarify?: { questions: string[]; original: string } };
 const IDEAS = ["هل يحق لي منح رخصة بناء بنفسي؟", "كيف أشتري بالمناقصة وما حدود المبالغ؟", "اكتب لي قرار تعيين موظف مؤقت", "كم يومًا للاعتراض على قرار المجلس البلدي؟"];
 
 export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false, endpoint = "/api/brain/ask" }: { ideas?: string[]; ctx?: Record<string, string | undefined>; auto?: { id: number; text: string } | null; compact?: boolean; endpoint?: string }) {
@@ -19,9 +19,9 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false, e
     const history = turns.map((t) => ({ role: t.role, content: t.content }));
     if (o.display !== null) setTurns((t) => [...t, { role: "user", content: o.display ?? query }]);
     try {
-      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; clarify?: string[] }>(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify, ctx }) });
+      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; confidence_detail?: import("./Answer").ConfDetail; clarify?: string[] }>(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify, ctx }) });
       if (r.clarify?.length) setTurns((t) => [...t, { role: "assistant", content: "أسئلة توضيحية:\n" + r.clarify!.map((x, i) => `${i + 1}. ${x}`).join("\n"), clarify: { questions: r.clarify!, original: query } }]);
-      else setTurns((t) => [...t, { role: "assistant", content: r.answer ?? "", sources: r.sources, confidence: r.confidence }]);
+      else setTurns((t) => [...t, { role: "assistant", content: r.answer ?? "", sources: r.sources, confidence: r.confidence, detail: r.confidence_detail }]);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); setTimeout(() => end.current?.scrollIntoView({ behavior: "smooth" }), 50); }
   }
   return (
@@ -42,7 +42,7 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false, e
         if (t.role === "user") return <p key={i} className="ms-auto w-fit max-w-[90%] rounded-2xl bg-primary px-4 py-3 text-base leading-7 text-primary-foreground">{t.content}</p>;
         if (t.clarify) return <ClarifyCard key={i} id={i} c={t.clarify} live={i === turns.length - 1 && !busy} onSend={(a) => send(a.length ? `${t.clarify!.original}\n\nتوضيحات:\n${a.map(([x, y]) => `- ${x} ${y}`).join("\n")}` : t.clarify!.original, { noClarify: true, display: a.length ? a.map(([, y]) => y).join("\n") : null })} />;
         const { text, templates } = splitTemplates(t.content);
-        return <div key={i} className="space-y-3 rounded-2xl border bg-background p-4"><Md>{text}</Md>{templates.map((d, k) => <Doc key={k} {...d} />)}<Sources list={t.sources ?? []} confidence={t.confidence} /></div>;
+        return <div key={i} className="space-y-3 rounded-2xl border bg-background p-4"><Md>{text}</Md>{templates.map((d, k) => <Doc key={k} {...d} />)}<Sources list={t.sources ?? []} confidence={t.confidence} detail={t.detail} /></div>;
       })}
       {busy && <p className="flex items-center gap-2 text-base text-muted-foreground"><Loader2 className="size-4 animate-spin" />نبحث لك في القوانين، لحظة من فضلك…</p>}
       {err && <p role="alert" className="rounded-xl bg-destructive/10 p-4 text-base text-destructive">{err} — حاول مرة أخرى بعد قليل.</p>}

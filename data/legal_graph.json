@@ -1,0 +1,31 @@
+{
+  "_note": "رسم مفاهيم قانوني عام لربط المصطلحات والنصوص. المفاهيم ليست مترادفات مطلقة: كل علاقة لها نوع وسند وحالة. كل العلاقات 'pending_review' إلى أن يعتمدها المالك؛ لا تُستعمل كحكم بل كخريطة للاسترجاع والتنبيه. لم تُقرأ المادة 67 من قانون البلديات آليًا (موقع الجريدة رفض الجلب الآلي) فعلاقتها موسومة 'needs_source_reading'.",
+  "concepts": [
+    { "id": "mayor", "ar": "رئيس البلدية", "match": "رئيس\\s+(?:ال)?بلدي[ةه]|رئيس\\s+المجلس\\s+البلدي", "topic": "municipal", "search": ["رئيس البلدية", "المجلس البلدي"] },
+    { "id": "executive_authority", "ar": "رئيس السلطة التنفيذية", "match": "السلطة\\s+التنفيذي[ةه]", "topic": "procurement", "search": ["السلطة التنفيذية", "البلديات"] },
+    { "id": "deciding_authority", "ar": "السلطة التقريرية", "match": "السلطة\\s+التقريري[ةه]", "topic": "procurement", "search": ["السلطة التقريرية"] },
+    { "id": "expenditure_authority", "ar": "المرجع الصالح لعقد النفقة", "match": "المرجع\\s+الصالح|عقد\\s+النفق[ةه]", "topic": "procurement", "search": ["المرجع الصالح", "عقد النفقة"] },
+    { "id": "tender_committee", "ar": "لجنة التلزيم", "match": "لجن[ةه]\\s+(?:ال)?(?:تلزيم|شراء|مناقص)|لجان\\s+(?:ال)?(?:تلزيم|شراء|مناقص)|لجن[ةه]\\s+عروض", "topic": "procurement", "search": ["لجان التلزيم", "التلزيم", "الاستلام"] },
+    { "id": "receiving_committee", "ar": "لجنة الاستلام", "match": "لجن[ةه]\\s+(?:ال)?استلام|لجان\\s+(?:ال)?استلام", "topic": "procurement", "search": ["لجان الاستلام", "الاستلام"] },
+    { "id": "evaluation", "ar": "تقييم العروض", "match": "تقييم|تقويم|العروض|عرض\\s+الاسعار|فض\\s+العروض", "topic": "procurement", "search": ["تقييم العروض", "لجنة التلزيم"] },
+    { "id": "contracting", "ar": "التعاقد (إبرام العقد)", "match": "تعاقد|إبرام|ابرام|التعاقد", "topic": "procurement", "search": ["التعاقد", "الجهة الشارية"] },
+    { "id": "appointment", "ar": "تعيين اللجنة", "match": "تعيين\\s+(?:ال)?لجن|تأليف|تشكيل\\s+(?:ال)?لجن", "topic": "procurement", "search": ["تعيين لجان", "تأليف"] },
+    { "id": "receiving", "ar": "الاستلام", "match": "استلام", "topic": "procurement", "search": ["الاستلام"] },
+    { "id": "sole_offer", "ar": "العرض الوحيد", "match": "العرض\\s+الوحيد|عرض\\s+وحيد", "topic": "procurement", "search": ["العرض الوحيد"] },
+    { "id": "procuring_entity", "ar": "الجهة الشارية", "match": "الجه[ةه]\\s+الشاري[ةه]|هيئ[ةه]\\s+الشراء|قانون\\s+الشراء|الشراء\\s+العام|مناقص|تلزيم|مزايد|استدراج|دفتر\\s+شروط", "topic": "procurement", "search": ["الجهة الشارية", "الشراء العام"] }
+  ],
+  "edges": [
+    { "from": "mayor", "to": "executive_authority", "relation": "typically_holder_of", "absolute": false, "basis": ["قانون البلديات، المادة 67 (لم تُقرأ آليًا)"], "status": "needs_source_reading",
+      "caveats": ["ليسا مترادفين مطلقين", "بلدية بيروت لها خصوصية في السلطة التنفيذية", "قد يتولى نائب الرئيس مهام السلطة التنفيذية في حالات محددة"] },
+    { "from": "executive_authority", "to": "tender_committee", "relation": "prohibited_from_chairing_or_membership", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، سادسًا (3)"], "status": "pending_review", "caveats": ["قراءة من نص مستخرج آليًا"] },
+    { "from": "executive_authority", "to": "receiving_committee", "relation": "prohibited_from_chairing_or_membership", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، سادسًا (3)"], "status": "pending_review", "caveats": [] },
+    { "from": "mayor", "to": "tender_committee", "relation": "excluded_when_council_members_are_used", "absolute": true, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، أولًا"], "status": "pending_review", "caveats": [] },
+    { "from": "tender_committee", "to": "procuring_entity", "relation": "composition_rules_set_by", "absolute": false, "basis": ["قانون الشراء العام 244/2021، المادة 100 كما عدّلها القانون 309/2023", "قرار الهيئة 9/هـ.ش.ع/2023"], "status": "pending_review", "caveats": ["تُراجع التعديلات اللاحقة"] },
+    { "from": "receiving_committee", "to": "procuring_entity", "relation": "composition_rules_set_by", "absolute": false, "basis": ["قانون الشراء العام 244/2021، المادة 101 كما عدّلها القانون 309/2023", "قرار الهيئة 9/هـ.ش.ع/2023"], "status": "pending_review", "caveats": [] },
+    { "from": "deciding_authority", "to": "tender_committee", "relation": "approves_annual_lists_in_municipalities", "absolute": false, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، ثالثًا (1)"], "status": "pending_review", "caveats": [] },
+    { "from": "expenditure_authority", "to": "tender_committee", "relation": "appoints_per_procurement_from_lists", "absolute": false, "basis": ["قرار الهيئة 9/هـ.ش.ع/2023، رابعًا (1)"], "status": "pending_review", "caveats": [] }
+  ],
+  "distinctions": [
+    { "ids": ["evaluation", "contracting", "appointment", "receiving"], "ar": "تقييم العروض (عمل لجنة التلزيم) وإبرام العقد (قرار الجهة الشارية/المرجع الصالح) وتعيين اللجنة وإجراء الاستلام (لجنة الاستلام) مراحل وصلاحيات مختلفة؛ لا تُنسب صلاحية أحدها إلى جهة الآخر. تفصّل مذكرة الهيئة 2/2025 الفصل بين صلاحيات اللجنة والجهة الشارية (قيد المراجعة؛ نص OCR)." }
+  ]
+}

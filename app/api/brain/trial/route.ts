@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   if (use === "limit") return Response.json({ error: "بلغت الحد اليومي للتجربة (25 سؤالًا)، عُد غدًا" }, { status: 429 });
   if (use !== "ok") return Response.json({ error: "انتهت الجلسة" }, { status: 401 });
   // the public trial has no PPA texts: procurement rulings get the fixed safe notice instead of an answer built from old books
-  if (isProcurementTopic(query) && isRulingQuestion(query)) return Response.json({ answer: NO_AUTHORITY_NOTE, sources: [], confidence: "low" });
+  if (isProcurementTopic(query) || isRulingQuestion(query) && /لجن|رئيس|عضو|مناقص|تلزيم|شراء/.test(query)) return Response.json({ answer: NO_AUTHORITY_NOTE, sources: [], confidence: "low" });
   try { return Response.json(await ask(query, history, { noClarify: true })); }
   catch { return Response.json({ error: "تعذّر الوصول إلى المساعد، حاول مجدداً" }, { status: 502 }); }
 }

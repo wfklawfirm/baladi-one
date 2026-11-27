@@ -42,13 +42,15 @@ export function Md({ children }: { children: string }) {
 }
 
 export const CONF: Record<string, string> = { high: "نثق بهذه الإجابة كثيرًا", medium: "نثق بها بدرجة متوسطة", low: "تحقق منها قبل الاعتماد عليها" };
-export type Src = { title: string; preview: string; domain: string; score: number };
-export function Sources({ list, confidence }: { list: Src[]; confidence?: string }) {
+export type Src = { title: string; preview: string; domain: string; score: number; url?: string | null; status?: string; year?: number | null; quality?: string | null; excerpt?: string };
+export type ConfDetail = { extraction: string; inference: string; in_force: string };
+export function Sources({ list, confidence, detail }: { list: Src[]; confidence?: string; detail?: ConfDetail }) {
   if (!list?.length) return null;
   return (
     <details className="rounded-xl border bg-background p-3 text-base">
       <summary className="cursor-pointer font-semibold">من أين جاء هذا؟ ({list.length}){confidence ? ` · ${CONF[confidence] ?? ""}` : ""}</summary>
-      <ul className="mt-2 space-y-2">{list.map((s, i) => <li key={i}><b>{s.title}</b> <span className="text-sm text-muted-foreground">· {s.domain}</span><p className="text-sm leading-7 text-muted-foreground">{s.preview}…</p></li>)}</ul>
+      {detail && <p className="mt-2 text-sm text-muted-foreground">الثقة — في استخراج النص: <b>{detail.extraction}</b> · في الاستنتاج القانوني: <b>{detail.inference}</b> · في النفاذ والاعتماد: <b>{detail.in_force}</b></p>}
+      <ul className="mt-2 space-y-2">{list.map((s, i) => <li key={i}><b>{s.title}</b> <span className="text-sm text-muted-foreground">· {s.domain}{s.year ? ` · ${s.year}` : ""}{s.status ? ` · ${s.status}` : ""}</span><p className="text-sm leading-7 text-muted-foreground">{s.excerpt ?? s.preview}…</p>{s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-sm underline">الأصل</a>}</li>)}</ul>
     </details>
   );
 }

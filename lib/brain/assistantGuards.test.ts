@@ -61,3 +61,10 @@ describe("grounded fallback & widened negation", () => {
     for (const a of ["لا. رئيس البلدية مستثنى من عضوية لجنة التلزيم.", "رئيس البلدية لا يحضر عضوًا في لجنة الشراء، استثناء ورد في القرار.", "يُحظر على رئيس البلدية عضوية لجنة الشراء."]) expect(auditGuards(a, "باستثناء رئيس البلدية")).toBeNull();
   });
 });
+describe("ruling detection covers phrasings that used to slip through", () => {
+  it.each(["رئيس البلدية يريد المشاركة في لجنة المناقصة، هل ذلك قانوني؟", "من يحق له رئاسة لجنة التلزيم؟", "هل رئيس البلدية مسموح له بتقييم العروض؟", "هل يجوز لرئيس المجلس البلدي ترؤس لجنة التلزيم؟"])("%s", (q) => { expect(isRulingQuestion(q)).toBe(true); expect(mustRefuseRuling(q, false)).toBe(true); });
+  it("a bare «نعم» answer to a question about the mayor is caught via the question", () => {
+    expect(auditGuards("نعم يحق.", SRC, undefined, "هل يحق لرئيس البلدية عضوية لجنة الشراء")?.id).toBe("mayor-procurement-committee");
+    expect(auditGuards("نعم يحق.", SRC, undefined, "هل يحق للموظف إجازة")).toBeNull();
+  });
+});
