@@ -4,7 +4,7 @@ import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK, TEMPLATE_RULES } from "./prompts";
 import { graphNotes } from "./legalGraph";
 import { CLAIMS_SYSTEM, parseClaims, blockingClaims, computeConfidence, LEVEL_AR, type AuthMeta, type Claim } from "./claims";
-import { parseArticleRefs } from "./hybrid";
+import { parseArticleRefs, topicRefs } from "./hybrid";
 import { decompose, coverageMatrix, uncoveredIssues } from "./issues";
 import { authorityCitations } from "./citations";
 import { searchTerms } from "./supersession";
@@ -65,7 +65,7 @@ export async function retrieve(query: string, complexity: "mini" | "full", topK 
   // hybrid legs: exact article lookup (high confidence) + full-text; both best-effort and never fatal
   try {
     const sb = await supabaseServer();
-    for (const r of parseArticleRefs(query)) {
+    for (const r of [...parseArticleRefs(query), ...topicRefs(query)]) {
       const { data } = await sb.rpc("law_article_lookup", { p_law: r.law, p_article: r.article });
       for (const x of data ?? []) best.set(x.chunk_id, { chunk_id: x.chunk_id, title: x.title, text: x.body, domain: "D01", source: "law_library", score: 0.9 });
     }

@@ -19,3 +19,9 @@ export function parseArticleRefs(query: string): ArticleRef[] {
   }
   return out;
 }
+
+// topic → extra instruments that must be fetched by id (the vector index has no embedding for text added later)
+const TOPIC_LAWS: { re: RegExp; ref: ArticleRef }[] = [
+  { re: /سقف|السقوف|مليار|ضمان\s+العرض|بالفاتوره|طلب\s+عروض|خطه\s+الشراء|دفع\s+قيمه\s+العقد/, ref: { law: "PROC-14063", article: 1 } },
+];
+export const topicRefs = (query: string): ArticleRef[] => TOPIC_LAWS.filter((t) => t.re.test(nz(query))).map((t) => t.ref);
