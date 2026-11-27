@@ -5,6 +5,7 @@ import { parsePeriod } from "@/lib/ops";
 import { loadOps, opsFacts } from "@/lib/opsData";
 import { procurementItemFacts } from "@/lib/procurementAuditData";
 import { procurementOverviewFacts } from "@/lib/procurementStatsData";
+import { platformFacts } from "@/lib/brain/platformFacts";
 import { buildLegalPrompt, isLegalQuestion, selectRules, type RuleCtx } from "@/lib/legalContext";
 
 export const maxDuration = 60;
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
         facts = (item ? await procurementItemFacts(sb, item, (m as any)?.[0]?.municipality?.name_ar ?? "—") : null) ?? await procurementOverviewFacts(sb, Number(today.slice(0, 4)), today);
       }
     } catch { /* answer without procurement facts */ }
+  }
+  // Any other question about the municipality's own data (requests, decisions, projects, contracts, finance, admin...): facts from the caller's RLS-visible rows.
+  if (facts === undefined) {
+    try {
+      const sb = await supabaseServer();
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut" }).format(new Date());
+      facts = await platformFacts(sb, query, today, { procurement: () => procurementOverviewFacts(sb, Number(today.slice(0, 4)), today) });
+    } catch { /* answer without platform facts */ }
   }
   // Legal/financial/procedural questions: load matching rows of the legal_rule registry (tolerates a missing table) and constrain how the model may use them.
   let legalPrompt: string | undefined;
