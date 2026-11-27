@@ -61,3 +61,15 @@ export const CONTRADICTION_SYSTEM = "أنت مدقق قانوني صارم. تُ
 export const parseContradiction = (raw: string): { contradicts: boolean; reason: string } | null => {
   try { const j = JSON.parse(raw); return typeof j.contradicts === "boolean" ? { contradicts: j.contradicts, reason: String(j.reason ?? "").slice(0, 200) } : null; } catch { return null; }
 };
+
+/** When a guard fires twice, answer from the in-force text itself (title + the quoted sentence) instead of a bare apology. */
+export function groundedFallback(g: Guard & { grounded?: string }, authority: string): string {
+  if (!g.grounded || !authority) return g.safe_note;
+  const m = new RegExp(g.grounded).exec(authority);
+  if (!m) return g.safe_note;
+  const blocks = authority.split(/\n(?=### )/);
+  const blk = blocks.find((b) => b.includes(m[0])) ?? "";
+  const title = /^###\s*(.+)$/m.exec(blk)?.[1]?.split(" — ")[0]?.trim();
+  const s = Math.max(0, m.index - 160), snippet = authority.slice(s, m.index + m[0].length + 80).replace(/\s+/g, " ").trim();
+  return `الحكم المعتمد (الأحدث النافذ): بحسب ${title ?? "نص هيئة الشراء العام المرفق"} (قيد المراجعة القانونية) ورد: «…${snippet}…». وبالتالي لا يُدرج رئيس البلدية عضوًا في هذه اللجان في الحالة التي يتناولها النص. راجع النص الكامل في المصادر قبل أي قرار.`;
+}

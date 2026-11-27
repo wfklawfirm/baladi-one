@@ -49,3 +49,14 @@ describe("answer mode & verifier", () => {
     expect(parseContradiction('{"x":1}')).toBeNull();
   });
 });
+import { groundedFallback } from "./assistantGuards";
+describe("grounded fallback & widened negation", () => {
+  const AUTH = "### قرار الهيئة 9/2023 — قيد المراجعة\nيُشكّل أعضاء المجلس البلدي باستثناء رئيس البلدية لجان التلزيم.";
+  it("answers from the text", () => {
+    const t = groundedFallback(GUARDS[0] as any, AUTH);
+    expect(t).toContain("9/2023"); expect(t).toContain("باستثناء رئيس البلدية");
+  });
+  it("does not flag correct phrasings", () => {
+    for (const a of ["لا. رئيس البلدية مستثنى من عضوية لجنة التلزيم.", "رئيس البلدية لا يحضر عضوًا في لجنة الشراء، استثناء ورد في القرار.", "يُحظر على رئيس البلدية عضوية لجنة الشراء."]) expect(auditGuards(a, "باستثناء رئيس البلدية")).toBeNull();
+  });
+});

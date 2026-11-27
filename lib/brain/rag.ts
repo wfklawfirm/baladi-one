@@ -1,4 +1,4 @@
-import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT, answerMode, NO_DRAFT_RULE, stripDrafts, CONTRADICTION_SYSTEM, parseContradiction } from "./assistantGuards";
+import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT, answerMode, NO_DRAFT_RULE, stripDrafts, CONTRADICTION_SYSTEM, parseContradiction, groundedFallback } from "./assistantGuards";
 import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
@@ -180,7 +180,7 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
       const v2 = await verify(retry);
       const gh = v2.hard.find((h) => h.startsWith("[guard:"));
       if (gh) {
-        answer = auditGuards(retry, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`)?.safe_note ?? NO_AUTHORITY_NOTE; v = { hard: [], soft: [] };
+        { const gg = auditGuards(retry, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`); answer = gg ? groundedFallback(gg, opts.authority ?? "") : "⚠️ تعذّر التحقق من الجواب مقابل نصوص هيئة الشراء العام المرفقة، فلم أعرض جوابًا قاطعًا. راجع النصوص المذكورة في المصادر أو أعد صياغة السؤال."; } v = { hard: [], soft: [] };
       } else if (v2.hard.length) {
         // never show a ministerial / entity-less municipal template; give the rest of the answer without it
         const stripped = retry.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
