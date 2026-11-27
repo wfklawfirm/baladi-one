@@ -5,6 +5,7 @@ import { parsePeriod } from "@/lib/ops";
 import { loadOps, opsFacts } from "@/lib/opsData";
 import { procurementItemFacts } from "@/lib/procurementAuditData";
 import { procurementOverviewFacts } from "@/lib/procurementStatsData";
+import { supersessionNote } from "@/lib/brain/supersession";
 import { platformFacts } from "@/lib/brain/platformFacts";
 import { buildLegalPrompt, isLegalQuestion, selectRules, type RuleCtx } from "@/lib/legalContext";
 
@@ -61,6 +62,13 @@ export async function POST(req: Request) {
       legalPrompt = buildLegalPrompt(error ? null : selectRules(query, (data ?? []) as RuleCtx[], isProc ? "/staff/projects/procurement" : path));
     } catch { legalPrompt = buildLegalPrompt(null); }
   }
+  // Procurement questions: the newest in-force instruments prevail over older municipal-law-era sources.
+  try {
+    const sb = await supabaseServer();
+    const { data } = await sb.from("procurement_legal_source").select("instrument_type,instrument_number,instrument_date,verification_status,effective_to").limit(100);
+    const note = supersessionNote(query, (data ?? null) as any);
+    if (note) legalPrompt = `${legalPrompt ?? ""}\n\n${note}`.trim();
+  } catch { /* note is optional */ }
   try {
     const r = await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts, legalPrompt });
     // procurement answers must always carry the verification limits, whatever the model wrote
