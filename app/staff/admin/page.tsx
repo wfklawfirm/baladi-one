@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Building2, Gavel, ShieldCheck, Eye, IdCard, Monitor, ChevronLeft } from "lucide-react";
+import { Mail, Building2, Gavel, ShieldCheck, Eye, IdCard, Monitor, ChevronLeft, QrCode } from "lucide-react";
 import { Shell, guard } from "@/components/admin/ui";
 import { deadlineState, loadList } from "@/lib/admin";
 
@@ -17,6 +17,8 @@ export default async function AdminHub() {
     loadList(sb, "hr_position", "id,ended_on"),
     loadList(sb, "display_setting", "screensaver_enabled,idle_seconds"),
   ]);
+  const { data: isOwner } = await sb.rpc("is_platform_owner");
+  const trialN = isOwner === true ? ((await sb.rpc("trial_leads")).data ?? []).length : 0;
   const fin = (s: string) => ["replied", "sent", "closed"].includes(s);
   const late = (rows: { due_on?: string | null; deadline_on?: string | null; done?: boolean; status?: string }[], key: "due_on" | "deadline_on", done: (r: any) => boolean) =>
     rows.filter((r) => deadlineState(r[key], today, done(r)) === "overdue").length;
@@ -28,6 +30,7 @@ export default async function AdminHub() {
     { href: "/staff/admin/transparency", Icon: Eye, title: "أجيب مواطنًا طلب معلومات", sub: "طلبات الاطلاع على المعلومات، وما يجوز نشره", m: ir.missing, n: ir.rows.filter((r) => !["replied", "refused", "closed"].includes(r.status)).length, nl: "طلب لم يُجَب", late: late(ir.rows, "due_on", (r) => ["replied", "refused", "closed"].includes(r.status)) },
     { href: "/staff/admin/hr", Icon: IdCard, title: "أتابع موظفًا وتكليفه", sub: "من يعمل في أي قسم ومنذ متى (بدون رواتب)", m: hr.missing, n: hr.rows.filter((r) => !r.ended_on).length, nl: "موظف يعمل", late: 0 },
     { href: "/staff/admin/display", Icon: Monitor, title: "أضبط شاشة العرض", sub: "شاشة الانتظار على الشاشات العامة", m: ds.missing, n: ds.rows[0] ? (ds.rows[0].screensaver_enabled ? ds.rows[0].idle_seconds : 0) : 60, nl: ds.rows[0] && !ds.rows[0].screensaver_enabled ? "الشاشة متوقفة" : "ثانية حتى تظهر", late: 0 },
+    ...(isOwner === true ? [{ href: "/staff/admin/trial-leads", Icon: QrCode, title: "سجل تجربة المساعد الذكي", sub: "من سجّل رقمه عبر الرمز لتجربة 3 أيام (لحساب WFK فقط)", m: false, n: trialN, nl: "مسجّل", late: 0 }] : []),
   ];
   return (
     <Shell title="الإدارة البلدية" sub="اختاروا ما تريدون فعله الآن. كل ما تسجّلونه محفوظ، ويُسجَّل اسم من عدّله." hub>

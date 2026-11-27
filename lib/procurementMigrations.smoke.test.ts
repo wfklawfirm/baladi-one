@@ -22,7 +22,7 @@ beforeAll(async () => {
       returns uuid language plpgsql security definer as $$ declare i uuid; begin insert into municipal_decision(municipality_id,title) values (_council_muni(), p_title) returning id into i; return i; end $$;
     grant execute on function public.decision_builder_create(uuid,uuid,text,jsonb) to authenticated;
     grant select on public.municipal_decision, public.decision_template_version to authenticated;`);
-  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql", "0048_procurement_legal_ceilings_seed.sql", "0049_procurement_north_lebanon_approval_matrix.sql"]) await E.db.exec(read(f));
+  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql", "0048_procurement_legal_ceilings_seed.sql", "0049_procurement_north_lebanon_approval_matrix.sql", "0050_assistant_trial.sql"]) await E.db.exec(read(f));
   P = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_add(2026,'Item','need',500,'USD') as id`))[0].id;
   TPL_OK = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('PROC01','1','تأليف لجنة','procurement') returning id`))[0].id;
   TPL_OTHER = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('FIN01','1','مالي','finance') returning id`))[0].id;
@@ -147,5 +147,30 @@ describe("0048 legal ceilings seed", () => {
     await E.db.exec(read("0048_procurement_legal_ceilings_seed.sql"));
     const r = await E.db.query<{ n: number }>("select count(*)::int n from procurement_threshold where review_status <> 'pending_review' and (source like '%14063%' or source like '%21/2025%')");
     expect(r.rows[0].n).toBe(0);
+  });
+});
+
+describe("0050 assistant trial", () => {
+  const H1 = "a".repeat(64), H2 = "b".repeat(64);
+  it("anon can register; table is not readable; leads are owner-only", async () => {
+    const r = await E.q<{ s: any }>("anon", `select public.trial_register('+961 71 123 456','Test',true,'${H1}') s`);
+    expect(r[0].s.status).toBe("ok");
+    expect(await E.err("anon", "select * from public.assistant_trial")).toBeTruthy();
+    expect(await E.err(u(E.mayorA), "select * from public.trial_leads()")).toBeTruthy();
+    await E.su(`insert into public.platform_owner(user_id) values ('${E.mayorA}')`);
+    const rows = await E.q<{ phone: string }>(u(E.mayorA), "select phone from public.trial_leads()");
+    expect(rows.map((x) => x.phone)).toContain("96171123456");
+  });
+  it("requires consent, valid phone; re-register reissues token; use is counted, limited and expires", async () => {
+    expect(await E.err("anon", `select public.trial_register('71123456','x',false,'${H1}')`)).toBeTruthy();
+    expect(await E.err("anon", `select public.trial_register('12','x',true,'${H1}')`)).toBeTruthy();
+    await E.q("anon", `select public.trial_register('96171123456','',true,'${H2}')`);
+    expect((await E.q<{ s: any }>("anon", `select public.trial_status('${H1}') s`))[0].s.status).toBe("invalid");
+    expect((await E.q<{ s: any }>("anon", `select public.trial_status('${H2}') s`))[0].s.status).toBe("ok");
+    for (let i = 0; i < 25; i++) expect((await E.q<{ s: string }>("anon", `select public.trial_use('${H2}') s`))[0].s).toBe("ok");
+    expect((await E.q<{ s: string }>("anon", `select public.trial_use('${H2}') s`))[0].s).toBe("limit");
+    await E.su(`update public.assistant_trial set expires_at = now() - interval '1 minute' where phone='96171123456'`);
+    expect((await E.q<{ s: string }>("anon", `select public.trial_use('${H2}') s`))[0].s).toBe("expired");
+    expect((await E.q<{ s: any }>("anon", `select public.trial_register('96171123456','',true,'${H1}') s`))[0].s.status).toBe("expired");
   });
 });

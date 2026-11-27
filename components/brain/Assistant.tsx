@@ -7,7 +7,7 @@ import Mic from "@/components/Mic";
 type Turn = { role: "user" | "assistant"; content: string; sources?: Src[]; confidence?: string; clarify?: { questions: string[]; original: string } };
 const IDEAS = ["هل يحق لي منح رخصة بناء بنفسي؟", "كيف أشتري بالمناقصة وما حدود المبالغ؟", "اكتب لي قرار تعيين موظف مؤقت", "كم يومًا للاعتراض على قرار المجلس البلدي؟"];
 
-export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }: { ideas?: string[]; ctx?: Record<string, string | undefined>; auto?: { id: number; text: string } | null; compact?: boolean }) {
+export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false, endpoint = "/api/brain/ask" }: { ideas?: string[]; ctx?: Record<string, string | undefined>; auto?: { id: number; text: string } | null; compact?: boolean; endpoint?: string }) {
   const [turns, setTurns] = useState<Turn[]>([]); const [q, setQ] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const lastAuto = useRef(0);
@@ -19,7 +19,7 @@ export default function Assistant({ ideas = IDEAS, ctx, auto, compact = false }:
     const history = turns.map((t) => ({ role: t.role, content: t.content }));
     if (o.display !== null) setTurns((t) => [...t, { role: "user", content: o.display ?? query }]);
     try {
-      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; clarify?: string[] }>("/api/brain/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify, ctx }) });
+      const r = await callBrain<{ answer?: string; sources?: Src[]; confidence?: string; clarify?: string[] }>(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, history, noClarify: o.noClarify, ctx }) });
       if (r.clarify?.length) setTurns((t) => [...t, { role: "assistant", content: "أسئلة توضيحية:\n" + r.clarify!.map((x, i) => `${i + 1}. ${x}`).join("\n"), clarify: { questions: r.clarify!, original: query } }]);
       else setTurns((t) => [...t, { role: "assistant", content: r.answer ?? "", sources: r.sources, confidence: r.confidence }]);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); setTimeout(() => end.current?.scrollIntoView({ behavior: "smooth" }), 50); }
