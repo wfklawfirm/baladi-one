@@ -1,15 +1,110 @@
 {
   "_note": "Issue detectors for multi-issue decomposition. 'requires' lists source prefixes (law_id prefix or instrument) that SHOULD be retrieved to answer the issue; missing ones show up in the coverage matrix. No legal values here.",
   "issues": [
-    { "id": "committee_composition", "label": "تشكيل لجنة (المناقصة/الاستلام/التقييم)", "match": "لجن[ةه]\\s+(المناقص|الاستلام|التقييم|التلزيم)|تشكيل\\s+لجن", "requires": ["PROC-244", "PPA"] },
-    { "id": "incompatibility", "label": "تعارض المصالح / عدم الجواز", "match": "يحق|يجوز|مسموح|تعارض|منع|عضو", "requires": ["PROC-244", "MUN-118"], "only_with": ["committee_composition"] },
-    { "id": "council_quorum", "label": "نصاب جلسات المجلس البلدي", "match": "نصاب|اكتمال\\s+الجلس|حضور\\s+الاعضاء", "requires": ["MUN-118"] },
-    { "id": "council_invitation", "label": "دعوة المجلس وجدول الأعمال", "match": "دعوه|دعوة|جدول\\s+الاعمال|جدول\\s+الأعمال|مهل[ةه]\\s+الدعو", "requires": ["MUN-118"] },
-    { "id": "majority", "label": "الأكثرية المطلوبة للقرار", "match": "اكثري|أكثري|اغلبي|أغلبي|تصويت", "requires": ["MUN-118"] },
-    { "id": "mayor_powers", "label": "صلاحيات رئيس البلدية والتفويض", "match": "رئيس\\s+البلدي|نائب\\s+الرئيس|تفويض|شغور", "requires": ["MUN-118"] },
-    { "id": "tacit_approval", "label": "الموافقة الضمنية/التصديق", "match": "ضمني|تصديق|مصادق|سلطه\\s+الوصايه|سلطة\\s+الوصاية|قائمقام|محافظ", "requires": ["MUN-118"] },
-    { "id": "procurement_method", "label": "طريقة الشراء (عرض وحيد/استدراج/مناقصة)", "match": "عرض\\s+وحيد|استدراج|مناقص|اتفاق\\s+رضائي|شراء", "requires": ["PROC-244", "PPA"] },
-    { "id": "public_property", "label": "الأملاك العامة والإشغال", "match": "املاك\\s+عام|أملاك\\s+عام|اشغال|إشغال|تعدي", "requires": ["PROP-144"] },
-    { "id": "accounting", "label": "المحاسبة العمومية/الصرف", "match": "محاسب[ةه]\\s+عمومي|صرف|اعتماد|ميزاني", "requires": ["MACC-5595", "ACC-14969"] }
+    {
+      "id": "committee_composition",
+      "label": "تشكيل لجنة (المناقصة/الاستلام/التقييم)",
+      "match": "لجن[ةه]\\s+(المناقص|الاستلام|التقييم|التلزيم)|تشكيل\\s+لجن",
+      "requires": [
+        "PROC-244",
+        "PROC-309",
+        "PPA"
+      ]
+    },
+    {
+      "id": "incompatibility",
+      "label": "تعارض المصالح / عدم الجواز",
+      "match": "يحق|يجوز|مسموح|تعارض|منع|عضو",
+      "requires": [
+        "PROC-244",
+        "MUN-118"
+      ],
+      "only_with": [
+        "committee_composition"
+      ]
+    },
+    {
+      "id": "council_quorum",
+      "label": "نصاب جلسات المجلس البلدي",
+      "match": "نصاب|اكتمال\\s+الجلس|حضور\\s+الاعضاء",
+      "requires": [
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "council_invitation",
+      "label": "دعوة المجلس وجدول الأعمال",
+      "match": "دعوه|دعوة|جدول\\s+الاعمال|جدول\\s+الأعمال|مهل[ةه]\\s+الدعو",
+      "requires": [
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "majority",
+      "label": "الأكثرية المطلوبة للقرار",
+      "match": "اكثري|أكثري|اغلبي|أغلبي|تصويت",
+      "requires": [
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "mayor_powers",
+      "label": "صلاحيات رئيس البلدية والتفويض",
+      "match": "رئيس\\s+البلدي|نائب\\s+الرئيس|تفويض|شغور",
+      "requires": [
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "tacit_approval",
+      "label": "الموافقة الضمنية/التصديق",
+      "match": "ضمني|تصديق|مصادق|سلطه\\s+الوصايه|سلطة\\s+الوصاية|قائمقام|محافظ",
+      "requires": [
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "procurement_method",
+      "label": "طريقة الشراء (عرض وحيد/استدراج/مناقصة)",
+      "match": "عرض\\s+وحيد|استدراج|مناقص|اتفاق\\s+رضائي|شراء",
+      "requires": [
+        "PROC-244",
+        "PPA"
+      ]
+    },
+    {
+      "id": "public_property",
+      "label": "الأملاك العامة والإشغال",
+      "match": "املاك\\s+عام|أملاك\\s+عام|اشغال|إشغال|تعدي",
+      "requires": [
+        "PROP-144"
+      ]
+    },
+    {
+      "id": "accounting",
+      "label": "المحاسبة العمومية/الصرف",
+      "match": "محاسب[ةه]\\s+عمومي|صرف|اعتماد|ميزاني",
+      "requires": [
+        "MACC-5595",
+        "ACC-14969"
+      ]
+    },
+    {
+      "id": "spending_limit",
+      "label": "سقف النفقة وصلاحية الإنفاق",
+      "match": "عقد\\s+النفق|سقف\\s+النفق|النفقه\\s+المسموح",
+      "requires": [
+        "MUN-21-2025",
+        "MUN-118"
+      ]
+    },
+    {
+      "id": "municipal_fees",
+      "label": "الرسوم والعلاوات البلدية",
+      "match": "رسم\\s+(?:ال)?(?:قيمه|اشغال|ترخيص|اعلان)|الرسوم\\s+البلديه|العلاوات|القيمه\\s+التاجيريه",
+      "requires": [
+        "MUN-60-1988"
+      ]
+    }
   ]
 }

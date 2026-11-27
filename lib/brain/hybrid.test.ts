@@ -10,3 +10,8 @@ describe("topic refs", () => {
   it("pulls the thresholds decree for ceiling questions", () => expect(topicRefs("ما هو سقف طلب عروض الأسعار؟")).toEqual([{ law: "PROC-14063", article: 1 }]));
   it("nothing for unrelated", () => expect(topicRefs("نصاب الجلسة")).toEqual([]));
 });
+describe("new instruments", () => {
+  it("fees law resolves before the generic municipal law", () => expect(parseArticleRefs("المادة 79 من قانون الرسوم والعلاوات البلدية")).toEqual([{ law: "MUN-60-1988", article: 79 }]));
+  it("committee questions pull Law 309/2023", () => expect(topicRefs("هل يحق لرئيس البلدية ان يكون عضوا في لجنة التلزيم؟")).toContainEqual({ law: "PROC-309", article: 1 }));
+  it("spending-limit questions pull Law 21/2025 art 3", () => expect(topicRefs("ما هو سقف عقد النفقة لرئيس البلدية؟")).toContainEqual({ law: "MUN-21-2025", article: 3 }));
+});
