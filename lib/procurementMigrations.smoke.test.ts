@@ -22,7 +22,7 @@ beforeAll(async () => {
       returns uuid language plpgsql security definer as $$ declare i uuid; begin insert into municipal_decision(municipality_id,title) values (_council_muni(), p_title) returning id into i; return i; end $$;
     grant execute on function public.decision_builder_create(uuid,uuid,text,jsonb) to authenticated;
     grant select on public.municipal_decision, public.decision_template_version to authenticated;`);
-  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql", "0048_procurement_legal_ceilings_seed.sql"]) await E.db.exec(read(f));
+  for (const f of ["0043_procurement_objections.sql", "0044_procurement_workflow.sql", "0045_procurement_documents.sql", "0046_procurement_security_fixes.sql", "0047_procurement_threshold_kinds_and_demo_guard.sql", "0048_procurement_legal_ceilings_seed.sql", "0049_procurement_north_lebanon_approval_matrix.sql"]) await E.db.exec(read(f));
   P = (await E.q<{ id: string }>(u(E.mayorA), `select public.procurement_plan_add(2026,'Item','need',500,'USD') as id`))[0].id;
   TPL_OK = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('PROC01','1','تأليف لجنة','procurement') returning id`))[0].id;
   TPL_OTHER = (await E.su<{ id: string }>(`insert into decision_template_version (template_id,version,title_ar,domain) values ('FIN01','1','مالي','finance') returning id`))[0].id;
