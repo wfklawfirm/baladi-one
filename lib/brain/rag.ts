@@ -1,3 +1,4 @@
+import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
 import { auditDraft } from "./audit";
@@ -69,7 +70,9 @@ export function filterAndRank(hits: Hit[]): Hit[] {
 }
 export function buildContext(chunks: Hit[], complexity: "mini" | "full" = "full") {
   const max = complexity === "mini" ? 1500 : 3500;
-  return chunks.map((c, i) => `[${i + 1}] **${c.title}**${c.source === JUR_SOURCE ? " [استشارة هيئة التشريع]" : ""}\n${c.text.slice(0, max)}`).join("\n\n---\n\n");
+  // newest source first, each tagged with its year: when sources disagree the model must lead with the newest in-force one
+  const ordered = newestFirst(chunks, (c) => issueYear(c.title));
+  return ordered.map((c, i) => `[${i + 1}] **${c.title}** (${yearLabel(issueYear(c.title))})${c.source === JUR_SOURCE ? " [استشارة هيئة التشريع]" : ""}\n${c.text.slice(0, max)}`).join("\n\n---\n\n");
 }
 export function confidence(chunks: Hit[]): "high" | "medium" | "low" {
   if (!chunks.length) return "low";

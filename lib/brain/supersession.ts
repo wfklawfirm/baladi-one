@@ -1,3 +1,4 @@
+import { issueYear, newestFirst } from "./recency";
 // "Latest in-force instrument prevails". For procurement questions the assistant is told which instruments are newest, and that older municipal-law-era
 // sources cannot decide procurement-committee questions. No legal content is hard-coded here: only what the legal source register itself holds.
 export const PROC_TOPIC = /لجنة (?:الشراء|التلزيم|المناقصات|الاستلام|استلام)|لجان (?:الشراء|التلزيم|المناقصات)|عضو(?:ية)? في لجنة|مناقصة|مناقصات|تلزيم|استدراج|شراء عام|الشراء العام|تضارب مصالح|تعارض مصالح/;
@@ -31,8 +32,8 @@ type Row = { title: string; category: string; published_on: string | null; sourc
 /** Retrieved PPA texts, newest first. OCR rows are flagged: their numbers/dates may be wrong. */
 export function ppaExcerpts(rows: Row[] | null): string | undefined {
   if (!rows?.length) return undefined;
-  // rows arrive best-match first: keep the best 8, then show newest first
-  const sorted = rows.slice(0, 8).sort((a, b) => String(b.published_on ?? "").localeCompare(String(a.published_on ?? "")));
+  // rows arrive best-match first: keep the best 8, then show newest ISSUE year first (from the title; publication date only as a fallback)
+  const sorted = newestFirst(rows.slice(0, 8), (r) => issueYear(r.title, r.published_on));
   const blocks = sorted.map((r) => `### ${r.title}${r.label ? ` — ${r.label}` : ""}\nالتصنيف: ${r.category}${r.published_on ? ` | نُشر على الموقع: ${r.published_on}` : ""} | المصدر: ${r.source_url}${r.text_quality?.includes("ocr") ? " | تنبيه: نص مقروء ضوئيًا، قد تكون الأرقام والتواريخ غير دقيقة فارجع إلى الرابط" : ""}\n${r.body.slice(0, 1300)}`);
   return `=== نصوص هيئة الشراء العام (من موقعها، الأحدث أولًا، كلها قيد المراجعة) ===\n${blocks.join("\n\n")}\nقاعدة: هذه نصوص مأخوذة من الموقع ولم تُوثَّق قانونيًا بعد؛ اذكر مصدرها وتاريخها وقل «قيد المراجعة»، وعند التعارض يسود الأحدث صدورًا (وفق تاريخ الصدور الوارد في عنوان النص أو متنه، وليس تاريخ نشره على الموقع).`;
 }
