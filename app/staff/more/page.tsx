@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote, Landmark, Wallet, HardHat, FileBarChart, ChevronLeft, ShieldCheck } from "lucide-react";
+import { Bot, DatabaseZap, ScanSearch, FileSignature, Inbox, ClipboardCheck, UsersRound, LogOut, Scale, BookOpen, Users, MonitorSmartphone, Globe, ListChecks, Gauge, Banknote, Landmark, Wallet, HardHat, FileBarChart, ChevronLeft, ShieldCheck, ShoppingCart } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
 import { BRAND, OFFICIAL } from "@/lib/brand";
 import { brainConfigured } from "@/lib/brain/rag";
@@ -33,6 +33,7 @@ export default async function More({ searchParams }: { searchParams: Promise<{ f
     { href: "/staff/council", Icon: Landmark, title: "المجلس والقرارات", sub: "جلسات وسجل قرارات" },
     { href: "/staff/finance", Icon: Wallet, title: "المالية والموازنة", sub: "اعتمادات ومستحقات وتحصيل" },
     { href: "/staff/projects", Icon: HardHat, title: "المشاريع والعقود", sub: "إنجاز وتأخر وعقود" },
+    { href: "/staff/procurement", Icon: ShoppingCart, title: "الشراء العام", sub: "خطة الشراء والعروض واللجان والاعتراضات والملف الرقابي" },
     { href: "/staff/admin", Icon: ClipboardCheck, title: "الإدارة البلدية", sub: "مراسلات وأملاك وشؤون قانونية ورقابة وشفافية" },
     { href: "/staff/legal", Icon: Scale, title: "المرجعية القانونية", sub: "سجل القواعد وحالة مراجعتها" },
     { href: "/staff/services", Icon: ClipboardCheck, title: "اعتماد الخدمات", sub: "مراجعة المعاملات المنشورة" },

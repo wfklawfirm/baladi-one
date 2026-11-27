@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox, Banknote, FileSignature, Landmark, Wallet, HardHat, LayoutGrid, ScanSearch, LogOut } from "lucide-react";
+import { Inbox, Banknote, FileSignature, Landmark, Wallet, HardHat, LayoutGrid, ScanSearch, LogOut, ShoppingCart, ClipboardCheck } from "lucide-react";
 import { requireStaff } from "@/lib/supabase-server";
 import { BRAND } from "@/lib/brand";
 import { brainConfigured } from "@/lib/brain/rag";
@@ -53,6 +53,8 @@ export default async function StaffHome() {
         { href: "/staff/council", title: "المجلس", Icon: Landmark },
         { href: "/staff/finance", title: "المالية", Icon: Wallet },
         { href: "/staff/projects", title: "المشاريع", Icon: HardHat },
+        { href: "/staff/procurement", title: "الشراء العام", Icon: ShoppingCart },
+        { href: "/staff/admin", title: "الإدارة البلدية", Icon: ClipboardCheck },
         { href: "/staff/more", title: "المزيد", Icon: LayoutGrid },
       ]
     : [

@@ -55,6 +55,7 @@ export default async function Projects({ searchParams }: { searchParams: Promise
         { label: "مشاريع متأخرة", value: failed ? "غير متاح" : delayed.length, tone: delayed.length ? "bad" : "ok" },
         { label: "عقود تحتاج إجراء", value: failed ? "غير متاح" : needs, tone: needs ? "warn" : "ok", href: "/staff/projects/contracts" },
       ]} />
+      <Link href="/staff/procurement" className="elev elev-hover flex min-h-14 items-center justify-between gap-3 rounded-2xl border bg-background px-4 py-3 font-bold text-primary active:bg-muted"><span>الشراء العام — الخطة والعروض واللجان والملف الرقابي</span><span aria-hidden>←</span></Link>
       <details open={!!(sp.s || sp.q)} className="rounded-2xl border bg-background p-4"><summary className="min-h-11 cursor-pointer py-2 font-bold text-primary">عرض التفاصيل: كل المشاريع والبحث</summary><div className="mt-3 space-y-4">
       <div className="flex flex-wrap gap-2"><span className="flex flex-wrap gap-2"><Link href="/staff/procurement" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">الشراء العام ←</Link><Link href="/staff/projects/contracts" className="rounded-xl border px-4 py-2 text-sm font-semibold active:bg-muted">سجل العقود ←</Link></span></div>
       {sp.err && <p role="alert" className="rounded-xl border border-destructive/40 p-3 text-sm">تحقق من الحقول المطلوبة (العنوان، الموازنة، التواريخ).</p>}
