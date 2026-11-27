@@ -1,4 +1,4 @@
-import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT } from "./assistantGuards";
+import { auditGuards, dropSuperseded, mustRefuseRuling, isRulingQuestion, isProcurementTopic, sourceTier, NO_AUTHORITY_NOTE, RULING_FORMAT, answerMode, NO_DRAFT_RULE, stripDrafts, CONTRADICTION_SYSTEM, parseContradiction } from "./assistantGuards";
 import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
@@ -126,8 +126,9 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const ungrounded = !chunks.length && !tpl && !opts.facts;
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
+  const mode = answerMode(query, wantsTemplate(query));
   const ruling = isRulingQuestion(query) && isProcurementTopic(query);
-  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}`;
+  const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}${ruling ? `\n\n${RULING_FORMAT}` : ""}${mode !== "draft" ? `\n\n${NO_DRAFT_RULE}` : ""}`;
   const msgs: Msg[] = [{ role: "system", content: sys }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
@@ -143,6 +144,17 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
     const hard = [...a.hard], soft = [...a.soft];
     const gv = auditGuards(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`);
     if (gv) hard.push(`[guard:${gv.id}] ${gv.message}`);
+    // model contradiction check against the in-force texts (fail-closed on ruling questions: no verdict → no categorical answer)
+    if (opts.authority && isProcurementTopic(query) && !gv) {
+      let cx: { contradicts: boolean; reason: string } | null = null;
+      try {
+        const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 200, response_format: { type: "json_object" }, messages: [
+          { role: "system", content: CONTRADICTION_SYSTEM }, { role: "user", content: `النصوص النافذة:\n${opts.authority.slice(0, 9000)}\n\nالجواب:\n${answer.slice(0, 5000)}` }] });
+        cx = parseContradiction(j.choices[0].message.content || "");
+      } catch { cx = null; }
+      if (cx?.contradicts) hard.push(`[guard:llm-contradiction] الجواب يناقض نصًا نافذًا مرفقًا: ${cx.reason}`);
+      else if (!cx && ruling) hard.push("[guard:verifier-unavailable] تعذّر التحقق من الجواب مقابل النص النافذ");
+    }
     // the model verifier only runs when the draft contains a decision template or cites articles (saves latency; avoids false alarms on plain advice)
     if (!ungrounded && (/<TEMPLATE:/.test(answer) || /(?:المادة|مادة)\s*[0-9٠-٩]/.test(answer))) {
       try {
@@ -158,10 +170,12 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   };
   const DISCLAIMER = "⚠️ جواب عام غير مستند إلى مصادر قاعدة المعرفة؛ يلزم التحقق من النص الرسمي أو مراجعة مختص.\n\n";
   let answer = await gen(msgs);
+  if (mode !== "draft") answer = stripDrafts(answer) || answer;
   let v = await verify(answer);
   if (v.hard.length || v.soft.length) {
     const all = [...v.hard, ...v.soft];
-    const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `ملاحظات التدقيق على مسودتك:\n- ${all.join("\n- ")}\nأعد كتابة الإجابة كاملة مصحّحة هذه النقاط: الجهة بلدية، ولا تذكر رقم مادة غير وارد في المصادر المرفقة (اكتفِ باسم القانون)، ولا تُلغِ بقية الإجابة المفيدة.` }]);
+    const retryRaw = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `ملاحظات التدقيق على مسودتك:\n- ${all.join("\n- ")}\nأعد كتابة الإجابة كاملة مصحّحة هذه النقاط: الجهة بلدية، ولا تذكر رقم مادة غير وارد في المصادر المرفقة (اكتفِ باسم القانون)، ولا تُلغِ بقية الإجابة المفيدة.` }]);
+    const retry = mode !== "draft" ? (stripDrafts(retryRaw) || retryRaw) : retryRaw;
     if (retry.trim()) {
       const v2 = await verify(retry);
       const gh = v2.hard.find((h) => h.startsWith("[guard:"));

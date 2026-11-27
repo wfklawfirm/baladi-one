@@ -35,3 +35,17 @@ describe("assistant guards", () => {
     expect(mustRefuseRuling("هل يحق لي تسجيل ولادة", false)).toBe(false);
   });
 });
+import { answerMode, stripDrafts, parseContradiction } from "./assistantGuards";
+describe("answer mode & verifier", () => {
+  it("drafts only when asked", () => {
+    expect(answerMode("هل يحق لرئيس البلدية عضوية لجنة الشراء", false)).toBe("ruling");
+    expect(answerMode("كيف تتألف لجنة التلزيم", false)).toBe("explain");
+    expect(answerMode("اكتب قرار تأليف لجنة", true)).toBe("draft");
+  });
+  it("strips templates from non-draft answers", () => { expect(stripDrafts("شرح <TEMPLATE:x>قرار</TEMPLATE> نهاية")).toBe("شرح  نهاية"); });
+  it("parses verifier output strictly", () => {
+    expect(parseContradiction('{"contradicts":true,"reason":"r"}')?.contradicts).toBe(true);
+    expect(parseContradiction("garbage")).toBeNull();
+    expect(parseContradiction('{"x":1}')).toBeNull();
+  });
+});

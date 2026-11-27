@@ -49,3 +49,15 @@ export const NO_AUTHORITY_NOTE = "لا أستطيع إعطاء حكم قاطع �
 export const mustRefuseRuling = (q: string, hasAuthority: boolean) => isRulingQuestion(q) && isProcurementTopic(q) && !hasAuthority;
 
 export const RULING_FORMAT = `قاعدة الأسئلة الحكمية (يحق/يجوز/يمنع): ابدأ بـ «الحكم المعتمد (الأحدث النافذ):» ثم اذكر اسم النص وسنته وأنه «قيد المراجعة» إن كان كذلك، ثم الاستثناءات والتحفظات. لا تبدأ بـ «نعم» أو «لا» إلا إذا كان نص حديث مرفق يقرر ذلك صراحة. لا تعتمد على الكتب القديمة للحكم.`;
+
+/** Answer mode: a draft/template is produced ONLY when the question asks for one. */
+export type AnswerMode = "draft" | "ruling" | "explain";
+export function answerMode(q: string, asksDraft: boolean): AnswerMode { return asksDraft ? "draft" : isRulingQuestion(q) ? "ruling" : "explain"; }
+export const NO_DRAFT_RULE = "قاعدة الصيغة: السؤال لا يطلب مسودة أو نموذجًا. أجب جوابًا مباشرًا ومختصرًا بالمعلومة والسند، ولا تُنشئ مسودة قرار أو نموذجًا أو محضرًا، ولا تعرض قوالب. اعرض صياغة فقط إذا طلبها المستخدم صراحة.";
+/** Deterministic safety net: templates/decision drafts are removed from non-draft answers. */
+export const stripDrafts = (a: string) => a.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
+
+export const CONTRADICTION_SYSTEM = "أنت مدقق قانوني صارم. تُعطى «نصوصًا نافذة» و«جوابًا». قرّر هل يناقض الجواب أي نص منها (مثل إجازة ما يمنعه النص أو منع ما يجيزه أو إدراج جهة استثناها النص). أجب JSON فقط: {\"contradicts\": true|false, \"reason\": \"سبب موجز\"}. لا تحكم بالتناقض إن لم يتناول الجواب المسألة.";
+export const parseContradiction = (raw: string): { contradicts: boolean; reason: string } | null => {
+  try { const j = JSON.parse(raw); return typeof j.contradicts === "boolean" ? { contradicts: j.contradicts, reason: String(j.reason ?? "").slice(0, 200) } : null; } catch { return null; }
+};
