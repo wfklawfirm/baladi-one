@@ -14,5 +14,25 @@ export function supersessionNote(query: string, sources: Src[] | null): string |
 السؤال يتعلق بالشراء العام. المرجع هو قانون الشراء العام 244/2021 بتعديلاته (ومنها القانون 309/2023 الذي أبقاه المجلس الدستوري بالقرار 7/2023) وتطبيقاته، وليس ما جاء في كتب وأدلة قانون البلديات 118/1977 وما قبله عن «لجنة الشراء» أو لجنة المناقصات البلدية، فهذه منسوخة أو معدّلة بالنظام الأحدث.
 نصوص الشراء العام المسجّلة في المنصة، الأحدث أولًا:
 ${list}
-قواعد الجواب: (1) ابدأ بالنص الأحدث وبيّن ما نُسخ من النص الأقدم. (2) لجان التلزيم والاستلام في النظام الجديد تُؤلَّف وفق أسس هيئة الشراء العام ويُشترط استقلالها وعدم تضارب مصالح أعضائها؛ فلا تقل إن رئيس البلدية يحق له أن يكون عضوًا استنادًا إلى مصادر أقدم، بل اعرض ما يقتضيه هذا الشرط واذكر أن النص الحرفي للمادة غير محمَّل في المنصة ويلزم التحقق منه قبل الاعتماد. (3) لا تعرض أي حكم على أنه «موثّق» ما دام قيد المراجعة.`;
+قواعد الجواب: (1) ابدأ بالنص الأحدث وبيّن ما نُسخ من النص الأقدم. (2) أجب من «نصوص هيئة الشراء العام» المرفقة أدناه إن وُجدت (مع ذكر عنوان النص وتاريخه ورابطه)، ولا تعتمد على مصادر أقدم تخالفها. إن لم تحسم المقتطفات المسألة فقل ذلك صراحةً ولا تخمّن. (3) لا تعرض أي حكم على أنه «موثّق» ما دام قيد المراجعة.`;
+}
+
+const STOP = new Set(["هل","ما","ماذا","كيف","متى","اين","أين","يحق","يجوز","من","في","على","الى","إلى","عن","هي","هو","ان","أن","كان","يكون","لدى","بين","مع","ذلك","هذا","هذه","التي","الذي","لنا","لي","لا","نعم","كل","اي","أي"]);
+export function searchTerms(query: string): string[] {
+  const words = query.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w));
+  // Arabic clitics: also try the word without a leading «ال/لل/بال/وال/ل/ب/و», since stored text is matched by prefix
+  const bare = (w: string) => w.replace(/^(?:وال|بال|لل|ال|ل|ب|و)(?=.{3,})/, "");
+  // the stored texts say «لجان التلزيم والاستلام / أعضاء», while people ask «لجنة الشراء / عضو»
+  const SYN: Record<string, string[]> = { لجنة: ["لجان", "التلزيم", "الاستلام"], لجان: ["لجنة", "التلزيم"], عضو: ["أعضاء", "عضو"], عضوا: ["أعضاء", "عضو"], عضوًا: ["أعضاء", "عضو"], الشراء: ["التلزيم", "الجهة الشارية"], مناقصة: ["التلزيم", "مناقصة"] };
+  const out = words.flatMap((w) => [w, bare(w), ...(SYN[bare(w)] ?? SYN[w] ?? [])]);
+  return [...new Set(out.flatMap((w) => w.split(/\s+/)))].filter((w) => w.length >= 3).slice(0, 16);
+}
+type Row = { title: string; category: string; published_on: string | null; source_url: string; text_quality: string | null; label: string | null; body: string };
+/** Retrieved PPA texts, newest first. OCR rows are flagged: their numbers/dates may be wrong. */
+export function ppaExcerpts(rows: Row[] | null): string | undefined {
+  if (!rows?.length) return undefined;
+  // rows arrive best-match first: keep the best 8, then show newest first
+  const sorted = rows.slice(0, 8).sort((a, b) => String(b.published_on ?? "").localeCompare(String(a.published_on ?? "")));
+  const blocks = sorted.map((r) => `### ${r.title}${r.label ? ` — ${r.label}` : ""}\nالتصنيف: ${r.category}${r.published_on ? ` | التاريخ: ${r.published_on}` : ""} | المصدر: ${r.source_url}${r.text_quality?.includes("ocr") ? " | تنبيه: نص مقروء ضوئيًا، قد تكون الأرقام والتواريخ غير دقيقة فارجع إلى الرابط" : ""}\n${r.body.slice(0, 1300)}`);
+  return `=== نصوص هيئة الشراء العام (من موقعها، الأحدث أولًا، كلها قيد المراجعة) ===\n${blocks.join("\n\n")}\nقاعدة: هذه نصوص مأخوذة من الموقع ولم تُوثَّق قانونيًا بعد؛ اذكر مصدرها وتاريخها وقل «قيد المراجعة»، وعند التعارض يسود الأحدث.`;
 }

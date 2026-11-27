@@ -18,3 +18,14 @@ describe("supersession note", () => {
   });
   it("tolerates a missing register", () => { expect(supersessionNote("مناقصة", null)).toContain("غير متاح"); });
 });
+import { ppaExcerpts, searchTerms } from "./supersession";
+describe("ppa excerpts", () => {
+  it("extracts content terms and drops stop-words", () => { expect(searchTerms("هل يحق لرئيس البلدية أن يكون عضوا في لجنة الشراء؟")).toEqual(expect.arrayContaining(["لرئيس", "البلدية", "لجنة", "الشراء"])); expect(searchTerms("هل ما")).toEqual([]); });
+  it("newest first, flags OCR, always pending review", () => {
+    const e = ppaExcerpts([
+      { title: "قديم", category: "مذكرات", published_on: "2022-08-11", source_url: "u1", text_quality: "text", label: null, body: "a" },
+      { title: "جديد", category: "قرارات", published_on: "2024-10-09", source_url: "u2", text_quality: "ocr", label: null, body: "b" }])!;
+    expect(e.indexOf("جديد")).toBeLessThan(e.indexOf("قديم")); expect(e).toContain("مقروء ضوئيًا"); expect(e).toContain("قيد المراجعة");
+    expect(ppaExcerpts([])).toBeUndefined();
+  });
+});

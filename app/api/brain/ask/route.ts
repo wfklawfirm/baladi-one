@@ -5,7 +5,7 @@ import { parsePeriod } from "@/lib/ops";
 import { loadOps, opsFacts } from "@/lib/opsData";
 import { procurementItemFacts } from "@/lib/procurementAuditData";
 import { procurementOverviewFacts } from "@/lib/procurementStatsData";
-import { supersessionNote } from "@/lib/brain/supersession";
+import { ppaExcerpts, searchTerms, supersessionNote } from "@/lib/brain/supersession";
 import { platformFacts } from "@/lib/brain/platformFacts";
 import { buildLegalPrompt, isLegalQuestion, selectRules, type RuleCtx } from "@/lib/legalContext";
 
@@ -67,7 +67,10 @@ export async function POST(req: Request) {
     const sb = await supabaseServer();
     const { data } = await sb.from("procurement_legal_source").select("instrument_type,instrument_number,instrument_date,verification_status,effective_to").limit(100);
     const note = supersessionNote(query, (data ?? null) as any);
-    if (note) legalPrompt = `${legalPrompt ?? ""}\n\n${note}`.trim();
+    if (note) {
+      const { data: docs } = await sb.rpc("procurement_doc_search", { p_terms: searchTerms(query), p_limit: 10 });
+      legalPrompt = `${legalPrompt ?? ""}\n\n${note}${ppaExcerpts((docs ?? null) as any) ? `\n\n${ppaExcerpts((docs ?? null) as any)}` : ""}`.trim();
+    }
   } catch { /* note is optional */ }
   try {
     const r = await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts, legalPrompt });
