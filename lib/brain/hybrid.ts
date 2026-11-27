@@ -26,6 +26,7 @@ const TOPIC_LAWS: { re: RegExp; ref: ArticleRef }[] = [
   { re: /سقف|السقوف|مليار|ضمان\s+العرض|بالفاتوره|طلب\s+عروض|خطه\s+الشراء|دفع\s+قيمه\s+العقد/, ref: { law: "PROC-14063", article: 1 } },
   // Law 309/2023 rewrote the committee-composition paragraphs of arts 100/101 (the platform's PROC-244 holds the pre-309 text)
   { re: /لجن[ةه]\s+(التلزيم|الاستلام|الشراء|المناقص)|تشكيل\s+لجن|اعضاء\s+لجن/, ref: { law: "PROC-309", article: 1 } },
+  { re: /لجن[ةه]\s+(التلزيم|الاستلام|الشراء|المناقص)|تشكيل\s+لجن|اعضاء\s+لجن/, ref: { law: "COA-46-2025", article: 1 } },
   // Law 21/2025: spending limit of mayor/council, fee doubling, sewer fee, ×20 on arts 59–61 of the municipal law
   { re: /عقد\s+النفق|سقف\s+النفق|النفقه\s+المسموح|صلاحيه\s+(?:رئيس\s+البلديه\s+)?(?:في\s+)?الانفاق/, ref: { law: "MUN-21-2025", article: 3 } },
   { re: /رسم\s+صيانه\s+(?:المجارير|مجارير)|مجارير\s+وارصفه/, ref: { law: "MUN-21-2025", article: 2 } },
