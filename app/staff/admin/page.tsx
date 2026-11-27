@@ -31,6 +31,7 @@ export default async function AdminHub() {
     { href: "/staff/admin/hr", Icon: IdCard, title: "أتابع موظفًا وتكليفه", sub: "من يعمل في أي قسم ومنذ متى (بدون رواتب)", m: hr.missing, n: hr.rows.filter((r) => !r.ended_on).length, nl: "موظف يعمل", late: 0 },
     { href: "/staff/admin/display", Icon: Monitor, title: "أضبط شاشة العرض", sub: "شاشة الانتظار على الشاشات العامة", m: ds.missing, n: ds.rows[0] ? (ds.rows[0].screensaver_enabled ? ds.rows[0].idle_seconds : 0) : 60, nl: ds.rows[0] && !ds.rows[0].screensaver_enabled ? "الشاشة متوقفة" : "ثانية حتى تظهر", late: 0 },
     ...(isOwner === true ? [{ href: "/staff/admin/ppa-import", Icon: QrCode, title: "نصوص هيئة الشراء العام", sub: "استيراد/تحديث نصوص الموقع للمساعد (لحساب WFK فقط)", m: false, n: 0, nl: "", late: 0 }] : []),
+    ...(isOwner === true ? [{ href: "/staff/admin/assistant-eval", Icon: ShieldCheck, title: "اختبار المساعد الذكي", sub: "تشغيل أسئلة فحص على المساعد الفعلي (لحساب WFK فقط)", m: false, n: 0, nl: "", late: 0 }] : []),
     ...(isOwner === true ? [{ href: "/staff/admin/trial-leads", Icon: QrCode, title: "سجل تجربة المساعد الذكي", sub: "من سجّل رقمه عبر الرمز لتجربة 3 أيام (لحساب WFK فقط)", m: false, n: trialN, nl: "مسجّل", late: 0 }] : []),
   ];
   return (
