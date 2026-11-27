@@ -24,7 +24,7 @@ export function searchTerms(query: string): string[] {
   // Arabic clitics: also try the word without a leading «ال/لل/بال/وال/ل/ب/و», since stored text is matched by prefix
   const bare = (w: string) => w.replace(/^(?:وال|بال|لل|ال|ل|ب|و)(?=.{3,})/, "");
   // the stored texts say «لجان التلزيم والاستلام / أعضاء», while people ask «لجنة الشراء / عضو»
-  const SYN: Record<string, string[]> = { لجنة: ["لجان", "التلزيم", "الاستلام"], لجان: ["لجنة", "التلزيم"], عضو: ["أعضاء", "عضو"], عضوا: ["أعضاء", "عضو"], عضوًا: ["أعضاء", "عضو"], الشراء: ["التلزيم", "الجهة الشارية"], مناقصة: ["التلزيم", "مناقصة"] };
+  const SYN: Record<string, string[]> = { لجنة: ["لجان", "التلزيم", "الاستلام", "استثناء", "المجلس", "البلدي"], لجان: ["لجنة", "التلزيم"], عضو: ["أعضاء", "عضو"], عضوا: ["أعضاء", "عضو"], عضوًا: ["أعضاء", "عضو"], الشراء: ["التلزيم", "الجهة الشارية"], مناقصة: ["التلزيم", "مناقصة"] };
   const out = words.flatMap((w) => [w, bare(w), ...(SYN[bare(w)] ?? SYN[w] ?? [])]);
   return [...new Set(out.flatMap((w) => w.split(/\s+/)))].filter((w) => w.length >= 3).slice(0, 16);
 }

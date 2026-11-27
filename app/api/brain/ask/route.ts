@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       legalPrompt = buildLegalPrompt(error ? null : selectRules(query, (data ?? []) as RuleCtx[], isProc ? "/staff/projects/procurement" : path));
     } catch { legalPrompt = buildLegalPrompt(null); }
   }
+  let authority: string | undefined;
   // Procurement questions: the newest in-force instruments prevail over older municipal-law-era sources.
   try {
     const sb = await supabaseServer();
@@ -69,11 +70,12 @@ export async function POST(req: Request) {
     const note = supersessionNote(query, (data ?? null) as any);
     if (note) {
       const { data: docs } = await sb.rpc("procurement_doc_search", { p_terms: searchTerms(query), p_limit: 10 });
-      legalPrompt = `${legalPrompt ?? ""}\n\n${note}${ppaExcerpts((docs ?? null) as any) ? `\n\n${ppaExcerpts((docs ?? null) as any)}` : ""}`.trim();
+      legalPrompt = `${legalPrompt ?? ""}\n\n${note}`.trim();
+      authority = ppaExcerpts((docs ?? null) as any);
     }
   } catch { /* note is optional */ }
   try {
-    const r = await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts, legalPrompt });
+    const r = await ask(query, history, { noClarify: b?.noClarify === true || facts !== undefined, facts, legalPrompt, authority });
     // procurement answers must always carry the verification limits, whatever the model wrote
     if (isProc && "answer" in r && typeof r.answer === "string" && !r.answer.includes("حدود التحقق")) r.answer += PROC_LIMITS;
     return Response.json(r);

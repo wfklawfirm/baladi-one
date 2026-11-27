@@ -36,6 +36,11 @@ describe("PPA documents", () => {
     expect((await E.err("anon", `select procurement_doc_import('{}'::jsonb)`))?.code).toBe("42501");
     expect(String((await E.err(u(E.mayorA), `select procurement_doc_import('{"page_id":"1","source_url":"https://evil.example/x","chunks":[]}'::jsonb)`))?.message)).toContain("invalid_doc");
   });
+  it("a drafting request for the committee decision also retrieves the mayor exclusion", async () => {
+    const terms = searchTerms("اعطني نموذج قرار تشكيل لجنة الشراء في البلدية");
+    const r = await E.q<any>(u(E.mayorA), `select body from procurement_doc_search($1::text[], 10)`, [terms]);
+    expect(r.slice(0, 8).some((x) => x.body.includes("باستثناء رئيس البلدية"))).toBe(true);
+  });
   it("every row is pending_review, none is labelled verified", async () => {
     expect((await E.su<any>(`select count(*)::int n from procurement_doc where verification_status <> 'pending_review'`))[0].n).toBe(0);
   });

@@ -1,3 +1,4 @@
+import { auditCommitteeMayor, SAFE_COMMITTEE_NOTE } from "./committeeGuard";
 import { issueYear, newestFirst, yearLabel } from "./recency";
 import "server-only";
 import { SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT, MUNICIPAL_LOCK } from "./prompts";
@@ -107,7 +108,7 @@ export async function clarify(query: string, history: Turn[]): Promise<string[]>
   } catch { return []; }
 }
 
-export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string } = {}) {
+export async function ask(query: string, history: Turn[], opts: { noClarify?: boolean; facts?: string; legalPrompt?: string; authority?: string } = {}) {
   if (!opts.noClarify) {
     const questions = await clarify(query, history);
     if (questions.length) return { clarify: questions };
@@ -115,7 +116,8 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const complexity = classify(query);
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* no sources → refuse below */ }
-  const tpl = wantsTemplate(query) ? matchTemplate(query) : null;
+  // people say «لجنة الشراء»; the approved library template and the law call it «لجنة التلزيم»
+  const tpl = wantsTemplate(query) ? matchTemplate(query.replace(/لجنة\s+الشراء/g, "لجنة تلزيم")) : null;
   // No sources: still answer from general knowledge, but cautiously (no article numbers, no invented templates) and flagged as unverified.
   const ungrounded = !chunks.length && !tpl && !opts.facts;
   const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
@@ -124,8 +126,9 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const msgs: Msg[] = [{ role: "system", content: sys }];
   for (const h of history.slice(-6)) if (h.content.trim()) msgs.push({ role: h.role, content: h.content.slice(0, 6000) });
   const FACTS = opts.facts ? `=== بيانات النظام الفعلية (محسوبة في الخادم من سجلات البلدية المصرّح بها) ===\n${opts.facts}\nقواعد: إن تعلّق السؤال بأرقام أو مؤشرات فاعتمد هذه البيانات حصرًا، ولا تختلق رقمًا أو مقارنة أو اتجاهًا غير وارد فيها، وصرّح بحدود البيانات والبنود «غير المتوفرة». لا تصف أي انحراف بأنه مخالفة أو فساد. أنت تقترح فقط ولا تنفّذ ولا تعتمد شيئًا.\n\n` : "";
+  const AUTH = opts.authority ? `${opts.authority}\nهذه النصوص الأحدث وتسود على أي مصدر أقدم يخالفها أدناه.\n\n` : "";
   const TPL = tpl ? `${templateGrounding(tpl)}\n\n` : "";
-  const userMsg = `${HINT}\n\n${FACTS}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
+  const userMsg = `${HINT}\n\n${FACTS}${AUTH}${TPL}=== وثائق المصادر المسترجعة ===\n(استخدم هذه الوثائق في إجابتك)\n\n${chunks.length ? buildContext(chunks, complexity) : NONE}\n\n=== السؤال ===\n${query}`;
   msgs.push({ role: "user", content: userMsg });
   const model = complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL;
   const gen = async (m: Msg[]) => ((await openai("chat/completions", { model, messages: m, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 })).choices[0].message.content as string) || "";
@@ -133,6 +136,8 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const verify = async (answer: string): Promise<{ hard: string[]; soft: string[] }> => {
     const a = auditDraft(answer, sourcesForAudit, query);
     const hard = [...a.hard], soft = [...a.soft];
+    const cm = auditCommitteeMayor(answer, `${opts.authority ?? ""} ${opts.legalPrompt ?? ""}`);
+    if (cm) hard.push(cm);
     // the model verifier only runs when the draft contains a decision template or cites articles (saves latency; avoids false alarms on plain advice)
     if (!ungrounded && (/<TEMPLATE:/.test(answer) || /(?:المادة|مادة)\s*[0-9٠-٩]/.test(answer))) {
       try {
@@ -154,7 +159,9 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
     const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `ملاحظات التدقيق على مسودتك:\n- ${all.join("\n- ")}\nأعد كتابة الإجابة كاملة مصحّحة هذه النقاط: الجهة بلدية، ولا تذكر رقم مادة غير وارد في المصادر المرفقة (اكتفِ باسم القانون)، ولا تُلغِ بقية الإجابة المفيدة.` }]);
     if (retry.trim()) {
       const v2 = await verify(retry);
-      if (v2.hard.length) {
+      if (v2.hard.some((h) => h.includes("لجنة تلزيم/استلام"))) {
+        answer = SAFE_COMMITTEE_NOTE; v = { hard: [], soft: [] };
+      } else if (v2.hard.length) {
         // never show a ministerial / entity-less municipal template; give the rest of the answer without it
         const stripped = retry.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
         answer = stripped ? `${stripped}\n\n> تعذّر إعداد نموذج قرار بلدي دقيق تلقائيًا؛ أُرفق الشرح فقط، ويُنصح بإعداد النموذج مع مستشار قانوني أو من مكتبة القرارات المعتمدة.` : REFUSAL;
