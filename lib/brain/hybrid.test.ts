@@ -16,3 +16,31 @@ describe("new instruments", () => {
   it("committee questions pull Court of Accounts opinion 46/2025", () => expect(topicRefs("تشكيل لجنة التلزيم في البلدية")).toContainEqual({ law: "COA-46-2025", article: 1 }));
   it("spending-limit questions pull Law 21/2025 art 3", () => expect(topicRefs("ما هو سقف عقد النفقة لرئيس البلدية؟")).toContainEqual({ law: "MUN-21-2025", article: 3 }));
 });
+
+describe("144/S, committees, invoice, amicable (retrieval routing)", () => {
+  it("public-property occupation pulls 144/S arts 14/16/18", () => {
+    const r = topicRefs("هل يحق للبلدية منح اجازة اشغال موقت للملك العام؟");
+    for (const a of [14, 16, 18]) expect(r).toContainEqual({ law: "PUBPROP-144S-1925", article: a });
+  });
+  it("pavement occupation fines pull 144/S art 23", () => expect(topicRefs("غرامة اشغال الملك العام")).toContainEqual({ law: "PUBPROP-144S-1925", article: 23 }));
+  it("invoice purchase pulls PROC-244 arts 47 and 60", () => {
+    const r = topicRefs("كيف تتم عملية الشراء بالفاتورة؟");
+    expect(r).toContainEqual({ law: "PROC-244", article: 47 });
+    expect(r).toContainEqual({ law: "PROC-244", article: 60 });
+  });
+  it("amicable agreement pulls PROC-244 arts 46 and 62", () => {
+    const r = topicRefs("شروط الاتفاق الرضائي");
+    expect(r).toContainEqual({ law: "PROC-244", article: 46 });
+    expect(r).toContainEqual({ law: "PROC-244", article: 62 });
+  });
+  it("committee questions pull PROC-244 arts 100/101", () => {
+    const r = topicRefs("تشكيل لجنة التلزيم ولجنة الاستلام");
+    expect(r).toContainEqual({ law: "PROC-244", article: 100 });
+    expect(r).toContainEqual({ law: "PROC-244", article: 101 });
+  });
+  it("ratification powers pull Law 21/2025 art 3, not the procurement ceilings decree", () => {
+    const r = topicRefs("ما هي صلاحية رئيس البلدية في الانفاق؟");
+    expect(r).toContainEqual({ law: "MUN-21-2025", article: 3 });
+    expect(r).not.toContainEqual({ law: "PROC-14063", article: 1 });
+  });
+});
