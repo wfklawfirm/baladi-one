@@ -18,6 +18,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // citizen report attachments (≤4 MB total, enforced again in the action); Vercel itself caps request bodies at 4.5 MB
+  experimental: { serverActions: { bodySizeLimit: "5mb" } },
   // The AI knowledge base files are read from disk by the ingestion route.
   outputFileTracingIncludes: { "/api/brain/ingest": ["./data/kb/**/*"], "/staff/brain": ["./data/kb/**/*"] },
   async headers() {

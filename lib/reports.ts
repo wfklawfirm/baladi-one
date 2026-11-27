@@ -27,6 +27,14 @@ export async function submitReport(slug: string, input: { type: string; descript
   } catch { return { ok: false, error: "unavailable" }; }
 }
 
+/** Attach one already-validated file to the report just filed (the tracking code proves ownership). */
+export async function attachReportFile(code: string, name: string, mime: string, bytes: Uint8Array): Promise<boolean> {
+  try {
+    const { error } = await db().rpc("report_attach", { p_code: code, p_name: name, p_mime: mime, p_data: "\\x" + Buffer.from(bytes).toString("hex") });
+    return !error;
+  } catch { return false; }
+}
+
 export type ServiceRequestResult = { ok: true; code: string } | { ok: false; error: "invalid_name" | "invalid_phone" | "rate_limited" | "unavailable" };
 
 export async function submitServiceRequest(slug: string, input: { serviceSlug: string; serviceTitle: string; name: string; phone: string; note: string; channel: "kiosk" | "app" }): Promise<ServiceRequestResult> {

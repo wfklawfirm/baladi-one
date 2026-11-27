@@ -174,3 +174,32 @@ describe("0050 assistant trial", () => {
     expect((await E.q<{ s: any }>("anon", `select public.trial_register('96171123456','',true,'${H1}') s`))[0].s.status).toBe("expired");
   });
 });
+
+describe("0051 report attachments", () => {
+  const CODE = "ABCDEFGHJKMN";
+  let REQ: string;
+  const jpg = "\\xffd8ffe000104a4649460001";
+  beforeAll(async () => {
+    await E.db.exec(`create function public._track_hash(p_code text) returns text language sql immutable as $$ select upper(regexp_replace(p_code,'[^A-Za-z0-9]','','g')) $$;
+      create table public.citizen_request (id uuid primary key default gen_random_uuid(), municipality_id uuid not null references public.municipality(id), kind text not null, token_hash text, is_demo boolean not null default false, created_at timestamptz not null default now());
+      alter table public.citizen_request enable row level security;
+      create policy req_staff_read on public.citizen_request for select to authenticated using (is_staff(municipality_id));`);
+    await E.db.exec(read("0051_report_attachments.sql"));
+    REQ = (await E.q<{ id: string }>("anon", "select 1 x")) && (await E.db.query<{ id: string }>(`insert into public.citizen_request(municipality_id, kind, token_hash) values ('${E.muniA}', 'report', '${CODE}') returning id`)).rows[0].id;
+  });
+  it("anon attaches a real jpeg with the code; scripts, wrong code, 4th file and late attach are refused", async () => {
+    expect(await E.err("anon", `select public.report_attach('${CODE}','a.jpg','image/jpeg','${jpg}'::bytea)`)).toBeFalsy();
+    expect(await E.err("anon", `select public.report_attach('${CODE}','x.jpg','image/jpeg','\\x3c7363726970743e616c6572742831293c2f7363726970743e'::bytea)`)).toBeTruthy();
+    expect(await E.err("anon", `select public.report_attach('ZZZZZZZZZZZZ','a.jpg','image/jpeg','${jpg}'::bytea)`)).toBeTruthy();
+    await E.q("anon", `select public.report_attach('${CODE}','b.jpg','image/jpeg','${jpg}'::bytea)`);
+    await E.q("anon", `select public.report_attach('${CODE}','c.jpg','image/jpeg','${jpg}'::bytea)`);
+    expect(await E.err("anon", `select public.report_attach('${CODE}','d.jpg','image/jpeg','${jpg}'::bytea)`)).toBeTruthy();
+    await E.su(`update public.citizen_request set created_at = now() - interval '1 hour' where id='${REQ}'`);
+    expect(await E.err("anon", `select public.report_attach('${CODE}','e.jpg','image/jpeg','${jpg}'::bytea)`)).toBeTruthy();
+  });
+  it("table is closed to anon; only staff of that municipality read it", async () => {
+    expect(await E.err("anon", "select * from public.report_attachment")).toBeTruthy();
+    expect((await E.q(u(E.mayorA), "select id from public.report_attachment")).length).toBe(3);
+    expect((await E.q(u(E.mayorB), "select id from public.report_attachment")).length).toBe(0);
+  });
+});

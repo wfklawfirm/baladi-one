@@ -24,6 +24,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const { sb } = await requireStaff();
   const { data: r } = await sb.from("citizen_request").select("*").eq("id", id).maybeSingle();
   if (!r) notFound();
+  const { data: atts } = await sb.from("report_attachment").select("id,file_name,mime,size_bytes").eq("request_id", id).order("created_at");
   const { data: hist } = await sb.from("request_status_history").select("to_status,note,internal,created_at").eq("request_id", id).order("created_at");
   return (
     <main dir="rtl" lang="ar" className="mx-auto max-w-2xl space-y-5 p-4 md:p-8 lg:max-w-7xl">
@@ -36,6 +37,15 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         {r.location_text && <p className="text-sm"><b>الموقع:</b> {r.location_text}</p>}
         {r.contact_phone && <p className="text-sm"><b>الهاتف:</b> <span dir="ltr">{r.contact_phone}</span></p>}
       </section>
+      {(atts ?? []).length > 0 && (
+        <section className="space-y-2 rounded-2xl border bg-background p-4"><h2 className="font-bold">المرفقات ({(atts ?? []).length})</h2>
+          <ul className="grid gap-3 sm:grid-cols-3">{(atts ?? []).map((a: any) => (
+            <li key={a.id} className="space-y-1.5">
+              {a.mime.startsWith("image/") ? <a href={`/staff/r/${id}/file/${a.id}`} target="_blank" rel="noopener noreferrer">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={`/staff/r/${id}/file/${a.id}`} alt={a.file_name} className="aspect-video w-full rounded-xl border object-cover" /></a>
+                : <a href={`/staff/r/${id}/file/${a.id}`} target="_blank" rel="noopener noreferrer" className="grid aspect-video place-items-center rounded-xl border bg-muted font-bold text-primary">PDF</a>}
+              <p className="truncate text-xs text-muted-foreground" dir="auto">{a.file_name} · {Math.max(1, Math.round(a.size_bytes / 1024))} KB</p>
+            </li>))}</ul>
+          <p className="text-xs text-muted-foreground">ملفات أرسلها المواطن؛ افتحوها بحذر ولا تعتمدوها وثائق رسمية.</p></section>)}
       <Link href={`/staff/analyze?t=${encodeURIComponent(r.description ?? "")}`} className="flex min-h-12 items-center justify-center rounded-xl border-2 border-primary font-semibold text-primary active:bg-muted">اطلبوا من المساعد قراءة الطلب وتلخيصه</Link>
       <StepCard title="ماذا تريدون أن تفعلوا بهذا الطلب؟" hint="اكتبوا ملاحظة اختيارية ثم اضغطوا الزر المناسب. يُسجَّل التغيير في السجل أدناه.">
         <form action={change.bind(null, id)} className="space-y-3">

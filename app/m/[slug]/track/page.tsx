@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { referrer: "no-referrer" as const, title: "متابعة بلاغ" };
 const fmt = (d: string) => new Intl.DateTimeFormat("ar-LB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Beirut" }).format(new Date(d));
 
-export default async function TrackPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ code?: string; new?: string }> }) {
+export default async function TrackPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ code?: string; new?: string; att?: string }> }) {
   const { slug } = await params;
   const sp = await searchParams;
   const muni = await loadMunicipality(slug);
@@ -22,6 +22,7 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
         <>
           <Link href={await portalHome(slug)} className="text-sm text-primary">← {muni.nameAr}</Link>
           <h1 className="text-2xl font-bold">{result?.kind === "service_request" ? "متابعة معاملة" : "متابعة بلاغ"}</h1>
+          {sp.att === "partial" && <p role="alert" className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">تم استلام البلاغ، لكن تعذّر رفع بعض الملفات المرفقة. يمكنكم ذكر ذلك لموظف البلدية.</p>}
           {sp.new && result && (
             <div className="rounded-2xl border-2 border-primary bg-background p-4 text-center">
               <p className="font-bold">{result.kind === "service_request" ? "تم تسجيل معاملتك" : "تم استلام بلاغك"}</p>
