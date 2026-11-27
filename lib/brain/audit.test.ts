@@ -9,10 +9,11 @@ describe("auditDraft", () => {
   it("rejects the ministerial draft for a municipal question (the reported bug)", () => {
     const r = auditDraft(WRONG, [], "اعطني نموذج قرار إسقاط الملك البلدي");
     expect(r.ok).toBe(false);
-    expect(r.issues.length).toBeGreaterThanOrEqual(3);
+    expect(r.hard.length).toBeGreaterThanOrEqual(3);
   });
   it("accepts a municipal draft", () => expect(auditDraft(GOOD, [], "نموذج قرار إسقاط الملك البلدي").ok).toBe(true));
-  it("flags a template without municipality", () => expect(auditDraft("<TEMPLATE:x>قرار عام\nالمدير</TEMPLATE>", [], "قرار بلدي").ok).toBe(false));
+  it("flags a template without municipality as hard", () => expect(auditDraft("<TEMPLATE:x>قرار عام\nالمدير</TEMPLATE>", [], "قرار بلدي").hard.length).toBe(1));
+  it("does not hard-block prose that mentions the minister or article numbers", () => { const r = auditDraft("يصدّق الوزير المختص وفق المادة 77 من القانون", [], "بلدية"); expect(r.hard).toEqual([]); expect(r.soft.length).toBeGreaterThan(0); });
   it("normalises Arabic digits", () => { expect(westernDigits("المادة ٤٩")).toBe("المادة 49"); expect(citedArticles("وفق المادة ٤٩ والمادة 12")).toEqual(["49", "12"]); });
   it("flags cited articles missing from sources and passes supported ones", () => {
     const chunks = [{ title: "قانون البلديات", text: "المادة 49 - يتولى المجلس البلدي" }];

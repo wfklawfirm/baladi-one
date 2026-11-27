@@ -39,25 +39,27 @@ function articleInChunks(n: string, chunks: AuditChunk[]): boolean {
   return chunks.some((c) => re.test(westernDigits(`${c.title}\n${c.text}`)));
 }
 
-export type AuditResult = { ok: boolean; issues: string[] };
+export type AuditResult = { ok: boolean; issues: string[]; hard: string[]; soft: string[] };
 
+/** hard = the draft must not be shown (a ministerial/entity-less decision template); soft = shown with a caution note. */
 export function auditDraft(answer: string, chunks: AuditChunk[], query = ""): AuditResult {
-  const issues: string[] = [];
+  const hard: string[] = [], soft: string[] = [];
   const municipal = isMunicipalContext(query) || isMunicipalContext(answer);
   const templates = extractTemplates(answer);
-  const scan = templates.length ? templates.join("\n") : answer;
   if (municipal) {
-    for (const [re, why] of MINISTERIAL_MARKERS) if (re.test(scan)) issues.push(why);
     for (const t of templates) {
-      if (!/بلدية|المجلس البلدي|رئيس البلدية/.test(t)) issues.push("نموذج القرار لا يذكر البلدية/المجلس البلدي/رئيس البلدية");
+      for (const [re, why] of MINISTERIAL_MARKERS) if (re.test(t)) hard.push(why);
+      if (!/بلدية|المجلس البلدي|رئيس البلدية/.test(t)) hard.push("نموذج القرار لا يذكر البلدية/المجلس البلدي/رئيس البلدية");
     }
+    if (!templates.length) for (const [re, why] of MINISTERIAL_MARKERS.slice(1)) if (re.test(answer)) soft.push(why);
     // property-drop questions: «الملك العام» must be framed as municipal property
-    if (/إسقاط|اسقاط/.test(query) && /ملك/.test(query) && /(?:الملك|ملك)\s+العام/.test(answer) && !/بلدي/.test(answer)) issues.push("إسقاط الملك العام ورد دون تقييده بالملك البلدي");
+    if (/إسقاط|اسقاط/.test(query) && /ملك/.test(query) && /(?:الملك|ملك)\s+العام/.test(answer) && !/بلدي/.test(answer)) soft.push("إسقاط الملك العام ورد دون تقييده بالملك البلدي");
   }
-  // cited article numbers must be present in the retrieved sources
+  // cited article numbers should be present in the retrieved sources
   const cited = citedArticles(answer);
   const unsupported = cited.filter((n) => !articleInChunks(n, chunks));
-  if (cited.length && !chunks.length) issues.push(`ذُكرت مواد (${cited.join("، ")}) دون أي مصدر مسترجع للتحقق منها`);
-  else if (unsupported.length) issues.push(`مواد غير واردة في المصادر المسترجعة: ${unsupported.join("، ")}`);
-  return { ok: issues.length === 0, issues };
+  if (cited.length && !chunks.length) soft.push(`ذُكرت مواد (${cited.join("، ")}) دون مصدر مسترجع للتحقق منها`);
+  else if (unsupported.length) soft.push(`مواد لم يُعثر عليها في المصادر المسترجعة: ${unsupported.join("، ")}`);
+  const issues = [...hard, ...soft];
+  return { ok: issues.length === 0, issues: [...new Set(issues)], hard: [...new Set(hard)], soft: [...new Set(soft)] };
 }

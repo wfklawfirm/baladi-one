@@ -113,9 +113,9 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   let chunks: Hit[] = [];
   try { chunks = filterAndRank(await retrieve(query, complexity, 20)); } catch { /* no sources → refuse below */ }
   const tpl = wantsTemplate(query) ? matchTemplate(query) : null;
-  // Nothing to ground on (no sources, no library template, no system facts): refuse instead of improvising.
-  if (!chunks.length && !tpl && !opts.facts) return { answer: REFUSAL, sources: [], confidence: "low" as const };
-  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. لا تذكر أي مادة أو رقم قانون، ولا تؤلّف نموذجاً؛ استند فقط إلى بيانات النظام أو القالب المرفق إن وُجدا.";
+  // No sources: still answer from general knowledge, but cautiously (no article numbers, no invented templates) and flagged as unverified.
+  const ungrounded = !chunks.length && !tpl && !opts.facts;
+  const NONE = "لا توجد مصادر مطابقة في قاعدة المعرفة. أجب بإيجاز وبشكل عام من معرفتك بالقانون اللبناني والإدارة البلدية، دون ذكر رقم أي مادة أو مرسوم ودون اقتباس نصوص ودون تأليف نموذج قرار، وابدأ بجملة تقول إن الجواب عام وغير مستند إلى مصادر قاعدة المعرفة ويلزم التحقق من النص الرسمي. وإن كان السؤال يحتاج نصاً أو نموذجاً محدداً فاعتذر عنه بوضوح.";
   const HINT = chunks.length ? "[تلميح: استخدم الهيكل الكامل — اذكر من النصوص ما ورد في المصادر فقط]" : "[تلميح: لا مصادر مسترجعة — لا اقتباس ولا أرقام مواد]";
   const sys = `${opts.legalPrompt ? `${SYSTEM_PROMPT}\n\n${opts.legalPrompt}` : SYSTEM_PROMPT}${MUNICIPAL_LOCK}`;
   const msgs: Msg[] = [{ role: "system", content: sys }];
@@ -127,26 +127,40 @@ export async function ask(query: string, history: Turn[], opts: { noClarify?: bo
   const model = complexity === "mini" ? CHAT_MODEL_MINI : CHAT_MODEL;
   const gen = async (m: Msg[]) => ((await openai("chat/completions", { model, messages: m, temperature: 0.1, max_tokens: complexity === "mini" ? 2000 : 6000 })).choices[0].message.content as string) || "";
   const sourcesForAudit = [...chunks.map((c) => ({ title: c.title, text: c.text })), ...(tpl ? [{ title: tpl.title_ar, text: `${tpl.legal_reference_candidates?.map((r) => `المادة ${r.article_candidates ?? ""}`).join(" ") ?? ""} ${(tpl.operative_clauses_ar ?? []).join(" ")}` }] : [])];
-  const verify = async (answer: string): Promise<string[]> => {
-    const issues = auditDraft(answer, sourcesForAudit, query).issues;
-    try {
-      const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 400, response_format: { type: "json_object" }, messages: [
-        { role: "system", content: "أنت مدقق قانوني للبلديات اللبنانية. قارن المسودة بالسؤال والمصادر. أبلغ فقط عن: (1) خلط الجهة (وزير/وزارة بدل المجلس البلدي أو رئيس البلدية)، (2) ادعاء قانوني أو رقم مادة غير موجود في المصادر، (3) عدم الإجابة عن السؤال المطروح فعلاً. لا تُبلغ عن أسلوب أو صياغة. أجب JSON: {\"ok\":true|false,\"issues\":[\"...\"]}" },
-        { role: "user", content: `السؤال:\n${query.slice(0, 1500)}\n\nالمصادر:\n${(chunks.length ? buildContext(chunks, "mini") : "") + (tpl ? `\n${templateGrounding(tpl)}` : "") || "لا مصادر"}\n\nالمسودة:\n${answer.slice(0, 7000)}` },
-      ] });
-      const v = JSON.parse(j.choices[0].message.content || "{}");
-      if (v.ok === false && Array.isArray(v.issues)) issues.push(...v.issues.map((x: unknown) => String(x).slice(0, 200)).slice(0, 4));
-    } catch { /* deterministic audit still applies */ }
-    return issues;
+  const verify = async (answer: string): Promise<{ hard: string[]; soft: string[] }> => {
+    const a = auditDraft(answer, sourcesForAudit, query);
+    const hard = [...a.hard], soft = [...a.soft];
+    // the model verifier only runs when the draft contains a decision template or cites articles (saves latency; avoids false alarms on plain advice)
+    if (!ungrounded && (/<TEMPLATE:/.test(answer) || /(?:المادة|مادة)\s*[0-9٠-٩]/.test(answer))) {
+      try {
+        const j = await openai("chat/completions", { model: CHAT_MODEL_MINI, temperature: 0, max_tokens: 300, response_format: { type: "json_object" }, messages: [
+          { role: "system", content: "أنت مدقق قانوني للبلديات اللبنانية. أبلغ فقط عن أمرين: (1) نموذج قرار صادر عن وزير/وزارة بدل المجلس البلدي أو رئيس البلدية، (2) رقم مادة أو اقتباس حرفي منسوب إلى قانون ولا أثر له في المصادر المرفقة. لا تُبلغ عن أي شيء آخر ولا عن الأسلوب ولا عن نقص التفاصيل. إن لم يوجد خلل فأجب {\"ok\":true,\"issues\":[]}. صيغة الجواب JSON: {\"ok\":true|false,\"issues\":[\"...\"]}" },
+          { role: "user", content: `المصادر:\n${(chunks.length ? buildContext(chunks, complexity) : "") + (tpl ? `\n${templateGrounding(tpl)}` : "")}\n\nالمسودة:\n${answer.slice(0, 7000)}` },
+        ] });
+        const v = JSON.parse(j.choices[0].message.content || "{}");
+        if (v.ok === false && Array.isArray(v.issues)) soft.push(...v.issues.map((x: unknown) => String(x).slice(0, 200)).slice(0, 3));
+      } catch { /* deterministic audit still applies */ }
+    }
+    return { hard, soft };
   };
+  const DISCLAIMER = "⚠️ جواب عام غير مستند إلى مصادر قاعدة المعرفة؛ يلزم التحقق من النص الرسمي أو مراجعة مختص.\n\n";
   let answer = await gen(msgs);
-  let issues = await verify(answer);
-  if (issues.length) {
-    const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `رفض المدقق المسودة للأسباب التالية:\n- ${issues.join("\n- ")}\nأعد كتابة الإجابة كاملة وصحّح هذه النقاط حصراً، والتزم بأن الجهة بلدية، ولا تذكر ما لا تسنده المصادر المرفقة. إن تعذّر ذلك فاعتذر بوضوح.` }]);
-    const again = await verify(retry);
-    if (again.length) return { answer: `${REFUSAL}\n\nتعذّر التحقق من مسودة دقيقة لهذا الطلب: ${again.slice(0, 3).join("؛ ")}.`, sources: makeSources(chunks), confidence: "low" as const };
-    answer = retry;
+  let v = await verify(answer);
+  if (v.hard.length || v.soft.length) {
+    const all = [...v.hard, ...v.soft];
+    const retry = await gen([...msgs, { role: "assistant", content: answer }, { role: "user", content: `ملاحظات التدقيق على مسودتك:\n- ${all.join("\n- ")}\nأعد كتابة الإجابة كاملة مصحّحة هذه النقاط: الجهة بلدية، ولا تذكر رقم مادة غير وارد في المصادر المرفقة (اكتفِ باسم القانون)، ولا تُلغِ بقية الإجابة المفيدة.` }]);
+    if (retry.trim()) {
+      const v2 = await verify(retry);
+      if (v2.hard.length) {
+        // never show a ministerial / entity-less municipal template; give the rest of the answer without it
+        const stripped = retry.replace(/<TEMPLATE:[^>]*>[\s\S]*?<\/TEMPLATE>/g, "").trim();
+        answer = stripped ? `${stripped}\n\n> تعذّر إعداد نموذج قرار بلدي دقيق تلقائيًا؛ أُرفق الشرح فقط، ويُنصح بإعداد النموذج مع مستشار قانوني أو من مكتبة القرارات المعتمدة.` : REFUSAL;
+        v = { hard: [], soft: v2.soft };
+      } else { answer = retry; v = v2; }
+    } else { v = { hard: [], soft: all.filter((x) => !v.hard.includes(x)) }; }
   }
+  if (v.soft.length && answer !== REFUSAL) answer += `\n\n> ملاحظات التدقيق (غير متحقَّق منها في المصادر): ${v.soft.slice(0, 3).join("؛ ")}. راجع النص الرسمي.`;
+  if (ungrounded && answer !== REFUSAL) answer = DISCLAIMER + answer;
   return { answer: answer || REFUSAL, sources: makeSources(chunks), confidence: confidence(chunks) };
 }
 

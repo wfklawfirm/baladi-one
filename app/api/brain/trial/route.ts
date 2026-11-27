@@ -21,6 +21,6 @@ export async function POST(req: Request) {
   const { data: use } = await sb.rpc("trial_use", { p_token_hash: t.hash });
   if (use === "limit") return Response.json({ error: "بلغت الحد اليومي للتجربة (25 سؤالًا)، عُد غدًا" }, { status: 429 });
   if (use !== "ok") return Response.json({ error: "انتهت الجلسة" }, { status: 401 });
-  try { return Response.json(await ask(query, history, { noClarify: b?.noClarify === true })); }
+  try { return Response.json(await ask(query, history, { noClarify: true })); }
   catch { return Response.json({ error: "تعذّر الوصول إلى المساعد، حاول مجدداً" }, { status: 502 }); }
 }
