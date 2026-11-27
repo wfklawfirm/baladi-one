@@ -62,14 +62,12 @@ export const parseContradiction = (raw: string): { contradicts: boolean; reason:
   try { const j = JSON.parse(raw); return typeof j.contradicts === "boolean" ? { contradicts: j.contradicts, reason: String(j.reason ?? "").slice(0, 200) } : null; } catch { return null; }
 };
 
-/** When a guard fires twice, answer from the in-force text itself (title + the quoted sentence) instead of a bare apology. */
-export function groundedFallback(g: Guard & { grounded?: string }, authority: string): string {
-  if (!g.grounded || !authority) return g.safe_note;
-  const m = new RegExp(g.grounded).exec(authority);
-  if (!m) return g.safe_note;
-  const blocks = authority.split(/\n(?=### )/);
-  const blk = blocks.find((b) => b.includes(m[0])) ?? "";
-  const title = /^###\s*(.+)$/m.exec(blk)?.[1]?.split(" — ")[0]?.trim();
-  const s = Math.max(0, m.index - 160), snippet = authority.slice(s, m.index + m[0].length + 80).replace(/\s+/g, " ").trim();
-  return `الحكم المعتمد (الأحدث النافذ): بحسب ${title ?? "نص هيئة الشراء العام المرفق"} (قيد المراجعة القانونية) ورد: «…${snippet}…». وبالتالي لا يُدرج رئيس البلدية عضوًا في هذه اللجان في الحالة التي يتناولها النص. راجع النص الكامل في المصادر قبل أي قرار.`;
+type Grounded = Guard & { grounded_head?: string; grounded_points?: { when: string; text: string }[]; grounded_caveat?: string };
+/** When a guard fires twice, answer from the in-force text itself (clean, structured) instead of a bare apology. Points appear only if the retrieved text contains them. */
+export function groundedFallback(g: Grounded, authority: string): string {
+  const pts = (g.grounded_points ?? []).filter((p) => new RegExp(n(p.when)).test(n(authority)));
+  if (!g.grounded_head || !pts.length) return g.safe_note;
+  const title = (/^###\s*(.+)$/m.exec(authority)?.[1] ?? "").split(" — ")[0].trim();
+  const link = /المصدر:\s*(https?:\/\/\S+)/.exec(authority)?.[1];
+  return [g.grounded_head, "", "**السند (الأحدث النافذ – قيد المراجعة القانونية):**", ...(title ? [`- ${title}`] : []), ...pts.map((p) => `- ${p.text}`), ...(g.grounded_caveat ? ["", `> ${g.grounded_caveat}`] : []), ...(link ? ["", `المصدر: ${link}`] : [])].join("\n");
 }

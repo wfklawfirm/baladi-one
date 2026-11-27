@@ -53,8 +53,9 @@ import { groundedFallback } from "./assistantGuards";
 describe("grounded fallback & widened negation", () => {
   const AUTH = "### قرار الهيئة 9/2023 — قيد المراجعة\nيُشكّل أعضاء المجلس البلدي باستثناء رئيس البلدية لجان التلزيم.";
   it("answers from the text", () => {
-    const t = groundedFallback(GUARDS[0] as any, AUTH);
-    expect(t).toContain("9/2023"); expect(t).toContain("باستثناء رئيس البلدية");
+    const t = groundedFallback(GUARDS[0] as any, AUTH + "\nالمصدر: https://x.test/1");
+    expect(t).toContain("9/2023"); expect(t).toContain("باستثناء رئيس البلدية"); expect(t).toContain("https://x.test/1"); expect(t).not.toContain("سادسًا");
+    expect(groundedFallback(GUARDS[0] as any, "### ق\nيحظر على رئيس السلطة التنفيذية في البلديات")).toContain("سادسًا");
   });
   it("does not flag correct phrasings", () => {
     for (const a of ["لا. رئيس البلدية مستثنى من عضوية لجنة التلزيم.", "رئيس البلدية لا يحضر عضوًا في لجنة الشراء، استثناء ورد في القرار.", "يُحظر على رئيس البلدية عضوية لجنة الشراء."]) expect(auditGuards(a, "باستثناء رئيس البلدية")).toBeNull();
